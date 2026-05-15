@@ -63,9 +63,9 @@ jobs:
             podman stop futebol-server || true
             podman rm futebol-server || true
 
-            # Run the new container
+            # Run the new container (bound to localhost for reverse proxy)
             podman run -d \
               --name futebol-server \
-              -p 7531:7531 \
+              -p 127.0.0.1:7531:7531 \
               --restart always \
               ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
