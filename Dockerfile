@@ -15,7 +15,7 @@ RUN uv sync --no-dev
 # Development stage
 FROM base AS development
 
-# Install diagnostic and network tools
+# Install diagnostic and network tools + make
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     iputils-ping \
@@ -24,6 +24,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     telnet \
     htop \
     procps \
+    make \
     && rm -rf /var/lib/apt/lists/*
 
 # Install dev dependencies
