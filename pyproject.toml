@@ -1,12 +1,14 @@
 [project]
 name = "international-futebol-data"
-version = "0.1.0"
-description = "Basic BlackSheep server for international football data"
+version = "0.2.0"
+description = "Server for international football data stats"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
-    "blacksheep>=2.0.0",
-    "uvicorn>=0.30.0",
+    "fastapi>=0.100.0",
+    "uvicorn[standard]>=0.30.0",
+    "pandas>=2.0.0",
+    "numpy>=1.26.0",
 ]
 
 [dependency-groups]

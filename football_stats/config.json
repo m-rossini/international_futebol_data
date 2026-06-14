@@ -1,0 +1,12 @@
+{
+  "_comment": "Configuration for International Football Stats. Edit and POST /reload to apply changes.",
+  "server": {
+    "host": "0.0.0.0",
+    "port": 8000
+  },
+  "defaults": {
+    "top_scorers_n": 20,
+    "biggest_wins_n": 10
+  },
+  "log_level": "INFO"
+}

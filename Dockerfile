@@ -37,7 +37,7 @@ COPY . .
 EXPOSE 7531 5678
 
 # Run with debugpy for VS Code attachment
-CMD ["uv", "run", "python", "-m", "debugpy", "--listen", "0.0.0.0:5678", "-m", "uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "7531", "--reload"]
+CMD ["uv", "run", "python", "-m", "debugpy", "--listen", "0.0.0.0:5678", "football_stats/server.py", "--host", "0.0.0.0", "--port", "7531"]
 
 # Production stage
 FROM base AS production
@@ -49,4 +49,4 @@ COPY . .
 EXPOSE 7531
 
 # Run the application
-CMD ["uv", "run", "uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "7531"]
+CMD ["uv", "run", "python", "football_stats/server.py", "--host", "0.0.0.0", "--port", "7531"]
