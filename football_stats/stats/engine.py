@@ -2,6 +2,8 @@
 
 from typing import Optional
 
+import pandas as pd
+
 from .log import get_logger
 from .state import DataState
 from .filters import FilterParams, apply_filters
