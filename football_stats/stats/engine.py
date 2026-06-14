@@ -17,6 +17,16 @@ from .analysis import (
     shootouts_metadata,
     former_names_metadata,
     team_vs_team,
+    most_teams,
+    most_countries,
+    most_cities,
+    tournaments_list,
+    tournament_info,
+    cities_list,
+    city_info,
+    countries_list,
+    country_info,
+    _strip_accents,
 )
 
 logger = get_logger("engine")
@@ -27,6 +37,26 @@ class QueryEngine:
 
     def __init__(self, state: DataState):
         self._state = state
+
+    # ------------------------------------------------------------------
+    #  Team name resolution (case-insensitive)
+    # ------------------------------------------------------------------
+
+    def _teams_set(self) -> set[str]:
+        """Return the full set of known team names from results."""
+        return set(self._state.results["home_team"].unique()) | set(self._state.results["away_team"].unique())
+
+    def _resolve_team_name(self, name: str) -> str:
+        """Find the canonical team name from a case-insensitive input.
+
+        Raises ValueError if no match is found.
+        """
+        teams = self._teams_set()
+        name_key = _strip_accents(name).strip().lower()
+        for team in teams:
+            if _strip_accents(team).lower() == name_key:
+                return team
+        raise ValueError(f"Unknown team: '{name}'")
 
     # ------------------------------------------------------------------
     #  Structured queries (used by REST endpoints)
@@ -43,11 +73,82 @@ class QueryEngine:
 
     def team(self, team_name: str) -> dict:
         logger.debug("Team stats requested: %s", team_name)
-        return team_win_rate(self._state.results, team_name)
+        try:
+            canonical = self._resolve_team_name(team_name)
+        except ValueError:
+            return {"error": True, "message": f"Team '{team_name}' not found in the data."}
+        return team_win_rate(self._state.results, canonical)
 
     def head_to_head(self, team1: str, team2: str) -> dict:
         logger.debug("Head-to-head: %s vs %s", team1, team2)
-        return team_vs_team(self._state.results, team1, team2)
+        try:
+            t1 = self._resolve_team_name(team1)
+            t2 = self._resolve_team_name(team2)
+        except ValueError as e:
+            return {"error": True, "message": str(e)}
+        return team_vs_team(self._state.results, t1, t2)
+
+    def most(self, stat: str, top_n: int = 20) -> dict:
+        """Top N by stat across all teams, countries, or cities."""
+        logger.debug("Most requested: stat=%s top_n=%d", stat, top_n)
+
+        if stat in ("country", "countries"):
+            return {"stat": stat, "top_n": top_n, "ranking": most_countries(self._state.results, top_n)}
+        elif stat in ("city", "cities"):
+            return {"stat": stat, "top_n": top_n, "ranking": most_cities(self._state.results, top_n)}
+        else:
+            try:
+                ranking = most_teams(self._state.results, stat, top_n)
+            except ValueError as e:
+                return {"error": True, "message": str(e)}
+            return {"stat": stat, "top_n": top_n, "ranking": ranking}
+
+    def tournaments(self) -> list:
+        """List all tournaments with comprehensive aggregate stats."""
+        logger.debug("Tournaments list requested")
+        return tournaments_list(self._state.results)
+
+    def tournament(self, name: str) -> dict:
+        """Comprehensive stats for a specific tournament."""
+        logger.debug("Tournament info requested: %s", name)
+        try:
+            return tournament_info(self._state.results, name)
+        except ValueError as e:
+            return {"error": True, "message": str(e)}
+
+    # ------------------------------------------------------------------
+    #  City queries
+    # ------------------------------------------------------------------
+
+    def cities(self) -> list:
+        """List all cities with comprehensive stats."""
+        logger.debug("Cities list requested")
+        return cities_list(self._state.results)
+
+    def city(self, name: str) -> dict:
+        """Comprehensive stats for a specific city."""
+        logger.debug("City info requested: %s", name)
+        try:
+            return city_info(self._state.results, name)
+        except ValueError as e:
+            return {"error": True, "message": str(e)}
+
+    # ------------------------------------------------------------------
+    #  Country queries
+    # ------------------------------------------------------------------
+
+    def countries(self) -> list:
+        """List all countries with comprehensive stats."""
+        logger.debug("Countries list requested")
+        return countries_list(self._state.results)
+
+    def country(self, name: str) -> dict:
+        """Comprehensive stats for a specific country."""
+        logger.debug("Country info requested: %s", name)
+        try:
+            return country_info(self._state.results, name)
+        except ValueError as e:
+            return {"error": True, "message": str(e)}
 
     def top_scorers(self, top_n: int = 20) -> dict:
         logger.debug("Top %d scorers requested", top_n)
@@ -55,11 +156,11 @@ class QueryEngine:
 
     def biggest_wins(self, top_n: int = 10) -> list:
         logger.debug("Top %d biggest wins requested", top_n)
-        return biggest_wins(self._state.results, top_n).to_dict(orient="records")
+        return biggest_wins(self._state.results, top_n)
 
-    def goals_per_year(self) -> list:
-        logger.debug("Goals per year requested")
-        return goals_per_year(self._state.results).to_dict(orient="records")
+    def goals_per_year(self, sort_by: str = "goals", order: str = "desc") -> list:
+        logger.debug("Goals per year requested (sort_by=%s, order=%s)", sort_by, order)
+        return goals_per_year(self._state.results, sort_by=sort_by, order=order)
 
     # ------------------------------------------------------------------
     #  Natural-language query
@@ -104,8 +205,7 @@ class QueryEngine:
         # -- biggest wins --
         if any(kw in ql for kw in ["biggest win", "largest victory", "goal margin", "biggest score"]):
             n = self._extract_number(ql, 10)
-            rows = biggest_wins(r, n)
-            rows_list = rows.to_dict(orient="records")
+            rows_list = biggest_wins(r, n)
             answer = f"Biggest win: {rows_list[0]['home_team']} {rows_list[0]['home_score']}-{rows_list[0]['away_score']} vs {rows_list[0]['away_team']} ({rows_list[0]['tournament']}, {rows_list[0]['date']})" if rows_list else "No match data available."
             logger.info("Question matched: biggest wins (top %d)", n)
             return self._response(question, answer, rows_list)
@@ -144,12 +244,16 @@ class QueryEngine:
 
         # -- goals per year --
         if any(kw in ql for kw in ["goals per year", "yearly goals", "goals by year"]):
-            df = goals_per_year(r)
+            data = goals_per_year(r)
             logger.info("Question matched: goals per year")
+            goals_list = [d["goals"] for d in data]
+            years_list = [d["year"] for d in data]
+            min_g, max_g = min(goals_list), max(goals_list)
+            min_y, max_y = min(years_list), max(years_list)
             return self._response(
                 question,
-                f"Goals range from {int(df['total_goals'].min()):,} (year {int(df['year'].min())}) to {int(df['total_goals'].max()):,} (year {int(df['year'].max())}).",
-                df.to_dict(orient="records"),
+                f"Goals range from {min_g:,} ({min_y}) to {max_g:,} ({max_y}).",
+                data,
             )
 
         # -- summary / overview --
@@ -185,23 +289,23 @@ class QueryEngine:
                 return int(token)
         return default
 
-    @staticmethod
-    def _find_team(text: str, results) -> str | None:
-        teams = sorted(set(results["home_team"].unique()) | set(results["away_team"].unique()))
+    def _find_team(self, text: str, results) -> str | None:
+        teams = self._teams_set()
+        text_key = _strip_accents(text).lower()
         for team in teams:
-            if team.lower() in text:
+            if _strip_accents(team).lower() in text_key:
                 return team
         return None
 
-    @staticmethod
-    def _find_vs_match(question: str, results) -> tuple | None:
-        teams = sorted(set(results["home_team"].unique()) | set(results["away_team"].unique()))
+    def _find_vs_match(self, question: str, results) -> tuple | None:
+        teams = sorted(self._teams_set())
+        ql = _strip_accents(question).lower()
         for sep in [" vs ", " versus ", " v "]:
-            if sep in question:
-                parts = question.split(sep)
+            if sep in ql:
+                parts = ql.split(sep)
                 for t1 in teams:
-                    if t1.lower() in parts[0].lower():
+                    if _strip_accents(t1).lower() in parts[0]:
                         for t2 in teams:
-                            if t2.lower() in parts[1].lower() and t1 != t2:
+                            if _strip_accents(t2).lower() in parts[1] and t1 != t2:
                                 return (t1, t2)
         return None

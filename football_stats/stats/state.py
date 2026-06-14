@@ -3,12 +3,27 @@
 import json
 import os
 
+import pandas as pd
+
 from .loader import load_all_data
 from .log import get_logger
 
 logger = get_logger("state")
 
 CONFIG_PATH = os.path.join(os.path.dirname(__file__), "..", "config.json")
+
+
+def _drop_future_rows(df: pd.DataFrame, label: str) -> pd.DataFrame:
+    """Remove rows where a 'date' column is in the future. Returns the filtered frame."""
+    if "date" not in df.columns:
+        return df
+    today = pd.Timestamp.today().normalize()
+    before = len(df)
+    df = df[df["date"] <= today]
+    dropped = before - len(df)
+    if dropped:
+        logger.info("Dropped %d future %s rows (date > %s)", dropped, label, today.date())
+    return df
 
 
 class DataState:
@@ -25,10 +40,12 @@ class DataState:
         """(Re)load all CSV files and the config file. Returns a summary dict."""
         logger.info("Reloading data from CSV files...")
         data = load_all_data()
-        self.results = data["results"]
-        self.goalscorers = data["goalscorers"]
-        self.shootouts = data["shootouts"]
-        self.former_names = data["former_names"]
+
+        # Strip future rows from any dataset with a date column
+        self.results = _drop_future_rows(data["results"], "results")
+        self.goalscorers = _drop_future_rows(data["goalscorers"], "goalscorers")
+        self.shootouts = _drop_future_rows(data["shootouts"], "shootouts")
+        self.former_names = data["former_names"]  # no date column for matches
 
         if os.path.exists(CONFIG_PATH):
             with open(CONFIG_PATH) as f:
