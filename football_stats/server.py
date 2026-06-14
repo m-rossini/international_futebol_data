@@ -355,6 +355,8 @@ async def root():
             "GET /top_scorers?top_n=20": "Top scorers (no filter support)",
             "GET /biggest_wins?top_n=10&tournaments=&countries=": "Biggest wins with optional filters",
             "GET /goals_per_year?sort_by=goals&order=desc&tournaments=&date_from=&date_to=": "Goals per year with optional filters",
+            "GET /health": "Health check for container orchestration",
+            "GET /version": "Current application version",
         },
         "available_stats": most_stats_desc,
         "filter_params": {
