@@ -35,10 +35,10 @@ help:
 	@echo "  make dev-run     Start with auto-reload on file changes"
 	@echo "  make help        Show this help"
 	@echo ""
-	@echo "--- FROM THE HOST (container must be running) ---"
+	@echo "--- EPHEMERAL (no container needed) ---"
 	@echo ""
-	@echo "  make test            Run tests inside container (145 tests)"
-	@echo "  make test-coverage   Run tests with coverage report"
+	@echo "  make test            Build & run tests in ephemeral container"
+	@echo "  make test-coverage   Build & run tests with coverage report"
 	@echo ""
 	@echo "  Quick start:"
 	@echo "    1. Host:   make up"
@@ -91,11 +91,19 @@ run:
 dev-run:
 	uv run uvicorn football_stats.server:app --host 0.0.0.0 --port $(PORT) --reload
 
-test:
-	$(DOCKER) exec $(CONTAINER_NAME) sh -c "cd /app && uv sync && PYTHONPATH=football_stats:\$$PYTHONPATH uv run pytest tests/ -v"
+test: build
+	$(DOCKER) run --rm \
+		-v $(PWD):/app \
+		-v $(DATA_SRC_DIR):$(DATA_SRC_DIR):ro \
+		$(IMAGE_NAME):dev \
+		sh -c "cd /app && uv sync && PYTHONPATH=football_stats uv run pytest tests/ -v"
 
-test-coverage:
-	$(DOCKER) exec $(CONTAINER_NAME) sh -c "cd /app && uv sync && PYTHONPATH=football_stats:\$$PYTHONPATH uv run pytest tests/ -v --cov=football_stats --cov-report=term-missing"
+test-coverage: build
+	$(DOCKER) run --rm \
+		-v $(PWD):/app \
+		-v $(DATA_SRC_DIR):$(DATA_SRC_DIR):ro \
+		$(IMAGE_NAME):dev \
+		sh -c "cd /app && uv sync && PYTHONPATH=football_stats uv run pytest tests/ -v --cov=football_stats --cov-report=term-missing"
 
 version-inc:
 	@python3 -c "import json; f = open('config.json', 'r+'); d = json.load(f); p = [int(x) for x in d['version'].split('.')]; v = '$(PART)'; p = [p[0]+1, 0, 0] if v == 'major' else [p[0], p[1]+1, 0] if v == 'minor' else [p[0], p[1], p[2]+1]; d['version'] = '.'.join(map(str, p)); f.seek(0); json.dump(d, f, indent=2); f.truncate(); print(f'Version: {d[\"version\"]} ({v})')"
