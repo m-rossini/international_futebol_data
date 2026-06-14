@@ -10,6 +10,8 @@ Usage:
 """
 
 import argparse
+import json
+import os
 import sys
 import time
 from contextlib import asynccontextmanager
@@ -23,6 +25,20 @@ from stats.state import DataState
 from stats.engine import QueryEngine
 from stats.filters import FilterParams
 from stats.log import logger
+
+# ---------------------------------------------------------------------------
+#  Config
+# ---------------------------------------------------------------------------
+_CONFIG_PATH = os.path.join(os.path.dirname(__file__), "..", "config.json")
+
+
+def _load_version() -> str:
+    try:
+        with open(_CONFIG_PATH) as f:
+            cfg = json.load(f)
+        return cfg.get("version", "unknown")
+    except (FileNotFoundError, json.JSONDecodeError):
+        return "unknown"
 
 
 class MostStat(str, Enum):
@@ -300,12 +316,28 @@ async def query(q: str = Query(..., description="Your question about football st
     return engine.answer_question(q)
 
 
+@app.get("/health")
+async def health():
+    """Health check endpoint for container orchestration probes."""
+    return {
+        "status": "ok",
+        "data_loaded": state.is_loaded,
+    }
+
+
+@app.get("/version")
+async def version():
+    """Return the current application version."""
+    return {"version": _load_version()}
+
+
 @app.get("/")
 async def root():
     most_stats_desc = {k: v for k, v in _MOST_VALID_STATS.items()}
     return {
         "service": "International Football Stats",
         "status": "running",
+        "version": _load_version(),
         "endpoints": {
             "GET /": "This info",
             "GET /query?q=<question>": "Ask a natural-language question",
