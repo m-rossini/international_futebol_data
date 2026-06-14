@@ -92,10 +92,10 @@ dev-run:
 	uv run uvicorn football_stats.server:app --host 0.0.0.0 --port $(PORT) --reload
 
 test:
-	$(DOCKER) exec $(CONTAINER_NAME) sh -c "PYTHONPATH=football_stats:\$$PYTHONPATH uv run pytest tests/ -v"
+	$(DOCKER) exec $(CONTAINER_NAME) sh -c "cd /app && uv sync && PYTHONPATH=football_stats:\$$PYTHONPATH uv run pytest tests/ -v"
 
 test-coverage:
-	$(DOCKER) exec $(CONTAINER_NAME) sh -c "PYTHONPATH=football_stats:\$$PYTHONPATH uv run pytest tests/ -v --cov=football_stats --cov-report=term-missing"
+	$(DOCKER) exec $(CONTAINER_NAME) sh -c "cd /app && uv sync && PYTHONPATH=football_stats:\$$PYTHONPATH uv run pytest tests/ -v --cov=football_stats --cov-report=term-missing"
 
 version-inc:
 	@python3 -c "import json; f = open('config.json', 'r+'); d = json.load(f); p = [int(x) for x in d['version'].split('.')]; v = '$(PART)'; p = [p[0]+1, 0, 0] if v == 'major' else [p[0], p[1]+1, 0] if v == 'minor' else [p[0], p[1], p[2]+1]; d['version'] = '.'.join(map(str, p)); f.seek(0); json.dump(d, f, indent=2); f.truncate(); print(f'Version: {d[\"version\"]} ({v})')"
