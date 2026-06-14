@@ -17,6 +17,8 @@ def total_matches(results: pd.DataFrame) -> int:
 
 
 def date_range(results: pd.DataFrame) -> tuple:
+    if results.empty:
+        return None, None
     return results["date"].min(), results["date"].max()
 
 
@@ -24,12 +26,16 @@ def tournaments_available(results: pd.DataFrame) -> pd.Series:
     return results["tournament"].value_counts()
 
 
-def most_common_tournament(results: pd.DataFrame) -> str:
+def most_common_tournament(results: pd.DataFrame) -> str | None:
+    if results.empty:
+        return None
     return results["tournament"].mode().iloc[0]
 
 
 def biggest_wins(results: pd.DataFrame, top_n: int = 10) -> list:
     """Return the top_n biggest goal margins as a ranked list."""
+    if results.empty:
+        return []
     df = results.copy()
     df["goal_diff"] = abs(df["home_score"] - df["away_score"])
     top = df.nlargest(top_n, "goal_diff")[
@@ -109,6 +115,9 @@ def goals_per_year(
     if order not in ("asc", "desc"):
         raise ValueError(f"Invalid order '{order}'. Use 'asc' or 'desc'.")
 
+    if results.empty:
+        return []
+
     df = results.copy()
     df["year"] = df["date"].dt.year
     df["total_goals"] = df["home_score"] + df["away_score"]
@@ -142,6 +151,16 @@ def goals_per_year(
 def home_advantage(results: pd.DataFrame) -> dict:
     """Calculate home win/draw/loss percentages."""
     total = len(results)
+    if total == 0:
+        return {
+            "total_matches": 0,
+            "home_wins": 0,
+            "home_win_pct": 0,
+            "draws": 0,
+            "draw_pct": 0,
+            "away_wins": 0,
+            "away_win_pct": 0,
+        }
     home_wins = len(results[results["home_score"] > results["away_score"]])
     draws = len(results[results["home_score"] == results["away_score"]])
     away_wins = len(results[results["home_score"] < results["away_score"]])
@@ -171,15 +190,18 @@ def results_metadata(results: pd.DataFrame) -> dict:
     dr = date_range(results)
     return {
         "total_matches": total_matches(results),
-        "date_range": {"from": str(dr[0].date()), "to": str(dr[1].date())},
+        "date_range": {
+            "from": str(dr[0].date()) if dr[0] is not None else None,
+            "to": str(dr[1].date()) if dr[1] is not None else None,
+        },
         "tournaments_count": len(tournaments_available(results)),
         "most_common_tournament": most_common_tournament(results),
-        "unique_home_teams": int(results["home_team"].nunique()),
-        "unique_away_teams": int(results["away_team"].nunique()),
+        "unique_home_teams": int(results["home_team"].nunique()) if not results.empty else 0,
+        "unique_away_teams": int(results["away_team"].nunique()) if not results.empty else 0,
         "total_goals": int(results["home_score"].sum() + results["away_score"].sum()),
         "avg_goals_per_match": round(
             float(results["home_score"].sum() + results["away_score"].sum()) / len(results), 2
-        ),
+        ) if not results.empty else 0,
         "home_advantage": home_advantage(results),
     }
 
@@ -227,6 +249,9 @@ def former_names_metadata(former_names: pd.DataFrame) -> dict:
 
 def _team_aggregate(results: pd.DataFrame) -> pd.DataFrame:
     """Compute per-team aggregate stats (wins, losses, draws, goals, rates)."""
+    if results.empty:
+        return pd.DataFrame()
+
     # Home records
     home = results[["home_team", "home_score", "away_score"]].copy()
     home.columns = ["team", "goals_for", "goals_against"]
@@ -294,12 +319,18 @@ _MIN_MATCHES_FOR_RATES = 10
 
 def most_teams(results: pd.DataFrame, stat: str, top_n: int = 20) -> list:
     """Top N teams by a given aggregate stat."""
+    if results.empty:
+        return []
+
     if stat not in _MOST_TEAM_STATS:
         valid = ", ".join(_MOST_TEAM_STATS)
         raise ValueError(f"Unknown stat '{stat}'. Valid: {valid}")
 
     col = _MOST_TEAM_STATS[stat]
     agg = _team_aggregate(results)
+
+    if agg.empty:
+        return []
 
     if stat in ("win_rate", "loss_rate"):
         agg = agg[agg["matches_played"] >= _MIN_MATCHES_FOR_RATES]
@@ -314,12 +345,16 @@ def most_teams(results: pd.DataFrame, stat: str, top_n: int = 20) -> list:
 
 def most_countries(results: pd.DataFrame, top_n: int = 20) -> list:
     """Top N countries by number of matches hosted."""
+    if results.empty:
+        return []
     counts = results["country"].value_counts().head(top_n)
     return [{"country": country, "matches": int(c)} for country, c in counts.items()]
 
 
 def most_cities(results: pd.DataFrame, top_n: int = 20) -> list:
     """Top N cities by number of matches hosted."""
+    if results.empty:
+        return []
     counts = results["city"].value_counts().head(top_n)
     return [{"city": city, "matches": int(c)} for city, c in counts.items()]
 

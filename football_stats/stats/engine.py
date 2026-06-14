@@ -1,7 +1,10 @@
 """Query engine — all natural-language parsing and structured query logic."""
 
+from typing import Optional
+
 from .log import get_logger
 from .state import DataState
+from .filters import FilterParams, apply_filters
 from .analysis import (
     total_matches,
     date_range,
@@ -62,57 +65,64 @@ class QueryEngine:
     #  Structured queries (used by REST endpoints)
     # ------------------------------------------------------------------
 
-    def summary(self) -> dict:
+    def _filtered_results(self, filters: Optional[FilterParams]) -> pd.DataFrame:
+        """Return ``self._state.results`` filtered by the given parameters."""
+        return apply_filters(self._state.results, filters)
+
+    def summary(self, filters: Optional[FilterParams] = None) -> dict:
         logger.debug("Computing summary")
+        r = self._filtered_results(filters)
         return {
-            "results": results_metadata(self._state.results),
+            "results": results_metadata(r),
             "goalscorers": goalscorers_metadata(self._state.goalscorers),
             "shootouts": shootouts_metadata(self._state.shootouts),
             "former_names": former_names_metadata(self._state.former_names),
         }
 
-    def team(self, team_name: str) -> dict:
+    def team(self, team_name: str, filters: Optional[FilterParams] = None) -> dict:
         logger.debug("Team stats requested: %s", team_name)
         try:
             canonical = self._resolve_team_name(team_name)
         except ValueError:
             return {"error": True, "message": f"Team '{team_name}' not found in the data."}
-        return team_win_rate(self._state.results, canonical)
+        return team_win_rate(self._filtered_results(filters), canonical)
 
-    def head_to_head(self, team1: str, team2: str) -> dict:
+    def head_to_head(self, team1: str, team2: str, filters: Optional[FilterParams] = None) -> dict:
         logger.debug("Head-to-head: %s vs %s", team1, team2)
         try:
             t1 = self._resolve_team_name(team1)
             t2 = self._resolve_team_name(team2)
         except ValueError as e:
             return {"error": True, "message": str(e)}
-        return team_vs_team(self._state.results, t1, t2)
+        return team_vs_team(self._filtered_results(filters), t1, t2)
 
-    def most(self, stat: str, top_n: int = 20) -> dict:
+    def most(self, stat: str, top_n: int = 20, filters: Optional[FilterParams] = None) -> dict:
         """Top N by stat across all teams, countries, or cities."""
         logger.debug("Most requested: stat=%s top_n=%d", stat, top_n)
 
+        r = self._filtered_results(filters)
+
         if stat in ("country", "countries"):
-            return {"stat": stat, "top_n": top_n, "ranking": most_countries(self._state.results, top_n)}
+            return {"stat": stat, "top_n": top_n, "ranking": most_countries(r, top_n)}
         elif stat in ("city", "cities"):
-            return {"stat": stat, "top_n": top_n, "ranking": most_cities(self._state.results, top_n)}
+            return {"stat": stat, "top_n": top_n, "ranking": most_cities(r, top_n)}
         else:
             try:
-                ranking = most_teams(self._state.results, stat, top_n)
+                ranking = most_teams(r, stat, top_n)
             except ValueError as e:
                 return {"error": True, "message": str(e)}
             return {"stat": stat, "top_n": top_n, "ranking": ranking}
 
-    def tournaments(self) -> list:
+    def tournaments(self, filters: Optional[FilterParams] = None) -> list:
         """List all tournaments with comprehensive aggregate stats."""
         logger.debug("Tournaments list requested")
-        return tournaments_list(self._state.results)
+        return tournaments_list(self._filtered_results(filters))
 
-    def tournament(self, name: str) -> dict:
+    def tournament(self, name: str, filters: Optional[FilterParams] = None) -> dict:
         """Comprehensive stats for a specific tournament."""
         logger.debug("Tournament info requested: %s", name)
         try:
-            return tournament_info(self._state.results, name)
+            return tournament_info(self._filtered_results(filters), name)
         except ValueError as e:
             return {"error": True, "message": str(e)}
 
@@ -120,16 +130,16 @@ class QueryEngine:
     #  City queries
     # ------------------------------------------------------------------
 
-    def cities(self) -> list:
+    def cities(self, filters: Optional[FilterParams] = None) -> list:
         """List all cities with comprehensive stats."""
         logger.debug("Cities list requested")
-        return cities_list(self._state.results)
+        return cities_list(self._filtered_results(filters))
 
-    def city(self, name: str) -> dict:
+    def city(self, name: str, filters: Optional[FilterParams] = None) -> dict:
         """Comprehensive stats for a specific city."""
         logger.debug("City info requested: %s", name)
         try:
-            return city_info(self._state.results, name)
+            return city_info(self._filtered_results(filters), name)
         except ValueError as e:
             return {"error": True, "message": str(e)}
 
@@ -137,16 +147,16 @@ class QueryEngine:
     #  Country queries
     # ------------------------------------------------------------------
 
-    def countries(self) -> list:
+    def countries(self, filters: Optional[FilterParams] = None) -> list:
         """List all countries with comprehensive stats."""
         logger.debug("Countries list requested")
-        return countries_list(self._state.results)
+        return countries_list(self._filtered_results(filters))
 
-    def country(self, name: str) -> dict:
+    def country(self, name: str, filters: Optional[FilterParams] = None) -> dict:
         """Comprehensive stats for a specific country."""
         logger.debug("Country info requested: %s", name)
         try:
-            return country_info(self._state.results, name)
+            return country_info(self._filtered_results(filters), name)
         except ValueError as e:
             return {"error": True, "message": str(e)}
 
@@ -154,13 +164,13 @@ class QueryEngine:
         logger.debug("Top %d scorers requested", top_n)
         return top_scorers(self._state.goalscorers, top_n).to_dict()
 
-    def biggest_wins(self, top_n: int = 10) -> list:
+    def biggest_wins(self, top_n: int = 10, filters: Optional[FilterParams] = None) -> list:
         logger.debug("Top %d biggest wins requested", top_n)
-        return biggest_wins(self._state.results, top_n)
+        return biggest_wins(self._filtered_results(filters), top_n)
 
-    def goals_per_year(self, sort_by: str = "goals", order: str = "desc") -> list:
+    def goals_per_year(self, sort_by: str = "goals", order: str = "desc", filters: Optional[FilterParams] = None) -> list:
         logger.debug("Goals per year requested (sort_by=%s, order=%s)", sort_by, order)
-        return goals_per_year(self._state.results, sort_by=sort_by, order=order)
+        return goals_per_year(self._filtered_results(filters), sort_by=sort_by, order=order)
 
     # ------------------------------------------------------------------
     #  Natural-language query

@@ -14,12 +14,14 @@ import sys
 import time
 from contextlib import asynccontextmanager
 from enum import Enum
+from typing import Optional
 
 import uvicorn
-from fastapi import FastAPI, HTTPException, Request, Query
+from fastapi import Depends, FastAPI, HTTPException, Request, Query
 
 from stats.state import DataState
 from stats.engine import QueryEngine
+from stats.filters import FilterParams
 from stats.log import logger
 
 
@@ -90,11 +92,36 @@ async def log_requests(request: Request, call_next):
 
 
 # ---------------------------------------------------------------------------
-# Guards
+#  Guards
 # ---------------------------------------------------------------------------
 def _require_data():
     if not state.is_loaded:
         raise HTTPException(503, "Data not loaded yet. Call POST /reload first.")
+
+
+# ---------------------------------------------------------------------------
+#  FilterParams dependency
+# ---------------------------------------------------------------------------
+class _FilterParams:
+    """FastAPI dependency that parses filter query params into a FilterParams."""
+
+    def __init__(
+        self,
+        tournaments: Optional[list[str]] = Query(None, description="Filter by tournament name (can repeat)"),
+        countries: Optional[list[str]] = Query(None, description="Filter by host country (can repeat)"),
+        date_from: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
+        date_to: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
+    ):
+        self._inner = FilterParams(
+            tournaments=tournaments,
+            countries=countries,
+            date_from=date_from,
+            date_to=date_to,
+        )
+
+    @property
+    def inner(self) -> FilterParams:
+        return self._inner
 
 
 # ---------------------------------------------------------------------------
@@ -116,59 +143,62 @@ async def reload_endpoint():
 
 
 @app.get("/summary")
-async def summary():
-    """General dataset overview."""
+async def summary(filters: _FilterParams = Depends()):
+    """General dataset overview. Optional filters: ``?tournaments=Friendly&countries=Brazil&date_from=2000-01-01``"""
     _require_data()
     logger.debug("GET /summary")
-    return engine.summary()
+    return engine.summary(filters.inner)
 
 
 @app.get("/team/{team_name}")
-async def team_stats(team_name: str):
-    """Stats for a specific national team."""
+async def team_stats(team_name: str, filters: _FilterParams = Depends()):
+    """Stats for a specific national team. Optional filters: ``?tournaments=FIFA+World+cup``"""
     _require_data()
     logger.debug("GET /team/%s", team_name)
-    return engine.team(team_name)
+    return engine.team(team_name, filters.inner)
 
 
 @app.get("/head_to_head")
-async def head_to_head(team1: str = Query(...), team2: str = Query(...)):
-    """Head-to-head stats between two teams."""
+async def head_to_head(team1: str = Query(...), team2: str = Query(...), filters: _FilterParams = Depends()):
+    """Head-to-head stats between two teams. Optional filters apply to matches considered."""
     _require_data()
     logger.debug("GET /head_to_head?team1=%s&team2=%s", team1, team2)
-    return engine.head_to_head(team1, team2)
+    return engine.head_to_head(team1, team2, filters.inner)
 
 
 @app.get("/top_scorers")
 async def top_scorers_endpoint(top_n: int = Query(20, ge=1, le=200)):
-    """Top N goal scorers of all time."""
+    """Top N goal scorers of all time. (No tournament/country filtering — scorers data lacks these columns.)"""
     _require_data()
     logger.debug("GET /top_scorers?top_n=%d", top_n)
     return engine.top_scorers(top_n)
 
 
 @app.get("/biggest_wins")
-async def biggest_wins_endpoint(top_n: int = Query(10, ge=1, le=200)):
-    """Biggest wins by goal margin."""
+async def biggest_wins_endpoint(top_n: int = Query(10, ge=1, le=200), filters: _FilterParams = Depends()):
+    """Biggest wins by goal margin. Optional filters: ``?tournaments=FIFA+World+Cup&countries=Germany``"""
     _require_data()
     logger.debug("GET /biggest_wins?top_n=%d", top_n)
-    return engine.biggest_wins(top_n)
+    return engine.biggest_wins(top_n, filters.inner)
 
 
 @app.get("/goals_per_year")
 async def goals_per_year_endpoint(
     sort_by: str = Query("goals", description="Sort field: 'year', 'goals', or 'ratio'"),
     order: str = Query("desc", description="Sort order: 'asc' or 'desc' (default)"),
+    filters: _FilterParams = Depends(),
 ):
     """Total goals and average goals per match per calendar year.
 
     Query params:
     - sort_by: ``year`` | ``goals`` (default) | ``ratio``
     - order: ``asc`` | ``desc`` (default)
+
+    Optional filters: ``?tournaments=Friendly&date_from=2000``
     """
     _require_data()
     logger.debug("GET /goals_per_year?sort_by=%s&order=%s", sort_by, order)
-    return engine.goals_per_year(sort_by=sort_by, order=order)
+    return engine.goals_per_year(sort_by=sort_by, order=order, filters=filters.inner)
 
 
 # ---------------------------------------------------------------------------
@@ -192,11 +222,11 @@ _MOST_VALID_STATS = {
 
 
 @app.get("/most/{stat}")
-async def most_endpoint(stat: MostStat, top_n: int = Query(20, ge=1, le=500)):
-    """Ranking of top N by a stat."""
+async def most_endpoint(stat: MostStat, top_n: int = Query(20, ge=1, le=500), filters: _FilterParams = Depends()):
+    """Ranking of top N by a stat. Optional filters: ``?tournaments=FIFA+World+Cup&date_from=2000``"""
     _require_data()
     logger.debug("GET /most/%s?top_n=%d", stat.value, top_n)
-    return engine.most(stat.value, top_n)
+    return engine.most(stat.value, top_n, filters.inner)
 
 
 # ---------------------------------------------------------------------------
@@ -205,19 +235,19 @@ async def most_endpoint(stat: MostStat, top_n: int = Query(20, ge=1, le=500)):
 
 
 @app.get("/tournaments")
-async def tournaments_endpoint():
-    """List all tournaments with comprehensive stats (matches, goals, years, teams)."""
+async def tournaments_endpoint(filters: _FilterParams = Depends()):
+    """List all tournaments with comprehensive stats (matches, goals, years, teams). Optional filters: ``?countries=Brazil&date_from=2000``"""
     _require_data()
     logger.debug("GET /tournaments")
-    return engine.tournaments()
+    return engine.tournaments(filters.inner)
 
 
 @app.get("/tournament/{tournament_name}")
-async def tournament_endpoint(tournament_name: str):
-    """Comprehensive stats for a specific tournament, with yearly breakdown."""
+async def tournament_endpoint(tournament_name: str, filters: _FilterParams = Depends()):
+    """Comprehensive stats for a specific tournament, with yearly breakdown. Optional filters: ``?countries=Germany&date_from=1990``"""
     _require_data()
     logger.debug("GET /tournament/%s", tournament_name)
-    return engine.tournament(tournament_name)
+    return engine.tournament(tournament_name, filters.inner)
 
 
 # ---------------------------------------------------------------------------
@@ -226,19 +256,19 @@ async def tournament_endpoint(tournament_name: str):
 
 
 @app.get("/cities")
-async def cities_endpoint():
-    """List all cities with comprehensive stats."""
+async def cities_endpoint(filters: _FilterParams = Depends()):
+    """List all cities with comprehensive stats. Optional filters: ``?tournaments=FIFA+World+Cup``"""
     _require_data()
     logger.debug("GET /cities")
-    return engine.cities()
+    return engine.cities(filters.inner)
 
 
 @app.get("/city/{city_name}")
-async def city_endpoint(city_name: str):
-    """Comprehensive stats for a specific city."""
+async def city_endpoint(city_name: str, filters: _FilterParams = Depends()):
+    """Comprehensive stats for a specific city. Optional filters: ``?tournaments=Friendly&date_from=2000``"""
     _require_data()
     logger.debug("GET /city/%s", city_name)
-    return engine.city(city_name)
+    return engine.city(city_name, filters.inner)
 
 
 # ---------------------------------------------------------------------------
@@ -247,19 +277,19 @@ async def city_endpoint(city_name: str):
 
 
 @app.get("/countries")
-async def countries_endpoint():
-    """List all countries with comprehensive stats."""
+async def countries_endpoint(filters: _FilterParams = Depends()):
+    """List all countries with comprehensive stats. Optional filters: ``?tournaments=FIFA+World+Cup``"""
     _require_data()
     logger.debug("GET /countries")
-    return engine.countries()
+    return engine.countries(filters.inner)
 
 
 @app.get("/country/{country_name}")
-async def country_endpoint(country_name: str):
-    """Comprehensive stats for a specific country."""
+async def country_endpoint(country_name: str, filters: _FilterParams = Depends()):
+    """Comprehensive stats for a specific country. Optional filters: ``?tournaments=Friendly&date_from=2010``"""
     _require_data()
     logger.debug("GET /country/%s", country_name)
-    return engine.country(country_name)
+    return engine.country(country_name, filters.inner)
 
 
 @app.get("/query")
@@ -280,21 +310,27 @@ async def root():
             "GET /": "This info",
             "GET /query?q=<question>": "Ask a natural-language question",
             "POST /reload": "Reload all data & config",
-            "GET /summary": "Dataset overview (JSON)",
-            "GET /team/{name}": "Stats for a specific team",
-            "GET /head_to_head?team1=X&team2=Y": "Head-to-head",
-            "GET /tournaments": "List all tournaments with stats",
-            "GET /tournament/{name}": "Stats for a specific tournament",
-            "GET /cities": "List all cities with stats",
-            "GET /city/{name}": "Stats for a specific city",
-            "GET /countries": "List all countries with stats",
-            "GET /country/{name}": "Stats for a specific country",
-            "GET /most/{stat}?top_n=N": "Rankings — see available_stats below",
-            "GET /top_scorers?top_n=20": "Top scorers",
-            "GET /biggest_wins?top_n=10": "Biggest wins",
-            "GET /goals_per_year?sort_by=goals&order=desc": "Goals per year (sort: year/goals/ratio, order: asc/desc)",
+            "GET /summary?tournaments=&countries=&date_from=&date_to=": "Dataset overview with optional filters",
+            "GET /team/{name}?tournaments=&date_from=&date_to=": "Team stats with optional filters",
+            "GET /head_to_head?team1=X&team2=Y&tournaments=&countries=": "Head-to-head with optional filters",
+            "GET /tournaments?countries=&date_from=&date_to=": "List all tournaments with optional filters",
+            "GET /tournament/{name}?countries=&date_from=&date_to=": "Tournament stats with optional filters",
+            "GET /cities?tournaments=&date_from=&date_to=": "List all cities with optional filters",
+            "GET /city/{name}?tournaments=&date_from=&date_to=": "City stats with optional filters",
+            "GET /countries?tournaments=&date_from=&date_to=": "List all countries with optional filters",
+            "GET /country/{name}?tournaments=&date_from=&date_to=": "Country stats with optional filters",
+            "GET /most/{stat}?top_n=N&tournaments=&date_from=&date_to=": "Rankings with optional filters",
+            "GET /top_scorers?top_n=20": "Top scorers (no filter support)",
+            "GET /biggest_wins?top_n=10&tournaments=&countries=": "Biggest wins with optional filters",
+            "GET /goals_per_year?sort_by=goals&order=desc&tournaments=&date_from=&date_to=": "Goals per year with optional filters",
         },
         "available_stats": most_stats_desc,
+        "filter_params": {
+            "tournaments": "List of tournament names to filter by (repeatable query param)",
+            "countries": "List of host country names to filter by (repeatable query param)",
+            "date_from": "Start date in YYYY-MM-DD format (inclusive)",
+            "date_to": "End date in YYYY-MM-DD format (inclusive)",
+        },
         "data_loaded": state.is_loaded,
     }
 
