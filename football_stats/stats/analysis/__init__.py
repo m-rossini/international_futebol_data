@@ -2,6 +2,13 @@
 
 from .enrich import strip_accents, enrich_match_results
 
+from .advanced_stats import (
+    series_stats,
+    goals_distribution_stats,
+    matches_distribution_stats,
+    scorer_distribution_stats,
+)
+
 from .metadata import (
     total_matches,
     date_range,

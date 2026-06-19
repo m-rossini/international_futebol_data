@@ -5,6 +5,12 @@ from typing import Optional
 import pandas as pd
 
 from .enrich import enrich_match_results
+from .advanced_stats import (
+    goals_distribution_stats,
+    matches_distribution_stats,
+    scorer_distribution_stats,
+    series_stats,
+)
 
 
 def total_matches(results: pd.DataFrame) -> int:
@@ -50,10 +56,20 @@ def home_advantage(results: pd.DataFrame) -> dict:
 
 
 def results_metadata(results: pd.DataFrame) -> dict:
-    """Metadata about the results dataset."""
+    """Metadata about the results dataset, with advanced descriptive statistics."""
     dr = date_range(results)
+    total_m = total_matches(results)
+    total_g = int(results["home_score"].sum() + results["away_score"].sum())
+    avg_goals = round(total_g / total_m, 2) if total_m else 0
+
+    # Advanced goal distribution stats
+    goal_stats = goals_distribution_stats(results)
+
+    # Match frequency distribution stats
+    match_dist = matches_distribution_stats(results)
+
     return {
-        "total_matches": total_matches(results),
+        "total_matches": total_m,
         "date_range": {
             "from": str(dr[0].date()) if dr[0] is not None else None,
             "to": str(dr[1].date()) if dr[1] is not None else None,
@@ -62,17 +78,21 @@ def results_metadata(results: pd.DataFrame) -> dict:
         "most_common_tournament": most_common_tournament(results),
         "unique_home_teams": int(results["home_team"].nunique()) if not results.empty else 0,
         "unique_away_teams": int(results["away_team"].nunique()) if not results.empty else 0,
-        "total_goals": int(results["home_score"].sum() + results["away_score"].sum()),
-        "avg_goals_per_match": round(
-            float(results["home_score"].sum() + results["away_score"].sum()) / len(results), 2
-        ) if not results.empty else 0,
+        "total_goals": total_g,
+        "avg_goals_per_match": avg_goals,
         "home_advantage": home_advantage(results),
+        "goal_distribution": goal_stats,
+        "match_distribution": match_dist,
     }
 
 
 def goalscorers_metadata(goalscorers: pd.DataFrame) -> dict:
-    """Metadata about the goalscorers dataset."""
+    """Metadata about the goalscorers dataset, with advanced statistics."""
     dr = date_range(goalscorers)
+
+    # Scorer distribution stats
+    scorer_dist = scorer_distribution_stats(goalscorers)
+
     return {
         "total_goals_recorded": len(goalscorers),
         "unique_scorers": int(goalscorers["scorer"].nunique()),
@@ -81,17 +101,28 @@ def goalscorers_metadata(goalscorers: pd.DataFrame) -> dict:
         "own_goals": int(goalscorers["own_goal"].sum()),
         "penalty_goals": int(goalscorers["penalty"].sum()),
         "top_scorer": goalscorers["scorer"].value_counts().head(1).to_dict(),
+        "scorer_distribution": scorer_dist,
     }
 
 
 def shootouts_metadata(shootouts: pd.DataFrame) -> dict:
-    """Metadata about the shootouts dataset."""
+    """Metadata about the shootouts dataset, with advanced statistics."""
     dr = date_range(shootouts)
+
+    # Winner distribution stats
+    winner_dist = {}
+    if not shootouts.empty:
+        winner_counts = shootouts["winner"].value_counts()
+        winner_dist["winner_frequency"] = series_stats(winner_counts)
+    else:
+        winner_dist["winner_frequency"] = series_stats(pd.Series([], dtype=int))
+
     return {
         "total_shootouts": len(shootouts),
         "date_range": {"from": str(dr[0].date()), "to": str(dr[1].date())},
         "unique_winners": int(shootouts["winner"].nunique()),
         "most_common_winner": str(shootouts["winner"].mode().iloc[0]) if len(shootouts) else None,
+        "winner_distribution": winner_dist,
     }
 
 

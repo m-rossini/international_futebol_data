@@ -3,6 +3,7 @@
 import pandas as pd
 
 from .enrich import enrich_match_results
+from .advanced_stats import series_stats
 
 _MIN_MATCHES_FOR_RATES = 10
 
@@ -19,7 +20,7 @@ _MOST_TEAM_STATS = {
 
 
 def team_win_rate(results: pd.DataFrame, team: str) -> dict:
-    """Calculate win/draw/loss stats for a given team."""
+    """Calculate win/draw/loss stats for a given team, with advanced goal statistics."""
     home_wins = results[(results["home_team"] == team) & (results["home_score"] > results["away_score"])]
     away_wins = results[(results["away_team"] == team) & (results["away_score"] > results["home_score"])]
     home_draws = results[(results["home_team"] == team) & (results["home_score"] == results["away_score"])]
@@ -32,7 +33,16 @@ def team_win_rate(results: pd.DataFrame, team: str) -> dict:
     losses = len(home_losses) + len(away_losses)
     total = wins + draws + losses
 
-    return {
+    # Collect all goals scored and conceded for this team
+    goals_for_home = results.loc[results["home_team"] == team, "home_score"]
+    goals_for_away = results.loc[results["away_team"] == team, "away_score"]
+    goals_against_home = results.loc[results["home_team"] == team, "away_score"]
+    goals_against_away = results.loc[results["away_team"] == team, "home_score"]
+
+    all_goals_for = pd.concat([goals_for_home, goals_for_away])
+    all_goals_against = pd.concat([goals_against_home, goals_against_away])
+
+    result = {
         "team": team,
         "matches_played": total,
         "wins": wins,
@@ -41,9 +51,19 @@ def team_win_rate(results: pd.DataFrame, team: str) -> dict:
         "win_rate": round(wins / total * 100, 2) if total else 0,
     }
 
+    # Add advanced goal statistics if the team has matches
+    if total > 0:
+        result["goals_for_stats"] = series_stats(all_goals_for)
+        result["goals_against_stats"] = series_stats(all_goals_against)
+        # Goal difference per match (positive means team scored more)
+        goal_diff_series = all_goals_for.reset_index(drop=True) - all_goals_against.reset_index(drop=True)
+        result["goal_diff_stats"] = series_stats(goal_diff_series)
+
+    return result
+
 
 def team_vs_team(results: pd.DataFrame, team1: str, team2: str) -> dict:
-    """Head-to-head stats between two teams."""
+    """Head-to-head stats between two teams, with advanced goal statistics."""
     mask = (
         ((results["home_team"] == team1) & (results["away_team"] == team2))
         | ((results["home_team"] == team2) & (results["away_team"] == team1))
@@ -75,7 +95,7 @@ def team_vs_team(results: pd.DataFrame, team1: str, team2: str) -> dict:
         (matches["away_team"] == team2)
     ]["away_score"].sum()
 
-    return {
+    result = {
         "team1": team1,
         "team2": team2,
         "matches": len(matches),
@@ -85,6 +105,15 @@ def team_vs_team(results: pd.DataFrame, team1: str, team2: str) -> dict:
         f"{team1}_goals": int(team1_goals),
         f"{team2}_goals": int(team2_goals),
     }
+
+    # Add advanced goal stats if there are matches between the two teams
+    total_h2h_matches = len(matches)
+    if total_h2h_matches > 0:
+        # Total goals per match in these head-to-heads
+        h2h_total_goals = matches["home_score"] + matches["away_score"]
+        result["total_goals_per_match_stats"] = series_stats(h2h_total_goals)
+
+    return result
 
 
 # ---------------------------------------------------------------------------

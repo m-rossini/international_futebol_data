@@ -57,6 +57,36 @@ _STAT_TO_RESPONSE_KEY = {
 
 
 # ===========================================================================
+#  Advanced stats helpers
+# ===========================================================================
+
+# Expected keys for any series_stats() response
+_ADVANCED_STAT_KEYS = {
+    "count", "sum", "mean", "median", "mode",
+    "min", "max", "stdev", "variance", "skewness", "kurtosis",
+    "p25", "p50", "p75", "iqr", "range",
+}
+
+
+def _assert_series_stats(stat_dict: dict, label: str, expect_nonzero: bool = True):
+    """Validate a series_stats dict has all expected keys and correct types."""
+    _assert_keys(stat_dict, _ADVANCED_STAT_KEYS, label)
+    assert isinstance(stat_dict["count"], int), f"{label}.count should be int"
+    if expect_nonzero and stat_dict["count"] > 0:
+        assert isinstance(stat_dict["mean"], float), f"{label}.mean should be float"
+        assert isinstance(stat_dict["median"], float), f"{label}.median should be float"
+        assert isinstance(stat_dict["mode"], list), f"{label}.mode should be list"
+        assert isinstance(stat_dict["stdev"], float), f"{label}.stdev should be float"
+        assert isinstance(stat_dict["variance"], float), f"{label}.variance should be float"
+        assert stat_dict["skewness"] is None or isinstance(stat_dict["skewness"], float), f"{label}.skewness wrong type"
+        assert stat_dict["kurtosis"] is None or isinstance(stat_dict["kurtosis"], float), f"{label}.kurtosis wrong type"
+        assert isinstance(stat_dict["p25"], float), f"{label}.p25 should be float"
+        assert isinstance(stat_dict["p75"], float), f"{label}.p75 should be float"
+        assert isinstance(stat_dict["iqr"], float), f"{label}.iqr should be float"
+        assert isinstance(stat_dict["range"], int), f"{label}.range should be int"
+
+
+# ===========================================================================
 #  GET /health
 # ===========================================================================
 
@@ -185,6 +215,55 @@ class TestSummary:
         assert isinstance(r["date_range"]["from"], str)
         assert isinstance(r["home_advantage"]["home_win_pct"], float)
 
+    # -- Advanced stats tests --
+
+    def test_summary_goal_distribution_keys(self, client: TestClient):
+        """Verify goal_distribution sub-keys exist and are valid."""
+        resp = client.get("/summary")
+        gd = resp.json()["results"]["goal_distribution"]
+        _assert_keys(gd, {"home_score", "away_score", "total_goals", "goal_diff"}, "goal_distribution")
+        for key, label in [("home_score", "goal_dist.home"), ("away_score", "goal_dist.away"),
+                           ("total_goals", "goal_dist.total"), ("goal_diff", "goal_dist.diff")]:
+            _assert_series_stats(gd[key], label)
+
+    def test_summary_match_distribution_keys(self, client: TestClient):
+        """Verify match_distribution sub-keys exist and are valid."""
+        resp = client.get("/summary")
+        md = resp.json()["results"]["match_distribution"]
+        _assert_keys(md, {"matches_per_year", "matches_per_tournament"}, "match_distribution")
+        _assert_series_stats(md["matches_per_year"], "match_dist.per_year")
+        _assert_series_stats(md["matches_per_tournament"], "match_dist.per_tournament")
+
+    def test_summary_scorer_distribution_keys(self, client: TestClient):
+        """Verify scorer_distribution exists in goalscorers metadata."""
+        resp = client.get("/summary")
+        sd = resp.json()["goalscorers"]["scorer_distribution"]
+        _assert_keys(sd, {"goals_per_scorer"}, "scorer_distribution")
+        _assert_series_stats(sd["goals_per_scorer"], "scorer_dist.goals_per_scorer")
+
+    def test_summary_winner_distribution_keys(self, client: TestClient):
+        """Verify winner_distribution exists in shootouts metadata."""
+        resp = client.get("/summary")
+        wd = resp.json()["shootouts"]["winner_distribution"]
+        _assert_keys(wd, {"winner_frequency"}, "winner_distribution")
+        _assert_series_stats(wd["winner_frequency"], "winner_dist.winner_freq")
+
+    def test_summary_stats_consistency(self, client: TestClient):
+        """Verify counts in goal_distribution match summary totals."""
+        resp = client.get("/summary")
+        r = resp.json()["results"]
+        gd = r["goal_distribution"]
+        # home_score / away_score count should be <= total_matches
+        # (describe() may exclude NaN, so use <= rather than ==)
+        assert gd["home_score"]["count"] <= r["total_matches"]
+        assert gd["away_score"]["count"] <= r["total_matches"]
+        assert gd["total_goals"]["count"] <= r["total_matches"]
+        assert gd["home_score"]["count"] > 0
+        # total_goals sum should match total_goals
+        assert gd["total_goals"]["sum"] == r["total_goals"]
+        # mean should match avg (rounding tolerance)
+        assert abs(gd["total_goals"]["mean"] - r["avg_goals_per_match"]) < 0.02
+
 
 # ===========================================================================
 #  GET /team/{team_name}
@@ -230,6 +309,15 @@ class TestTeam:
         assert isinstance(body["losses"], int)
         assert isinstance(body["win_rate"], (int, float))
 
+    def test_team_advanced_goal_stats(self, client: TestClient):
+        """Team endpoint returns goals_for_stats, goals_against_stats, goal_diff_stats."""
+        resp = client.get(f"/team/{_KNOWN_TEAM}")
+        body = resp.json()
+        _assert_keys(body, {"goals_for_stats", "goals_against_stats", "goal_diff_stats"}, "team.advanced")
+        _assert_series_stats(body["goals_for_stats"], "team.goals_for")
+        _assert_series_stats(body["goals_against_stats"], "team.goals_against")
+        _assert_series_stats(body["goal_diff_stats"], "team.goal_diff")
+
 
 # ===========================================================================
 #  GET /head_to_head
@@ -263,6 +351,13 @@ class TestHeadToHead:
         assert isinstance(body["draws"], int)
         assert isinstance(body[f"{_KNOWN_TEAM}_wins"], int)
         assert isinstance(body[f"{_KNOWN_TEAM}_goals"], int)
+
+    def test_h2h_advanced_goal_stats(self, client: TestClient):
+        """Head-to-head returns total_goals_per_match_stats with full series_stats."""
+        resp = client.get(f"/head_to_head?team1={_KNOWN_TEAM}&team2={_KNOWN_TEAM2}")
+        body = resp.json()
+        _assert_keys(body, {"total_goals_per_match_stats"}, "h2h.advanced")
+        _assert_series_stats(body["total_goals_per_match_stats"], "h2h.goals_per_match")
 
 
 # ===========================================================================

@@ -25,7 +25,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     htop \
     procps \
     make \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/*po
 
 # Install dev dependencies
 RUN uv sync
