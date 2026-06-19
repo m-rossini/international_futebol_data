@@ -1,0 +1,39 @@
+services:
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+      target: development
+    container_name: futebol-api
+    ports:
+      - "7531:7531"
+      - "5678:5678"
+    volumes:
+      - ./api:/app
+      - /home/perez/projetos/international_results:/home/perez/projetos/international_results:ro
+    command: ["uv", "run", "python", "football_stats/server.py", "--host", "0.0.0.0", "--port", "7531"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7531/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+      target: development
+    container_name: futebol-web
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./web:/app
+      - /app/node_modules
+      - /app/.next
+    environment:
+      - NEXT_PUBLIC_API_URL=http://api:7531
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
