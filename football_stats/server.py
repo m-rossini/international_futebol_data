@@ -25,6 +25,21 @@ from stats.state import DataState
 from stats.engine import QueryEngine
 from stats.filters import FilterParams
 from stats.log import logger
+from stats.models import (
+    BiggestWinItem,
+    CityListItem,
+    CountryListItem,
+    GoalsPerYearItem,
+    HealthResponse,
+    QueryResponse,
+    ReloadResponse,
+    RootResponse,
+    SummaryResponse,
+    TeamRankingResponse,
+    TopScorersResponse,
+    TournamentListItem,
+    VersionResponse,
+)
 
 # ---------------------------------------------------------------------------
 #  Config
@@ -145,7 +160,7 @@ class _FilterParams:
 # ---------------------------------------------------------------------------
 
 
-@app.post("/reload")
+@app.post("/reload", response_model=ReloadResponse)
 async def reload_endpoint():
     """Reload all CSV data and config file."""
     logger.info("Reload requested")
@@ -158,7 +173,7 @@ async def reload_endpoint():
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.get("/summary")
+@app.get("/summary", response_model=SummaryResponse)
 async def summary(filters: _FilterParams = Depends()):
     """General dataset overview. Optional filters: ``?tournaments=Friendly&countries=Brazil&date_from=2000-01-01``"""
     _require_data()
@@ -182,7 +197,7 @@ async def head_to_head(team1: str = Query(...), team2: str = Query(...), filters
     return engine.head_to_head(team1, team2, filters.inner)
 
 
-@app.get("/top_scorers")
+@app.get("/top_scorers", response_model=TopScorersResponse)
 async def top_scorers_endpoint(top_n: int = Query(20, ge=1, le=200)):
     """Top N goal scorers of all time. (No tournament/country filtering — scorers data lacks these columns.)"""
     _require_data()
@@ -190,7 +205,7 @@ async def top_scorers_endpoint(top_n: int = Query(20, ge=1, le=200)):
     return engine.top_scorers(top_n)
 
 
-@app.get("/biggest_wins")
+@app.get("/biggest_wins", response_model=list[BiggestWinItem])
 async def biggest_wins_endpoint(top_n: int = Query(10, ge=1, le=200), filters: _FilterParams = Depends()):
     """Biggest wins by goal margin. Optional filters: ``?tournaments=FIFA+World+Cup&countries=Germany``"""
     _require_data()
@@ -198,7 +213,7 @@ async def biggest_wins_endpoint(top_n: int = Query(10, ge=1, le=200), filters: _
     return engine.biggest_wins(top_n, filters.inner)
 
 
-@app.get("/goals_per_year")
+@app.get("/goals_per_year", response_model=list[GoalsPerYearItem])
 async def goals_per_year_endpoint(
     sort_by: str = Query("goals", description="Sort field: 'year', 'goals', or 'ratio'"),
     order: str = Query("desc", description="Sort order: 'asc' or 'desc' (default)"),
@@ -237,7 +252,7 @@ _MOST_VALID_STATS = {
 }
 
 
-@app.get("/most/{stat}")
+@app.get("/most/{stat}", response_model=TeamRankingResponse)
 async def most_endpoint(stat: MostStat, top_n: int = Query(20, ge=1, le=500), filters: _FilterParams = Depends()):
     """Ranking of top N by a stat. Optional filters: ``?tournaments=FIFA+World+Cup&date_from=2000``"""
     _require_data()
@@ -250,7 +265,7 @@ async def most_endpoint(stat: MostStat, top_n: int = Query(20, ge=1, le=500), fi
 # ---------------------------------------------------------------------------
 
 
-@app.get("/tournaments")
+@app.get("/tournaments", response_model=list[TournamentListItem])
 async def tournaments_endpoint(filters: _FilterParams = Depends()):
     """List all tournaments with comprehensive stats (matches, goals, years, teams). Optional filters: ``?countries=Brazil&date_from=2000``"""
     _require_data()
@@ -271,7 +286,7 @@ async def tournament_endpoint(tournament_name: str, filters: _FilterParams = Dep
 # ---------------------------------------------------------------------------
 
 
-@app.get("/cities")
+@app.get("/cities", response_model=list[CityListItem])
 async def cities_endpoint(filters: _FilterParams = Depends()):
     """List all cities with comprehensive stats. Optional filters: ``?tournaments=FIFA+World+Cup``"""
     _require_data()
@@ -292,7 +307,7 @@ async def city_endpoint(city_name: str, filters: _FilterParams = Depends()):
 # ---------------------------------------------------------------------------
 
 
-@app.get("/countries")
+@app.get("/countries", response_model=list[CountryListItem])
 async def countries_endpoint(filters: _FilterParams = Depends()):
     """List all countries with comprehensive stats. Optional filters: ``?tournaments=FIFA+World+Cup``"""
     _require_data()
@@ -308,7 +323,7 @@ async def country_endpoint(country_name: str, filters: _FilterParams = Depends()
     return engine.country(country_name, filters.inner)
 
 
-@app.get("/query")
+@app.get("/query", response_model=QueryResponse)
 async def query(q: str = Query(..., description="Your question about football stats")):
     """Answer a natural-language question about the football data."""
     _require_data()
@@ -316,7 +331,7 @@ async def query(q: str = Query(..., description="Your question about football st
     return engine.answer_question(q)
 
 
-@app.get("/health")
+@app.get("/health", response_model=HealthResponse)
 async def health():
     """Health check endpoint for container orchestration probes."""
     return {
@@ -325,13 +340,13 @@ async def health():
     }
 
 
-@app.get("/version")
+@app.get("/version", response_model=VersionResponse)
 async def version():
     """Return the current application version."""
     return {"version": _load_version()}
 
 
-@app.get("/")
+@app.get("/", response_model=RootResponse)
 async def root():
     most_stats_desc = {k: v for k, v in _MOST_VALID_STATS.items()}
     return {
