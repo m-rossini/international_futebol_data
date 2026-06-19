@@ -31,7 +31,6 @@ from stats.models import (
     CountryListItem,
     GoalsPerYearItem,
     HealthResponse,
-    QueryResponse,
     ReloadResponse,
     RootResponse,
     SummaryResponse,
@@ -98,7 +97,7 @@ async def lifespan(application: FastAPI):
 
 app = FastAPI(
     title="International Football Stats",
-    description="Query international football match data using natural-language questions.",
+    description="REST API for querying international football match statistics.",
     version="1.0.0",
     lifespan=lifespan,
 )
@@ -323,14 +322,6 @@ async def country_endpoint(country_name: str, filters: _FilterParams = Depends()
     return engine.country(country_name, filters.inner)
 
 
-@app.get("/query", response_model=QueryResponse)
-async def query(q: str = Query(..., description="Your question about football stats")):
-    """Answer a natural-language question about the football data."""
-    _require_data()
-    logger.info("Query: %s", q)
-    return engine.answer_question(q)
-
-
 @app.get("/health", response_model=HealthResponse)
 async def health():
     """Health check endpoint for container orchestration probes."""
@@ -355,7 +346,6 @@ async def root():
         "version": _load_version(),
         "endpoints": {
             "GET /": "This info",
-            "GET /query?q=<question>": "Ask a natural-language question",
             "POST /reload": "Reload all data & config",
             "GET /summary?tournaments=&countries=&date_from=&date_to=": "Dataset overview with optional filters",
             "GET /team/{name}?tournaments=&date_from=&date_to=": "Team stats with optional filters",

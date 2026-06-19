@@ -942,60 +942,6 @@ class TestCountry:
 
 
 # ===========================================================================
-#  GET /query
-# ===========================================================================
-
-class TestQuery:
-    def test_query_how_many_matches(self, client: TestClient):
-        resp = client.get("/query?q=how+many+matches")
-        _assert_status(resp)
-        body = resp.json()
-        _assert_keys(body, {"question", "answer", "data"}, "query")
-        assert isinstance(body["answer"], str)
-        assert isinstance(body["data"], dict)
-
-    def test_query_team_stats(self, client: TestClient):
-        resp = client.get(f"/query?q={_KNOWN_TEAM}+stats")
-        _assert_status(resp)
-        body = resp.json()
-        assert "data" in body
-
-    def test_query_head_to_head(self, client: TestClient):
-        resp = client.get(f"/query?q={_KNOWN_TEAM}+vs+{_KNOWN_TEAM2}")
-        _assert_status(resp)
-        body = resp.json()
-        assert "data" in body
-
-    def test_query_top_scorers(self, client: TestClient):
-        resp = client.get("/query?q=top+10+scorers")
-        _assert_status(resp)
-        body = resp.json()
-        assert body["data"] is not None
-
-    def test_query_biggest_wins(self, client: TestClient):
-        resp = client.get("/query?q=biggest+wins")
-        _assert_status(resp)
-
-    def test_query_goals_per_year(self, client: TestClient):
-        resp = client.get("/query?q=goals+per+year")
-        _assert_status(resp)
-        body = resp.json()
-        assert isinstance(body["data"], list)
-
-    def test_query_summary(self, client: TestClient):
-        resp = client.get("/query?q=summary")
-        _assert_status(resp)
-        body = resp.json()
-        assert "data" in body
-
-    def test_query_unknown(self, client: TestClient):
-        resp = client.get("/query?q=this+is+gibberish+xyz123")
-        _assert_status(resp)
-        body = resp.json()
-        assert body["data"] is None  # fallback returns None
-
-
-# ===========================================================================
 #  Filter tests
 # ===========================================================================
 
