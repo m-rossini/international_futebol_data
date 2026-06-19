@@ -2,7 +2,7 @@
 
 from fastapi.testclient import TestClient
 
-from tests.helpers import _assert_keys, _assert_status
+from tests.helpers import _KNOWN_TOURNAMENT, _assert_keys, _assert_status
 
 
 class TestMostCountries:
@@ -33,3 +33,25 @@ class TestMostCountries:
     def test_most_country_top_n(self, client: TestClient):
         resp = client.get("/most/country?top_n=5")
         assert len(resp.json()["ranking"]) == 5
+
+    # ------------------------------------------------------------------
+    #  Filter tests
+    # ------------------------------------------------------------------
+
+    def test_filter_tournament_reduces_ranking(self, client: TestClient):
+        full = client.get("/most/country").json()
+        filt = client.get(f"/most/country?tournaments={_KNOWN_TOURNAMENT}").json()
+        assert len(filt["ranking"]) > 0
+        assert filt["ranking"][0]["matches"] <= full["ranking"][0]["matches"]
+
+    def test_filter_date_range(self, client: TestClient):
+        resp = client.get("/most/country?date_from=2000-01-01&date_to=2020-12-31").json()
+        assert len(resp["ranking"]) > 0
+
+    def test_filter_nonexistent_tournament_returns_empty(self, client: TestClient):
+        resp = client.get("/most/country?tournaments=NonExistentTournamentXYZ").json()
+        assert resp["ranking"] == []
+
+    def test_filter_date_from_after_date_to_returns_empty(self, client: TestClient):
+        resp = client.get("/most/country?date_from=2020-01-01&date_to=2010-01-01").json()
+        assert resp["ranking"] == []

@@ -5,6 +5,7 @@ from fastapi.testclient import TestClient
 from tests.helpers import (
     _KNOWN_CITY,
     _KNOWN_CITY_LOWER,
+    _KNOWN_TOURNAMENT,
     _assert_keys,
     _assert_status,
 )
@@ -59,3 +60,31 @@ class TestCity:
         resp = client.get("/city/NonExistentCityXXX")
         _assert_status(resp, 200)
         assert resp.json().get("error") is True
+
+    # ------------------------------------------------------------------
+    #  Filter tests
+    # ------------------------------------------------------------------
+
+    def test_filter_tournament_reduces_matches(self, client: TestClient):
+        full = client.get(f"/city/{_KNOWN_CITY}").json()
+        filt = client.get(f"/city/{_KNOWN_CITY}?tournaments={_KNOWN_TOURNAMENT}").json()
+        assert 0 < filt["summary"]["matches"] < full["summary"]["matches"]
+
+    def test_filter_country_mismatch_returns_error(self, client: TestClient):
+        """City in one country filtered by another country returns error (zero matches)."""
+        # London is in England; filtering by "Brazil" returns no matches
+        resp = client.get(f"/city/{_KNOWN_CITY}?countries=Brazil").json()
+        assert resp.get("error") is True
+
+    def test_filter_date_range_reduces_matches(self, client: TestClient):
+        full = client.get(f"/city/{_KNOWN_CITY}").json()
+        filt = client.get(f"/city/{_KNOWN_CITY}?date_from=2000-01-01&date_to=2020-12-31").json()
+        assert 0 < filt["summary"]["matches"] < full["summary"]["matches"]
+
+    def test_filter_nonexistent_tournament_returns_error(self, client: TestClient):
+        resp = client.get(f"/city/{_KNOWN_CITY}?tournaments=NonExistentTournamentXYZ").json()
+        assert resp.get("error") is True
+
+    def test_filter_date_from_after_date_to_returns_error(self, client: TestClient):
+        resp = client.get(f"/city/{_KNOWN_CITY}?date_from=2020-01-01&date_to=2010-01-01").json()
+        assert resp.get("error") is True

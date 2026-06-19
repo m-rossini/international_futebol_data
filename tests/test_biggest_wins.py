@@ -2,7 +2,7 @@
 
 from fastapi.testclient import TestClient
 
-from tests.helpers import _assert_keys, _assert_status
+from tests.helpers import _KNOWN_TOURNAMENT, _KNOWN_COUNTRY, _assert_keys, _assert_status
 
 
 class TestBiggestWins:
@@ -44,3 +44,27 @@ class TestBiggestWins:
             assert diffs[i] >= diffs[i + 1], (
                 f"Not sorted descending: {diffs}"
             )
+
+    # ------------------------------------------------------------------
+    #  Filter tests
+    # ------------------------------------------------------------------
+
+    def test_filter_tournament_applies(self, client: TestClient):
+        resp = client.get(f"/biggest_wins?top_n=200&tournaments={_KNOWN_TOURNAMENT}").json()
+        assert len(resp) > 0
+        for item in resp:
+            assert item["tournament"] == _KNOWN_TOURNAMENT
+
+    def test_filter_country_applies(self, client: TestClient):
+        resp = client.get(f"/biggest_wins?top_n=200&countries={_KNOWN_COUNTRY}").json()
+        assert len(resp) > 0
+        for item in resp:
+            assert item["country"] == _KNOWN_COUNTRY
+
+    def test_filter_nonexistent_tournament_returns_empty(self, client: TestClient):
+        resp = client.get("/biggest_wins?tournaments=NonExistentTournamentXYZ").json()
+        assert resp == []
+
+    def test_filter_date_from_after_date_to_returns_empty(self, client: TestClient):
+        resp = client.get("/biggest_wins?date_from=2020-01-01&date_to=2010-01-01").json()
+        assert resp == []

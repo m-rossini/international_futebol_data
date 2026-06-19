@@ -2,7 +2,7 @@
 
 from fastapi.testclient import TestClient
 
-from tests.helpers import _KNOWN_TOURNAMENT, _assert_keys, _assert_status
+from tests.helpers import _KNOWN_TOURNAMENT, _KNOWN_COUNTRY, _assert_keys, _assert_status
 
 
 class TestTournament:
@@ -57,3 +57,25 @@ class TestTournament:
         assert len(teams) > 0
         _assert_keys(teams[0], {"team", "wins"}, "top_teams")
         assert isinstance(teams[0]["wins"], int)
+
+    # ------------------------------------------------------------------
+    #  Filter tests
+    # ------------------------------------------------------------------
+
+    def test_filter_country_reduces_matches(self, client: TestClient):
+        full = client.get(f"/tournament/{_KNOWN_TOURNAMENT}").json()
+        filt = client.get(f"/tournament/{_KNOWN_TOURNAMENT}?countries={_KNOWN_COUNTRY}").json()
+        assert 0 < filt["summary"]["matches"] < full["summary"]["matches"]
+
+    def test_filter_date_range_reduces_matches(self, client: TestClient):
+        full = client.get(f"/tournament/{_KNOWN_TOURNAMENT}").json()
+        filt = client.get(f"/tournament/{_KNOWN_TOURNAMENT}?date_from=2000-01-01&date_to=2020-12-31").json()
+        assert 0 < filt["summary"]["matches"] < full["summary"]["matches"]
+
+    def test_filter_nonexistent_country_returns_error(self, client: TestClient):
+        resp = client.get(f"/tournament/{_KNOWN_TOURNAMENT}?countries=NonExistentCountryXYZ").json()
+        assert resp.get("error") is True
+
+    def test_filter_date_from_after_date_to_returns_error(self, client: TestClient):
+        resp = client.get(f"/tournament/{_KNOWN_TOURNAMENT}?date_from=2020-01-01&date_to=2010-01-01").json()
+        assert resp.get("error") is True

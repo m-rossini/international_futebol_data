@@ -2,7 +2,7 @@
 
 from fastapi.testclient import TestClient
 
-from tests.helpers import _assert_keys, _assert_status
+from tests.helpers import _KNOWN_COUNTRY, _assert_keys, _assert_status
 
 
 class TestTournaments:
@@ -37,3 +37,25 @@ class TestTournaments:
         matches = [t["matches"] for t in data]
         for i in range(len(matches) - 1):
             assert matches[i] >= matches[i + 1]
+
+    # ------------------------------------------------------------------
+    #  Filter tests
+    # ------------------------------------------------------------------
+
+    def test_filter_country_reduces_results(self, client: TestClient):
+        full = client.get("/tournaments").json()
+        filt = client.get(f"/tournaments?countries={_KNOWN_COUNTRY}").json()
+        assert 0 < len(filt) < len(full)
+
+    def test_filter_date_range_reduces_results(self, client: TestClient):
+        full = client.get("/tournaments").json()
+        filt = client.get("/tournaments?date_from=2000-01-01&date_to=2020-12-31").json()
+        assert 0 < len(filt) < len(full)
+
+    def test_filter_nonexistent_country_returns_empty(self, client: TestClient):
+        resp = client.get("/tournaments?countries=NonExistentCountryXYZ").json()
+        assert resp == []
+
+    def test_filter_date_from_after_date_to_returns_empty(self, client: TestClient):
+        resp = client.get("/tournaments?date_from=2020-01-01&date_to=2010-01-01").json()
+        assert resp == []

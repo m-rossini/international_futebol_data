@@ -8,6 +8,8 @@ from tests.helpers import (
     _KNOWN_TEAM,
     _KNOWN_TEAM_LOWER,
     _KNOWN_TEAM_MIXED,
+    _KNOWN_TOURNAMENT,
+    _KNOWN_COUNTRY,
     _assert_keys,
     _assert_series_stats,
     _assert_status,
@@ -15,6 +17,9 @@ from tests.helpers import (
 
 
 class TestTeam:
+    # ------------------------------------------------------------------
+    #  Basic resolution & shape
+    # ------------------------------------------------------------------
     def test_team_known(self, client: TestClient):
         resp = client.get(f"/team/{_KNOWN_TEAM}")
         _assert_status(resp)
@@ -62,3 +67,32 @@ class TestTeam:
         _assert_series_stats(body["goals_for_stats"], "team.goals_for")
         _assert_series_stats(body["goals_against_stats"], "team.goals_against")
         _assert_series_stats(body["goal_diff_stats"], "team.goal_diff")
+
+    # ------------------------------------------------------------------
+    #  Filter tests
+    # ------------------------------------------------------------------
+
+    def test_filter_tournament_reduces_matches(self, client: TestClient):
+        full = client.get(f"/team/{_KNOWN_TEAM}").json()
+        filt = client.get(f"/team/{_KNOWN_TEAM}?tournaments={_KNOWN_TOURNAMENT}").json()
+        assert filt["matches_played"] < full["matches_played"]
+        assert filt["matches_played"] > 0
+
+    def test_filter_country_reduces_matches(self, client: TestClient):
+        full = client.get(f"/team/{_KNOWN_TEAM}").json()
+        filt = client.get(f"/team/{_KNOWN_TEAM}?countries={_KNOWN_COUNTRY}").json()
+        assert filt["matches_played"] < full["matches_played"]
+
+    def test_filter_date_range_reduces_matches(self, client: TestClient):
+        full = client.get(f"/team/{_KNOWN_TEAM}").json()
+        filt = client.get(f"/team/{_KNOWN_TEAM}?date_from=2000-01-01&date_to=2020-12-31").json()
+        assert filt["matches_played"] < full["matches_played"]
+        assert filt["matches_played"] > 0
+
+    def test_filter_nonexistent_tournament_returns_zero(self, client: TestClient):
+        resp = client.get(f"/team/{_KNOWN_TEAM}?tournaments=NonExistentTournamentXYZ").json()
+        assert resp["matches_played"] == 0
+
+    def test_filter_date_from_after_date_to_returns_zero(self, client: TestClient):
+        resp = client.get(f"/team/{_KNOWN_TEAM}?date_from=2020-01-01&date_to=2010-01-01").json()
+        assert resp["matches_played"] == 0

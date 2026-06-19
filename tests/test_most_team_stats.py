@@ -3,7 +3,7 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from tests.helpers import _STAT_TO_RESPONSE_KEY, _assert_keys, _assert_status
+from tests.helpers import _KNOWN_TOURNAMENT, _KNOWN_COUNTRY, _STAT_TO_RESPONSE_KEY, _assert_keys, _assert_status
 
 _TEAM_MOST_STATS = ["wins", "losses", "draws", "win_rate",
                      "loss_rate", "goals_pro", "goals_against", "matches"]
@@ -69,3 +69,32 @@ class TestMostTeamStats:
         body = resp.json()
         assert body["top_n"] == 3
         assert len(body["ranking"]) == 3
+
+    # ------------------------------------------------------------------
+    #  Filter tests (use representative stat "wins")
+    # ------------------------------------------------------------------
+
+    def test_filter_tournament_reduces_ranking(self, client: TestClient):
+        full = client.get("/most/wins").json()
+        filt = client.get(f"/most/wins?tournaments={_KNOWN_TOURNAMENT}").json()
+        assert len(filt["ranking"]) > 0
+        # Filtered ranking may be different (not necessarily a strict subset)
+        # but the total value for top team should be lower
+        assert filt["ranking"][0]["wins"] <= full["ranking"][0]["wins"]
+
+    def test_filter_country_reduces_results(self, client: TestClient):
+        full = client.get("/most/wins").json()
+        filt = client.get(f"/most/wins?countries={_KNOWN_COUNTRY}").json()
+        assert len(filt["ranking"]) > 0
+
+    def test_filter_date_range(self, client: TestClient):
+        resp = client.get("/most/wins?date_from=2000-01-01&date_to=2020-12-31").json()
+        assert len(resp["ranking"]) > 0
+
+    def test_filter_nonexistent_tournament_returns_empty(self, client: TestClient):
+        resp = client.get("/most/wins?tournaments=NonExistentTournamentXYZ").json()
+        assert resp["ranking"] == []
+
+    def test_filter_date_from_after_date_to_returns_empty(self, client: TestClient):
+        resp = client.get("/most/wins?date_from=2020-01-01&date_to=2010-01-01").json()
+        assert resp["ranking"] == []

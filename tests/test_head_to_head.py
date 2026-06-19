@@ -13,6 +13,9 @@ from tests.helpers import (
 
 
 class TestHeadToHead:
+    # ------------------------------------------------------------------
+    #  Basic resolution & shape
+    # ------------------------------------------------------------------
     def test_h2h_known(self, client: TestClient):
         resp = client.get(f"/head_to_head?team1={_KNOWN_TEAM}&team2={_KNOWN_TEAM2}")
         _assert_status(resp)
@@ -47,3 +50,34 @@ class TestHeadToHead:
         body = resp.json()
         _assert_keys(body, {"total_goals_per_match_stats"}, "h2h.advanced")
         _assert_series_stats(body["total_goals_per_match_stats"], "h2h.goals_per_match")
+
+    # ------------------------------------------------------------------
+    #  Filter tests
+    # ------------------------------------------------------------------
+
+    def test_filter_tournament_reduces_matches(self, client: TestClient):
+        full = client.get(f"/head_to_head?team1={_KNOWN_TEAM}&team2={_KNOWN_TEAM2}").json()
+        filt = client.get(
+            f"/head_to_head?team1={_KNOWN_TEAM}&team2={_KNOWN_TEAM2}&tournaments=FIFA+World+Cup"
+        ).json()
+        assert "error" not in filt
+        assert filt["matches"] <= full["matches"]
+
+    def test_filter_date_range(self, client: TestClient):
+        resp = client.get(
+            f"/head_to_head?team1={_KNOWN_TEAM}&team2={_KNOWN_TEAM2}&date_from=2000-01-01&date_to=2020-12-31"
+        ).json()
+        assert "error" not in resp
+        assert resp["matches"] >= 0
+
+    def test_filter_nonexistent_tournament_returns_zero(self, client: TestClient):
+        resp = client.get(
+            f"/head_to_head?team1={_KNOWN_TEAM}&team2={_KNOWN_TEAM2}&tournaments=NonExistentTournamentXYZ"
+        ).json()
+        assert resp["matches"] == 0
+
+    def test_filter_date_from_after_date_to_returns_zero(self, client: TestClient):
+        resp = client.get(
+            f"/head_to_head?team1={_KNOWN_TEAM}&team2={_KNOWN_TEAM2}&date_from=2020-01-01&date_to=2010-01-01"
+        ).json()
+        assert resp["matches"] == 0

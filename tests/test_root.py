@@ -22,3 +22,9 @@ class TestRoot:
         assert isinstance(body["endpoints"], dict)
         assert isinstance(body["data_loaded"], bool)
         assert body["data_loaded"] is True
+
+    def test_root_filter_params_documented(self, client: TestClient):
+        """Root endpoint documents the available filter parameters."""
+        body = client.get("/").json()
+        fp = body["filter_params"]
+        _assert_keys(fp, {"tournaments", "countries", "date_from", "date_to"})

@@ -2,10 +2,13 @@
 
 from fastapi.testclient import TestClient
 
-from tests.helpers import _assert_keys, _assert_series_stats, _assert_status
+from tests.helpers import _KNOWN_TOURNAMENT, _assert_keys, _assert_series_stats, _assert_status
 
 
 class TestSummary:
+    # ------------------------------------------------------------------
+    #  Basic shape & types
+    # ------------------------------------------------------------------
     def test_summary_ok(self, client: TestClient):
         resp = client.get("/summary")
         _assert_status(resp)
@@ -97,3 +100,54 @@ class TestSummary:
         assert gd["home_score"]["count"] > 0
         assert gd["total_goals"]["sum"] == r["total_goals"]
         assert abs(gd["total_goals"]["mean"] - r["avg_goals_per_match"]) < 0.02
+
+    # ------------------------------------------------------------------
+    #  Filter tests
+    # ------------------------------------------------------------------
+
+    def test_filter_tournament_reduces_totals(self, client: TestClient):
+        full = client.get("/summary").json()
+        filt = client.get(f"/summary?tournaments={_KNOWN_TOURNAMENT}").json()
+        assert filt["results"]["total_matches"] < full["results"]["total_matches"]
+        assert filt["results"]["total_matches"] > 0
+
+    def test_filter_multiple_tournaments(self, client: TestClient):
+        resp = client.get(f"/summary?tournaments=Friendly&tournaments={_KNOWN_TOURNAMENT}").json()
+        assert resp["results"]["total_matches"] > 0
+
+    def test_filter_country_reduces_totals(self, client: TestClient):
+        full = client.get("/summary").json()
+        filt = client.get("/summary?countries=Brazil").json()
+        assert filt["results"]["total_matches"] < full["results"]["total_matches"]
+        assert filt["results"]["total_matches"] > 0
+
+    def test_filter_date_from(self, client: TestClient):
+        full = client.get("/summary").json()
+        filt = client.get("/summary?date_from=2000-01-01").json()
+        assert filt["results"]["total_matches"] < full["results"]["total_matches"]
+        assert filt["results"]["total_matches"] > 0
+
+    def test_filter_date_to(self, client: TestClient):
+        filt = client.get("/summary?date_to=1900-01-01").json()
+        assert filt["results"]["total_matches"] >= 0
+
+    def test_filter_date_range(self, client: TestClient):
+        full = client.get("/summary").json()
+        filt = client.get("/summary?date_from=2000-01-01&date_to=2010-12-31").json()
+        assert filt["results"]["total_matches"] < full["results"]["total_matches"]
+        assert filt["results"]["total_matches"] > 0
+
+    def test_filter_all_params_combined(self, client: TestClient):
+        resp = client.get(
+            f"/summary?tournaments={_KNOWN_TOURNAMENT}&countries=Germany&date_from=1990&date_to=2020"
+        ).json()
+        assert resp["results"]["total_matches"] > 0
+
+    def test_filter_nonexistent_tournament_returns_zero(self, client: TestClient):
+        resp = client.get("/summary?tournaments=NonExistentTournamentXYZ").json()
+        assert resp["results"]["total_matches"] == 0
+
+    def test_filter_date_from_after_date_to_returns_zero(self, client: TestClient):
+        """date_from > date_to should produce an empty result."""
+        resp = client.get("/summary?date_from=2020-01-01&date_to=2010-01-01").json()
+        assert resp["results"]["total_matches"] == 0
