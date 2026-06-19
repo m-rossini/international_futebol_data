@@ -19,7 +19,7 @@ class TestTournaments:
         _assert_keys(item, {
             "tournament", "first_year", "last_year", "editions",
             "matches", "total_goals", "home_wins", "away_wins",
-            "draws", "avg_goals", "unique_teams",
+            "draws", "avg_goals", "unique_teams", "seasons",
         }, "tournaments.item")
 
     def test_tournaments_types(self, client: TestClient):
@@ -30,6 +30,35 @@ class TestTournaments:
         assert isinstance(item["matches"], int)
         assert isinstance(item["total_goals"], int)
         assert isinstance(item["avg_goals"], float)
+
+        # seasons type check
+        assert isinstance(item["seasons"], list)
+        assert len(item["seasons"]) > 0
+        for s in item["seasons"]:
+            assert isinstance(s, str)
+
+    def test_tournaments_seasons_format(self, client: TestClient):
+        """FIFA World Cup seasons should be single years; UNL should have cross-year seasons."""
+        resp = client.get("/tournaments").json()
+
+        # Find specific tournaments
+        wc = next(t for t in resp if t["tournament"] == "FIFA World Cup")
+        unl = next(t for t in resp if t["tournament"] == "UEFA Nations League")
+
+        # FIFA World Cup: all single years
+        for s in wc["seasons"]:
+            assert "-" not in s, f"Expected single-year season, got '{s}'"
+
+        # UEFA Nations League: should have cross-year seasons
+        cross_year = [s for s in unl["seasons"] if "-" in s]
+        assert len(cross_year) > 0, f"Expected cross-year seasons in UNL, got {unl['seasons']}"
+
+        # Each season string should match YYYY or YYYY-YYYY
+        for s in wc["seasons"] + unl["seasons"]:
+            parts = s.split("-")
+            assert len(parts) in (1, 2)
+            for p in parts:
+                assert p.isdigit() and len(p) == 4
 
     def test_tournaments_sorted_desc_by_matches(self, client: TestClient):
         resp = client.get("/tournaments")

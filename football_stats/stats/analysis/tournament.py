@@ -34,12 +34,61 @@ def _per_tournament_agg(results: pd.DataFrame) -> pd.DataFrame:
     return agg
 
 
+def _detect_seasons(df: pd.DataFrame) -> list[str]:
+    """Detect edition seasons (year ranges) for a tournament.
+
+    Groups consecutive years into ``"YYYY"`` or ``"YYYY-YYYY"`` based on
+    whether matches span across a year boundary (gap ≤ 365 days between the
+    last match of year N and the first match of year N+1).  Each season is
+    capped at 2 years to prevent over-chaining.
+    """
+    if df.empty:
+        return []
+
+    df = df.copy()
+    df["dt"] = pd.to_datetime(df["date"])
+    df["year"] = df["dt"].dt.year
+
+    years_set = sorted(df["year"].unique())
+    if not years_set:
+        return []
+
+    # Per-year first/last match dates
+    year_bounds: dict[int, tuple[pd.Timestamp, pd.Timestamp]] = {}
+    for y in years_set:
+        mask = df["year"] == y
+        year_bounds[y] = (df.loc[mask, "dt"].min(), df.loc[mask, "dt"].max())
+
+    seasons: list[str] = []
+    i = 0
+    while i < len(years_set):
+        y = years_set[i]
+        if i + 1 < len(years_set):
+            y_next = years_set[i + 1]
+            gap = (year_bounds[y_next][0] - year_bounds[y][1]).days
+            if 1 <= gap <= 365:
+                seasons.append(f"{y}-{y_next}")
+                i += 2
+                continue
+        seasons.append(str(y))
+        i += 1
+
+    return seasons
+
+
 def tournaments_list(results: pd.DataFrame) -> list:
     """List all tournaments with comprehensive aggregate stats."""
     agg = _per_tournament_agg(results)
-    records = agg.sort_values("matches", ascending=False).to_dict(orient="records")
-    for r in records:
+    agg = agg.sort_values("matches", ascending=False)
+
+    records: list[dict] = []
+    for _, row in agg.iterrows():
+        r = row.to_dict()
         r["total_goals"] = int(r["total_goals"])
+        tournament_df = results[results["tournament"] == r["tournament"]]
+        r["seasons"] = _detect_seasons(tournament_df)
+        records.append(r)
+
     return records
 
 

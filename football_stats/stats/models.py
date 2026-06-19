@@ -264,6 +264,10 @@ class TournamentListItem(BaseModel):
     draws: int
     avg_goals: float
     unique_teams: int
+    seasons: list[str] = Field(
+        default_factory=list,
+        description="Edition years, e.g. [\"1930\", \"1934\"] or [\"2018-2019\", \"2020-2021\"]",
+    )
 
     model_config = ConfigDict(extra="allow")
 
