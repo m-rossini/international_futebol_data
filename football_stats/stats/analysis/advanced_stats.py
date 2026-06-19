@@ -7,9 +7,20 @@ and percentiles (25th, 50th, 75th).
 
 from __future__ import annotations
 
+import math
 from typing import Any
 
 import pandas as pd
+
+
+def _safe_f(v: Any) -> float | None:
+    """Convert a value to float, returning None if it is NaN or Inf."""
+    if v is None:
+        return None
+    f = float(v)
+    if math.isnan(f) or math.isinf(f):
+        return None
+    return f
 
 
 def series_stats(series: pd.Series) -> dict[str, float | int | list[float | int] | None]:
@@ -51,31 +62,36 @@ def series_stats(series: pd.Series) -> dict[str, float | int | list[float | int]
             mode_vals.append(v)
 
     # Percentiles
-    p25 = float(series.quantile(0.25))
-    p50 = float(desc["50%"])
-    p75 = float(series.quantile(0.75))
+    p25 = _safe_f(series.quantile(0.25))
+    p50 = _safe_f(desc["50%"])
+    p75 = _safe_f(series.quantile(0.75))
 
-    # IQR
-    iqr = round(p75 - p25, 2)
+    # IQR — only compute if both percentiles are valid
+    if p25 is not None and p75 is not None:
+        iqr: float | None = round(p75 - p25, 2)
+    else:
+        iqr = None
 
     # Range
-    rng = int(desc["max"] - desc["min"])
+    rng = None
+    if desc["max"] is not None and desc["min"] is not None:
+        rng = int(desc["max"] - desc["min"])
 
     return {
         "count": int(desc["count"]),
         "sum": int(series.sum()) if series.dtype.kind in ("i", "u") else round(float(series.sum()), 2),
-        "mean": round(float(desc["mean"]), 4),
-        "median": round(float(desc["50%"]), 4),
+        "mean": round(_safe_f(desc["mean"]) or 0, 4) if _safe_f(desc["mean"]) is not None else None,
+        "median": round(_safe_f(desc["50%"]) or 0, 4) if _safe_f(desc["50%"]) is not None else None,
         "mode": mode_vals,
-        "min": int(desc["min"]) if series.dtype.kind in ("i", "u") else round(float(desc["min"]), 4),
-        "max": int(desc["max"]) if series.dtype.kind in ("i", "u") else round(float(desc["max"]), 4),
-        "stdev": round(float(desc["std"]), 4),
-        "variance": round(float(series.var()), 4),
-        "skewness": round(float(series.skew()), 6) if len(series) >= 3 else None,
-        "kurtosis": round(float(series.kurtosis()), 6) if len(series) >= 4 else None,
-        "p25": round(p25, 4),
-        "p50": round(p50, 4),
-        "p75": round(p75, 4),
+        "min": int(desc["min"]) if series.dtype.kind in ("i", "u") and not math.isnan(float(desc["min"])) else _safe_f(desc["min"]),
+        "max": int(desc["max"]) if series.dtype.kind in ("i", "u") and not math.isnan(float(desc["max"])) else _safe_f(desc["max"]),
+        "stdev": round(_safe_f(desc["std"]) or 0, 4) if _safe_f(desc["std"]) is not None else None,
+        "variance": round(_safe_f(series.var()) or 0, 4) if _safe_f(series.var()) is not None else None,
+        "skewness": round(float(series.skew()), 6) if len(series) >= 3 and not math.isnan(float(series.skew())) else None,
+        "kurtosis": round(float(series.kurtosis()), 6) if len(series) >= 4 and not math.isnan(float(series.kurtosis())) else None,
+        "p25": None if p25 is None else round(p25, 4),
+        "p50": None if p50 is None else round(p50, 4),
+        "p75": None if p75 is None else round(p75, 4),
         "iqr": iqr,
         "range": rng,
     }
