@@ -47,7 +47,29 @@ export function HeadToHeadClient() {
         throw new Error(text);
       }
       const json = await res.json();
-      setData(json);
+      // API uses team names as key prefixes (e.g. Brazil_wins, Argentina_goals)
+      const t1 = json.team1 as string;
+      const t2 = json.team2 as string;
+      const t1_wins = (json as Record<string, number>)[`${t1}_wins`] ?? 0;
+      const t2_wins = (json as Record<string, number>)[`${t2}_wins`] ?? 0;
+      const t1_goals = (json as Record<string, number>)[`${t1}_goals`] ?? 0;
+      const t2_goals = (json as Record<string, number>)[`${t2}_goals`] ?? 0;
+      const totalMatches = (json.matches as number) || (t1_wins + t2_wins + (json.draws as number));
+      setData({
+        team1: t1,
+        team2: t2,
+        team1_wins: t1_wins,
+        team2_wins: t2_wins,
+        draws: json.draws as number,
+        total_matches: totalMatches,
+        team1_goals: t1_goals,
+        team2_goals: t2_goals,
+        team1_win_rate: totalMatches > 0 ? (t1_wins / totalMatches) * 100 : 0,
+        team2_win_rate: totalMatches > 0 ? (t2_wins / totalMatches) * 100 : 0,
+        team1_avg_goals: totalMatches > 0 ? t1_goals / totalMatches : 0,
+        team2_avg_goals: totalMatches > 0 ? t2_goals / totalMatches : 0,
+        total_goals_per_match_stats: json.total_goals_per_match_stats as HeadToHeadResponse["total_goals_per_match_stats"],
+      });
     } catch (err) {
       console.error("Failed to load head-to-head:", err);
       setError("Failed to load comparison. Check that both team names are correct.");

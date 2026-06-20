@@ -10,14 +10,14 @@ import type { TeamRankingItem } from "@/lib/types";
 const API = "/api/proxy";
 
 const STATS = [
-  { value: "wins", label: "Wins" },
-  { value: "losses", label: "Losses" },
-  { value: "draws", label: "Draws" },
-  { value: "win_rate", label: "Win Rate" },
-  { value: "loss_rate", label: "Loss Rate" },
-  { value: "goals_pro", label: "Goals For" },
-  { value: "goals_against", label: "Goals Against" },
-  { value: "matches", label: "Matches" },
+  { value: "wins", label: "Wins", apiField: "wins" },
+  { value: "losses", label: "Losses", apiField: "losses" },
+  { value: "draws", label: "Draws", apiField: "draws" },
+  { value: "win_rate", label: "Win Rate", apiField: "win_rate" },
+  { value: "loss_rate", label: "Loss Rate", apiField: "loss_rate" },
+  { value: "goals_pro", label: "Goals For", apiField: "goals_for" },
+  { value: "goals_against", label: "Goals Against", apiField: "goals_against" },
+  { value: "matches", label: "Matches", apiField: "matches_played" },
 ];
 
 
@@ -46,13 +46,19 @@ export function RankingsClient() {
     const params = { tournaments, countries, date_from: dateFrom, date_to: dateTo };
     const fq = buildFilterQs(params);
     const qs = `top_n=${topN}${fq ? "&" + fq : ""}`;
+    const apiField = STATS.find((s) => s.value === stat)?.apiField || stat;
 
     async function load() {
       if (!cancelled) setLoading(true);
       try {
         const res = await fetch(`${API}/most/${stat}?${qs}`).then((r) => r.json());
         if (!cancelled) {
-          setTeams(res.teams || []);
+          const ranking = (res.ranking || []).map((item: Record<string, unknown>, idx: number) => ({
+            rank: idx + 1,
+            team: String(item.team || ""),
+            value: Number(item[apiField] ?? 0),
+          }));
+          setTeams(ranking);
           setLoading(false);
         }
       } catch (err) {

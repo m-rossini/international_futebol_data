@@ -74,8 +74,8 @@ export function CitiesClient() {
       ),
     },
     { key: "matches", header: "Matches", sortable: true, render: (c: CityListItem) => formatNumber(c.matches) },
-    { key: "goals", header: "Goals", sortable: true, render: (c: CityListItem) => formatNumber(c.goals) },
-    { key: "tournaments", header: "Tournaments", sortable: true },
+    { key: "total_goals", header: "Goals", sortable: true, render: (c: CityListItem) => formatNumber(c.total_goals) },
+    { key: "tournaments", header: "Tournaments", sortable: true, render: (c: CityListItem) => formatNumber(c.tournaments) },
   ];
 
   return (

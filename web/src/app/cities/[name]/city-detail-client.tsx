@@ -12,7 +12,6 @@ import type { CityDetail } from "@/lib/types";
 
 const API = "/api/proxy";
 
-
 function buildFilterQs(params: { tournaments: string; countries: string; date_from: string; date_to: string }): string {
   const q = new URLSearchParams();
   if (params.tournaments) q.set("tournaments", params.tournaments);
@@ -75,24 +74,24 @@ export function CityDetailClient({ name }: { name: string }) {
     );
   }
 
-  const topTeams = Object.entries(data.top_teams)
-    .sort(([, a], [, b]) => b - a)
+  const s = data.summary;
+
+  const topTeams = (s.top_teams_by_wins || [])
     .slice(0, 10)
-    .map(([t, val], i) => ({
+    .map((t, i) => ({
       rank: i + 1,
-      name: t,
-      value: formatNumber(val),
-      href: `/teams/${encodeURIComponent(t)}`,
+      name: t.team,
+      value: formatNumber(t.wins),
+      href: `/teams/${encodeURIComponent(t.team)}`,
     }));
 
-  const topTournaments = Object.entries(data.top_tournaments)
-    .sort(([, a], [, b]) => b - a)
+  const topTournaments = (s.top_tournaments || [])
     .slice(0, 10)
-    .map(([t, val], i) => ({
+    .map((t, i) => ({
       rank: i + 1,
-      name: t,
-      value: formatNumber(val),
-      href: `/tournaments/${encodeURIComponent(t)}`,
+      name: t.tournament,
+      value: formatNumber(t.matches),
+      href: `/tournaments/${encodeURIComponent(t.tournament)}`,
     }));
 
   return (
@@ -112,25 +111,23 @@ export function CityDetailClient({ name }: { name: string }) {
         )}
       </div>
       <p className="text-[14px] text-[#6C757D] mb-6">
-        {data.tournaments} tournaments · {formatNumber(data.matches)} matches · {formatNumber(data.goals)} goals
+        {s.unique_tournaments} tournaments · {formatNumber(s.matches)} matches · {formatNumber(s.total_goals)} goals
       </p>
 
       <FilterBar showTournaments showCountries showDateRange />
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <StatsCard label="Matches" value={formatNumber(data.matches)} />
-        <StatsCard label="Goals" value={formatNumber(data.goals)} />
-        <StatsCard label="Tournaments" value={data.tournaments} />
-        {data.biggest_win && (
-          <StatsCard label="Biggest Win" value={data.biggest_win.score} sub={`${data.biggest_win.teams} · ${data.biggest_win.date}`} />
-        )}
+        <StatsCard label="Matches" value={formatNumber(s.matches)} />
+        <StatsCard label="Goals" value={formatNumber(s.total_goals)} sub={`${s.avg_goals_per_match.toFixed(2)} avg/match`} />
+        <StatsCard label="Tournaments" value={s.unique_tournaments} />
+        <StatsCard label="Unique Teams" value={s.unique_teams} />
       </div>
 
       {/* Lists */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        <TopList title="👥 Top Teams" items={topTeams} maxValue={topTeams[0] ? Number(topTeams[0].value) : 1} />
-        <TopList title="🏆 Top Tournaments" items={topTournaments} maxValue={topTournaments[0] ? Number(topTournaments[0].value) : 1} />
+        <TopList title="👥 Top Teams" items={topTeams} maxValue={s.top_teams_by_wins?.[0]?.wins || 1} />
+        <TopList title="🏆 Top Tournaments" items={topTournaments} maxValue={s.top_tournaments?.[0]?.matches || 1} />
       </div>
     </div>
   );

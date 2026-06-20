@@ -56,7 +56,7 @@ export async function getTeams(filters?: FilterParams) {
     "/most/matches",
     `top_n=500${filters ? "&" + buildFilterQuery(filters) : ""}`
   );
-  return data.teams;
+  return data.ranking;
 }
 
 export async function getTeam(name: string, filters?: FilterParams) {

@@ -85,10 +85,10 @@ export function TournamentsClient() {
                   <Target size={13} /> {formatNumber(t.matches)} matches
                 </div>
                 <div className="flex items-center gap-1.5 text-[13px] text-[#6C757D]">
-                  ⚽ {formatNumber(t.goals)} goals
+                  ⚽ {formatNumber(t.total_goals)} goals
                 </div>
                 <div className="flex items-center gap-1.5 text-[13px] text-[#6C757D]">
-                  <Users size={13} /> {t.teams} teams
+                  <Users size={13} /> {t.unique_teams} teams
                 </div>
               </div>
               <div className="mt-2 text-[13px] text-[#1A56DB] font-medium">View Details →</div>

@@ -39,9 +39,9 @@ export function TeamsClient() {
       try {
         const res = await fetch(`${API}/most/matches?top_n=500${fq ? "&" + fq : ""}`).then((r) => r.json());
         if (!cancelled) {
-          const mapped: TeamListItem[] = (res.teams || []).map((t: { team: string; value: number }) => ({
-            team: t.team,
-            matches: t.value,
+          const mapped: TeamListItem[] = (res.ranking || []).map((t: Record<string, unknown>) => ({
+            team: String(t.team || ""),
+            matches: Number((t as Record<string, number>).matches_played ?? 0),
             wins: 0,
             losses: 0,
             draws: 0,

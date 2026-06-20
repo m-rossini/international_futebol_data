@@ -12,7 +12,6 @@ import type { CountryDetail } from "@/lib/types";
 
 const API = "/api/proxy";
 
-
 function buildFilterQs(params: { tournaments: string; countries: string; date_from: string; date_to: string }): string {
   const q = new URLSearchParams();
   if (params.tournaments) q.set("tournaments", params.tournaments);
@@ -75,34 +74,24 @@ export function CountryDetailClient({ name }: { name: string }) {
     );
   }
 
-  const topTournaments = Object.entries(data.top_tournaments)
-    .sort(([, a], [, b]) => b - a)
+  const s = data.summary;
+
+  const topTeams = (s.top_teams_by_wins || [])
     .slice(0, 10)
-    .map(([t, val], i) => ({
+    .map((t, i) => ({
       rank: i + 1,
-      name: t,
-      value: formatNumber(val),
-      href: `/tournaments/${encodeURIComponent(t)}`,
+      name: t.team,
+      value: formatNumber(t.wins),
+      href: `/teams/${encodeURIComponent(t.team)}`,
     }));
 
-  const topCities = Object.entries(data.top_cities)
-    .sort(([, a], [, b]) => b - a)
+  const topCities = (s.top_cities || [])
     .slice(0, 10)
-    .map(([c, val], i) => ({
+    .map((c, i) => ({
       rank: i + 1,
-      name: c,
-      value: formatNumber(val),
-      href: `/cities/${encodeURIComponent(c)}`,
-    }));
-
-  const topTeams = Object.entries(data.top_teams)
-    .sort(([, a], [, b]) => b - a)
-    .slice(0, 10)
-    .map(([t, val], i) => ({
-      rank: i + 1,
-      name: t,
-      value: formatNumber(val),
-      href: `/teams/${encodeURIComponent(t)}`,
+      name: c.city,
+      value: formatNumber(c.matches),
+      href: `/cities/${encodeURIComponent(c.city)}`,
     }));
 
   return (
@@ -112,29 +101,51 @@ export function CountryDetailClient({ name }: { name: string }) {
       </Link>
       <h1 className="page-title mb-1">{data.country}</h1>
       <p className="text-[14px] text-[#6C757D] mb-6">
-        {data.cities} cities · {formatNumber(data.matches)} matches · {formatNumber(data.goals)} goals
+        {s.first_year} – {s.last_year} · {formatNumber(s.matches)} matches · {formatNumber(s.total_goals)} goals
       </p>
 
       <FilterBar showTournaments showCountries showDateRange />
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
-        <StatsCard label="Matches" value={formatNumber(data.matches)} />
-        <StatsCard label="Goals" value={formatNumber(data.goals)} />
-        <StatsCard label="Cities" value={data.cities} />
-        <StatsCard label="First Match" value={data.first_match} />
-        <StatsCard label="Last Match" value={data.last_match} />
-        {data.biggest_win && (
-          <StatsCard label="Biggest Win" value={data.biggest_win.score} sub={`${data.biggest_win.teams} · ${data.biggest_win.date}`} />
-        )}
+        <StatsCard label="Matches" value={formatNumber(s.matches)} />
+        <StatsCard label="Goals" value={formatNumber(s.total_goals)} sub={`${s.avg_goals_per_match.toFixed(2)} avg/match`} />
+        <StatsCard label="Teams" value={s.unique_teams} />
+        <StatsCard label="Tournaments" value={s.unique_tournaments} />
+        <StatsCard label="Home Wins" value={s.home_wins} />
+        <StatsCard label="Draws" value={s.draws} />
       </div>
 
       {/* Lists */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        <TopList title="🏆 Top Tournaments" items={topTournaments} maxValue={topTournaments[0] ? Number(topTournaments[0].value) : 1} />
-        <TopList title="🏙️ Top Cities" items={topCities} maxValue={topCities[0] ? Number(topCities[0].value) : 1} />
-        <TopList title="👥 Top Teams" items={topTeams} maxValue={topTeams[0] ? Number(topTeams[0].value) : 1} />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <TopList title="👥 Top Teams" items={topTeams} maxValue={s.top_teams_by_wins?.[0]?.wins || 1} />
+        <TopList title="🏙️ Top Cities" items={topCities} maxValue={s.top_cities?.[0]?.matches || 1} />
       </div>
+
+      {/* Biggest Win */}
+      {s.biggest_win && (
+        <div className="card p-5 mb-8">
+          <h3 className="section-title mb-4">🏆 Biggest Win</h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="text-center p-3 bg-[#F8F9FA] rounded-lg">
+              <div className="text-[12px] text-[#6C757D] mb-1">Score</div>
+              <div className="text-[20px] font-bold">{s.biggest_win.home_score} – {s.biggest_win.away_score}</div>
+            </div>
+            <div className="text-center p-3 bg-[#F8F9FA] rounded-lg">
+              <div className="text-[12px] text-[#6C757D] mb-1">Teams</div>
+              <div className="text-[14px] font-bold">{s.biggest_win.home_team} vs {s.biggest_win.away_team}</div>
+            </div>
+            <div className="text-center p-3 bg-[#F8F9FA] rounded-lg">
+              <div className="text-[12px] text-[#6C757D] mb-1">Date</div>
+              <div className="text-[20px] font-bold">{s.biggest_win.date}</div>
+            </div>
+            <div className="text-center p-3 bg-[#F8F9FA] rounded-lg">
+              <div className="text-[12px] text-[#6C757D] mb-1">Tournament</div>
+              <div className="text-[14px] font-bold">{s.biggest_win.tournament || "—"}</div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

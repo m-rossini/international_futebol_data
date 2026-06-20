@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { TopList } from "@/components/shared/TopList";
 import { formatNumber } from "@/lib/utils";
@@ -14,20 +14,34 @@ export function TopScorersClient() {
   const [scorers, setScorers] = useState<TopScorerItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch(`${API}/top_scorers?top_n=${topN}`).then((r) => r.json());
-      setScorers(res.scorers || []);
-    } catch (err) {
-      console.error("Failed to load top scorers:", err);
-    }
-    setLoading(false);
-  }, [topN]);
-
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    let cancelled = false;
+
+    async function load() {
+      if (!cancelled) setLoading(true);
+      try {
+        const res = await fetch(`${API}/top_scorers?top_n=${topN}`).then((r) => r.json());
+        if (!cancelled) {
+          // API returns { "Player Name": goals, ... } dict
+          const entries = Object.entries(res as Record<string, number>)
+            .sort(([, a], [, b]) => b - a);
+          const mapped: TopScorerItem[] = entries.map(([player, goals], idx) => ({
+            rank: idx + 1,
+            player,
+            goals,
+          }));
+          setScorers(mapped);
+          setLoading(false);
+        }
+      } catch (err) {
+        if (!cancelled) setLoading(false);
+        console.error("Failed to load top scorers:", err);
+      }
+    }
+
+    load();
+    return () => { cancelled = true; };
+  }, [topN]);
 
   const items = scorers.map((s) => ({
     rank: s.rank,

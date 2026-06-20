@@ -48,7 +48,12 @@ export function GoalsPerYearClient() {
       try {
         const res = await fetch(`${API}/goals_per_year?${qs}`).then((r) => r.json());
         if (!cancelled) {
-          setData(res);
+          // API returns avg_goals, frontend uses ratio
+          const normalized = (res as Array<Record<string, unknown>>).map((item) => ({
+            ...item,
+            ratio: Number(item.avg_goals ?? 0),
+          })) as GoalsPerYearItem[];
+          setData(normalized);
           setLoading(false);
         }
       } catch (err) {

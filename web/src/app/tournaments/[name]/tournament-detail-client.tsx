@@ -75,25 +75,19 @@ export function TournamentDetailClient({ name }: { name: string }) {
     );
   }
 
-  const topTeams = Object.entries(data.top_teams)
-    .sort(([, a], [, b]) => b - a)
+  const s = data.summary;
+  const topTeams = (s.top_teams_by_wins || [])
     .slice(0, 10)
-    .map(([team, val], i) => ({
+    .map((t, i) => ({
       rank: i + 1,
-      name: team,
-      value: formatNumber(val),
-      href: `/teams/${encodeURIComponent(team)}`,
+      name: t.team,
+      value: formatNumber(t.wins),
+      href: `/teams/${encodeURIComponent(t.team)}`,
     }));
 
-  const topHosts = Object.entries(data.top_hosts)
-    .sort(([, a], [, b]) => b - a)
-    .slice(0, 10)
-    .map(([host, val], i) => ({
-      rank: i + 1,
-      name: host,
-      value: formatNumber(val),
-      href: `/countries/${encodeURIComponent(host)}`,
-    }));
+  const homePct = s.matches > 0 ? (s.home_wins / s.matches) * 100 : 0;
+  const awayPct = s.matches > 0 ? (s.away_wins / s.matches) * 100 : 0;
+  const drawPct = s.matches > 0 ? (s.draws / s.matches) * 100 : 0;
 
   return (
     <div>
@@ -102,32 +96,32 @@ export function TournamentDetailClient({ name }: { name: string }) {
       </Link>
       <h1 className="page-title mb-1">{data.tournament}</h1>
       <p className="text-[14px] text-[#6C757D] mb-6">
-        {data.first_year} – {data.last_year} · {data.seasons} editions · {data.teams} teams
+        {s.first_year} – {s.last_year} · {s.editions} editions · {s.unique_teams} teams
       </p>
 
       <FilterBar showTournaments showCountries showDateRange />
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <StatsCard label="First Edition" value={data.first_year} />
-        <StatsCard label="Last Edition" value={data.last_year} />
-        <StatsCard label="Editions" value={data.seasons} />
-        <StatsCard label="Matches" value={formatNumber(data.matches)} />
-        <StatsCard label="Goals" value={formatNumber(data.goals)} sub={`${data.avg_goals_per_match.toFixed(2)} avg/match`} />
-        <StatsCard label="Teams" value={data.teams} />
-        <StatsCard label="Home Win Rate" value={`${data.home_win_pct.toFixed(0)}%`} subColor="success" />
-        <StatsCard label="Draw Rate" value={`${data.draw_pct.toFixed(0)}%`} subColor="warning" />
+        <StatsCard label="First Edition" value={s.first_year} />
+        <StatsCard label="Last Edition" value={s.last_year} />
+        <StatsCard label="Editions" value={s.editions} />
+        <StatsCard label="Matches" value={formatNumber(s.matches)} />
+        <StatsCard label="Goals" value={formatNumber(s.total_goals)} sub={`${s.avg_goals_per_match.toFixed(2)} avg/match`} />
+        <StatsCard label="Teams" value={s.unique_teams} />
+        <StatsCard label="Home Win Rate" value={`${homePct.toFixed(0)}%`} subColor="success" />
+        <StatsCard label="Draw Rate" value={`${drawPct.toFixed(0)}%`} subColor="warning" />
       </div>
 
       {/* Yearly Breakdown Chart + Table */}
-      {data.yearly_breakdown && data.yearly_breakdown.length > 0 && (
+      {data.yearly && data.yearly.length > 0 && (
         <div className="card p-5 mb-8">
           <h3 className="section-title mb-4">📈 Goals Per Edition</h3>
           <div className="h-[220px] flex items-end gap-[2px] px-4 pb-2 mb-4">
-            {data.yearly_breakdown
+            {data.yearly
               .sort((a, b) => a.year - b.year)
               .map((yb) => {
-                const maxGoals = Math.max(...data.yearly_breakdown.map((y) => y.goals));
+                const maxGoals = Math.max(...data.yearly.map((y) => y.goals));
                 const pct = maxGoals > 0 ? (yb.goals / maxGoals) * 100 : 0;
                 return (
                   <div
@@ -155,18 +149,18 @@ export function TournamentDetailClient({ name }: { name: string }) {
                 </tr>
               </thead>
               <tbody>
-                {data.yearly_breakdown
+                {data.yearly
                   .sort((a, b) => b.year - a.year)
                   .map((yb) => (
                     <tr key={yb.year}>
                       <td className="font-semibold">{yb.year}</td>
                       <td>{formatNumber(yb.matches)}</td>
                       <td>{formatNumber(yb.goals)}</td>
-                      <td>{yb.avg.toFixed(2)}</td>
+                      <td>{yb.avg_goals.toFixed(2)}</td>
                       <td>{yb.home_wins}</td>
                       <td>{yb.away_wins}</td>
                       <td>{yb.draws}</td>
-                      <td className="text-[#6C757D]">{(yb.hosts || []).join(", ")}</td>
+                      <td className="text-[#6C757D]">{yb.host_country}</td>
                     </tr>
                   ))}
               </tbody>
@@ -175,10 +169,9 @@ export function TournamentDetailClient({ name }: { name: string }) {
         </div>
       )}
 
-      {/* Top Teams & Top Hosts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        <TopList title="🏆 Top Teams" items={topTeams} maxValue={topTeams[0] ? Number(topTeams[0].value) : 1} />
-        <TopList title="🌍 Top Host Countries" items={topHosts} maxValue={topHosts[0] ? Number(topHosts[0].value) : 1} />
+      {/* Top Teams */}
+      <div className="mb-8">
+        <TopList title="🏆 Top Teams (by Wins)" items={topTeams} maxValue={s.top_teams_by_wins?.[0]?.wins || 1} />
       </div>
     </div>
   );

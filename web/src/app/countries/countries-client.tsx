@@ -73,10 +73,10 @@ export function CountriesClient() {
       ),
     },
     { key: "matches", header: "Matches", sortable: true, render: (c: CountryListItem) => formatNumber(c.matches) },
-    { key: "goals", header: "Goals", sortable: true, render: (c: CountryListItem) => formatNumber(c.goals) },
+    { key: "total_goals", header: "Goals", sortable: true, render: (c: CountryListItem) => formatNumber(c.total_goals) },
     { key: "cities", header: "Cities", sortable: true },
-    { key: "first_match", header: "First Match", sortable: true, className: "text-[13px] text-[#6C757D]" },
-    { key: "last_match", header: "Last Match", sortable: true, className: "text-[13px] text-[#6C757D]" },
+    { key: "first_year", header: "First Year", sortable: true },
+    { key: "last_year", header: "Last Year", sortable: true },
   ];
 
   return (

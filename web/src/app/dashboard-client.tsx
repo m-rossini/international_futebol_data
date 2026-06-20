@@ -8,7 +8,6 @@ import { FilterBar } from "@/components/shared/FilterBar";
 import { formatNumber } from "@/lib/utils";
 import type { SummaryResponse, TeamRankingItem } from "@/lib/types";
 
-// Serverless-friendly approach — fetch from proxy
 const API = "/api/proxy";
 
 function buildFilterQs(params: { tournaments: string; countries: string; date_from: string; date_to: string }): string {
@@ -44,7 +43,14 @@ export function DashboardClient() {
         ]);
         if (!cancelled) {
           setSummary(summaryRes);
-          setTopTeams(teamsRes.teams || []);
+          // /most/wins returns { stat, top_n, ranking: [{ team, wins }] }
+          const rawRanking = (teamsRes.ranking || []) as Array<Record<string, unknown>>;
+          const mapped: TeamRankingItem[] = rawRanking.map((item, idx) => ({
+            rank: idx + 1,
+            team: String(item.team || ""),
+            value: Number((item as Record<string, number>).wins ?? 0),
+          }));
+          setTopTeams(mapped);
           setLoading(false);
         }
       } catch (err) {
@@ -66,7 +72,9 @@ export function DashboardClient() {
     );
   }
 
-  const meta = summary?.results_metadata;
+  const r = summary?.results;
+  const g = summary?.goalscorers;
+  const ha = r?.home_advantage;
 
   return (
     <div>
@@ -79,71 +87,74 @@ export function DashboardClient() {
 
       {/* KPI Row */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-        <StatsCard label="Total Matches" value={meta ? formatNumber(meta.total_matches) : "—"} sub="All recorded matches" />
-        <StatsCard label="Total Goals" value={meta ? formatNumber(meta.total_goals) : "—"} sub={`${meta?.avg_goals_per_match.toFixed(2) || "—"} avg/match`} />
-        <StatsCard label="Tournaments" value={meta?.total_tournaments ?? "—"} sub="Across all eras" />
-        <StatsCard label="Countries" value={meta?.total_countries ?? "—"} sub="Host nations" />
-        <StatsCard label="Teams" value={meta?.total_teams ?? "—"} sub="National & club" />
-        <StatsCard label="Scorers" value={meta?.unique_scorers ? formatNumber(meta.unique_scorers) : "—"} sub="All time" />
+        <StatsCard label="Total Matches" value={r ? formatNumber(r.total_matches) : "—"} sub="All recorded matches" />
+        <StatsCard label="Total Goals" value={r ? formatNumber(r.total_goals) : "—"} sub={`${r?.avg_goals_per_match.toFixed(2) || "—"} avg/match`} />
+        <StatsCard label="Tournaments" value={r?.tournaments_count ?? "—"} sub="Across all eras" />
+        <StatsCard label="Home Teams" value={r?.unique_home_teams ?? "—"} sub="Unique home sides" />
+        <StatsCard label="Away Teams" value={r?.unique_away_teams ?? "—"} sub="Unique away sides" />
+        <StatsCard label="Scorers" value={g?.unique_scorers ? formatNumber(g.unique_scorers) : "—"} sub="All time" />
       </div>
 
       {/* Charts row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        {/* Goals Over Time */}
+        {/* Matches Over Time */}
         <div className="card p-5">
-          <h3 className="section-title mb-4">📈 Goals Over Time</h3>
-          <div className="h-[240px] flex items-end gap-[2px] px-4 pb-2">
-            {meta?.match_distribution &&
-              Object.entries(meta.match_distribution)
-                .sort(([a], [b]) => a.localeCompare(b))
-                .map(([year, val], i) => {
-                  const maxVal = Math.max(...Object.values(meta.match_distribution));
-                  const pct = maxVal > 0 ? (val / maxVal) * 100 : 0;
-                  return (
-                    <div
-                      key={year}
-                      className="bg-[#1A56DB] rounded-t-sm flex-1"
-                      style={{ height: `${pct}%`, opacity: 0.5 + pct / 200 }}
-                      title={`${year}: ${val} matches`}
-                    />
-                  );
-                })}
-          </div>
-          <div className="flex justify-between mt-2 text-[11px] text-[#ADB5BD]">
-            <span>{meta ? Object.keys(meta.match_distribution).sort()[0]?.split("-")[0] : ""}</span>
-            <span>{meta ? Object.keys(meta.match_distribution).sort().slice(-1)[0]?.split("-")[0] : ""}</span>
-          </div>
+          <h3 className="section-title mb-4">📈 Matches Per Year</h3>
+          {r?.match_distribution?.matches_per_year && (
+            <>
+              <div className="h-[240px] flex items-end gap-[2px] px-4 pb-2">
+                {Object.entries(r.match_distribution.matches_per_year)
+                  .sort(([a], [b]) => a.localeCompare(b))
+                  .map(([year, val]) => {
+                    const maxVal = Math.max(...Object.values(r.match_distribution.matches_per_year));
+                    const pct = maxVal > 0 ? (val / maxVal) * 100 : 0;
+                    return (
+                      <div
+                        key={year}
+                        className="bg-[#1A56DB] rounded-t-sm flex-1"
+                        style={{ height: `${pct}%`, opacity: 0.5 + pct / 200 }}
+                        title={`${year}: ${val} matches`}
+                      />
+                    );
+                  })}
+              </div>
+              <div className="flex justify-between mt-2 text-[11px] text-[#ADB5BD]">
+                <span>{Object.keys(r.match_distribution.matches_per_year).sort()[0]}</span>
+                <span>{Object.keys(r.match_distribution.matches_per_year).sort().slice(-1)[0]}</span>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Win/Loss/Draw — SVG pie */}
         <div className="card p-5">
           <h3 className="section-title mb-4">📊 Match Outcomes</h3>
-          {meta && (
+          {ha && (
             <>
               <div className="flex items-center justify-center" style={{ height: 200 }}>
                 <svg viewBox="0 0 200 200" width="180" height="180">
                   <circle cx="100" cy="100" r="70" fill="none" stroke="#198754" strokeWidth="30"
-                    strokeDasharray={`${meta.home_win_pct * 4.4} 440`} strokeDashoffset="0"
+                    strokeDasharray={`${ha.home_win_pct * 4.4} 440`} strokeDashoffset="0"
                     transform="rotate(-90 100 100)" />
                   <circle cx="100" cy="100" r="70" fill="none" stroke="#DC3545" strokeWidth="30"
-                    strokeDasharray={`${meta.away_win_pct * 4.4} 440`}
-                    strokeDashoffset={-meta.home_win_pct * 4.4}
+                    strokeDasharray={`${ha.away_win_pct * 4.4} 440`}
+                    strokeDashoffset={-ha.home_win_pct * 4.4}
                     transform="rotate(-90 100 100)" />
                   <circle cx="100" cy="100" r="70" fill="none" stroke="#FD7E14" strokeWidth="30"
-                    strokeDasharray={`${meta.draw_pct * 4.4} 440`}
-                    strokeDashoffset={-(meta.home_win_pct + meta.away_win_pct) * 4.4}
+                    strokeDasharray={`${ha.draw_pct * 4.4} 440`}
+                    strokeDashoffset={-(ha.home_win_pct + ha.away_win_pct) * 4.4}
                     transform="rotate(-90 100 100)" />
                 </svg>
               </div>
               <div className="flex justify-center gap-6 mt-2">
                 <div className="flex items-center gap-2 text-[13px]">
-                  <span className="w-3 h-3 rounded-sm inline-block bg-[#198754]" /> Home Win <b>{meta.home_win_pct.toFixed(0)}%</b>
+                  <span className="w-3 h-3 rounded-sm inline-block bg-[#198754]" /> Home Win <b>{ha.home_win_pct.toFixed(0)}%</b>
                 </div>
                 <div className="flex items-center gap-2 text-[13px]">
-                  <span className="w-3 h-3 rounded-sm inline-block bg-[#DC3545]" /> Away Win <b>{meta.away_win_pct.toFixed(0)}%</b>
+                  <span className="w-3 h-3 rounded-sm inline-block bg-[#DC3545]" /> Away Win <b>{ha.away_win_pct.toFixed(0)}%</b>
                 </div>
                 <div className="flex items-center gap-2 text-[13px]">
-                  <span className="w-3 h-3 rounded-sm inline-block bg-[#FD7E14]" /> Draw <b>{meta.draw_pct.toFixed(0)}%</b>
+                  <span className="w-3 h-3 rounded-sm inline-block bg-[#FD7E14]" /> Draw <b>{ha.draw_pct.toFixed(0)}%</b>
                 </div>
               </div>
             </>
@@ -153,25 +164,38 @@ export function DashboardClient() {
 
       {/* Top lists */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        {meta && (
+        {r?.match_distribution?.matches_per_tournament && (
           <TopList
             title="🏆 Top Tournaments"
             viewAllHref="/tournaments"
-            items={Object.entries(meta.tournament_distribution)
+            items={Object.entries(r.match_distribution.matches_per_tournament)
               .sort(([, a], [, b]) => b - a)
               .slice(0, 5)
               .map(([name, val], i) => ({ rank: i + 1, name, value: formatNumber(val), sub: "matches" }))}
           />
         )}
-        {meta && (
-          <TopList
-            title="🌍 Top Countries"
-            viewAllHref="/countries"
-            items={Object.entries(meta.country_distribution)
-              .sort(([, a], [, b]) => b - a)
-              .slice(0, 5)
-              .map(([name, val], i) => ({ rank: i + 1, name, value: formatNumber(val), sub: "matches" }))}
-          />
+        {g && (
+          <div className="card p-5">
+            <h3 className="section-title mb-4">⚽ Goalscorers</h3>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="text-center p-3 bg-[#F8F9FA] rounded-lg">
+                <div className="text-[18px] font-bold">{formatNumber(g.unique_scorers)}</div>
+                <div className="text-[12px] text-[#6C757D]">Unique Scorers</div>
+              </div>
+              <div className="text-center p-3 bg-[#F8F9FA] rounded-lg">
+                <div className="text-[18px] font-bold">{formatNumber(g.own_goals)}</div>
+                <div className="text-[12px] text-[#6C757D]">Own Goals</div>
+              </div>
+              <div className="text-center p-3 bg-[#F8F9FA] rounded-lg">
+                <div className="text-[18px] font-bold">{formatNumber(g.total_goals_recorded)}</div>
+                <div className="text-[12px] text-[#6C757D]">Goals Recorded</div>
+              </div>
+              <div className="text-center p-3 bg-[#F8F9FA] rounded-lg">
+                <div className="text-[18px] font-bold">{g.unique_teams_scored_for}</div>
+                <div className="text-[12px] text-[#6C757D]">Teams Scored For</div>
+              </div>
+            </div>
+          </div>
         )}
       </div>
 

@@ -1,5 +1,6 @@
-// TypeScript types matching the FastAPI Pydantic models
+// TypeScript types matching the actual FastAPI responses
 
+// ── Filter params ──
 export interface FilterParams {
   tournaments?: string[];
   countries?: string[];
@@ -7,208 +8,99 @@ export interface FilterParams {
   date_to?: string;
 }
 
-export interface SeriesStats {
+// ── Shared ──
+export interface StatsSeries {
   count: number;
+  sum: number;
   mean: number;
   median: number;
-  std: number;
+  mode: number[];
   min: number;
   max: number;
-  q1: number;
-  q3: number;
-  skew: number;
+  stdev: number;
+  variance: number;
+  skewness: number;
+  kurtosis: number;
+  p25: number;
+  p50: number;
+  p75: number;
   iqr: number;
+  range: number;
 }
 
-export interface Distribution {
-  value: number;
-  label: string;
+export interface BiggestWin {
+  date: string;
+  home_team: string;
+  away_team: string;
+  home_score: number;
+  away_score: number;
+  tournament?: string;
+  city?: string;
 }
 
-// ── Summary ──
+export interface TeamWinEntry {
+  team: string;
+  wins: number;
+}
+
+export interface CityMatchEntry {
+  city: string;
+  matches: number;
+}
+
+// ── Summary (dashboard) ──
 export interface SummaryResponse {
-  results_metadata: {
+  results: {
     total_matches: number;
+    date_range: { from: string; to: string };
+    tournaments_count: number;
+    most_common_tournament: string;
+    unique_home_teams: number;
+    unique_away_teams: number;
     total_goals: number;
-    total_tournaments: number;
-    total_countries: number;
-    total_teams: number;
-    unique_scorers: number;
-    home_win_pct: number;
-    away_win_pct: number;
-    draw_pct: number;
-    total_home_goals: number;
-    total_away_goals: number;
     avg_goals_per_match: number;
-    tournament_distribution: Record<string, number>;
-    country_distribution: Record<string, number>;
-    match_distribution: Record<string, number>;
-    goal_distribution: Distribution[];
-    win_distribution: Record<string, number>;
-    goals_per_match_stats: SeriesStats;
-    home_goals_stats: SeriesStats;
-    away_goals_stats: SeriesStats;
-    shootouts: {
-      total_shootouts: number;
+    home_advantage: {
+      total_matches: number;
       home_wins: number;
+      home_win_pct: number;
+      draws: number;
+      draw_pct: number;
       away_wins: number;
-      winner_distribution: Distribution[];
+      away_win_pct: number;
     };
-    former_names: Record<string, string[]>;
+    goal_distribution: {
+      home_score: StatsSeries;
+      away_score: StatsSeries;
+    };
+    match_distribution: {
+      matches_per_year: Record<string, number>;
+      matches_per_tournament: Record<string, number>;
+    };
+  };
+  goalscorers: {
+    total_goals_recorded: number;
+    unique_scorers: number;
+    unique_teams_scored_for: number;
+    date_range: { from: string; to: string };
+    own_goals: number;
   };
 }
 
-// ── Teams ──
-export interface TeamStats {
-  team: string;
-  matches: number;
-  wins: number;
-  losses: number;
-  draws: number;
-  win_rate: number;
-  loss_rate: number;
-  draw_rate: number;
-  goals_for: number;
-  goals_against: number;
-  avg_goals_per_match: number;
-  biggest_win: { score: string; opponent: string; date: string } | null;
-  biggest_loss: { score: string; opponent: string; date: string } | null;
-  goals_for_stats: SeriesStats;
-  goals_against_stats: SeriesStats;
-  goal_differential: number;
+// ── Rankings / Most ──
+// The API returns { stat, top_n, ranking: [...], error, message }
+// Each item in ranking has the stat name (or mapped name) as its value field
+export interface TeamRankingResponse {
+  stat: string;
+  top_n: number;
+  ranking: Array<Record<string, unknown>>;
+  error: string | null;
+  message: string | null;
 }
 
-export interface TeamListItem {
-  team: string;
-  matches: number;
-  wins: number;
-  losses: number;
-  draws: number;
-  win_rate: number;
-}
-
-// ── H2H ──
-export interface HeadToHeadResponse {
-  team1: string;
-  team2: string;
-  team1_wins: number;
-  team2_wins: number;
-  draws: number;
-  total_matches: number;
-  team1_goals: number;
-  team2_goals: number;
-  team1_win_rate: number;
-  team2_win_rate: number;
-  team1_avg_goals: number;
-  team2_avg_goals: number;
-  total_goals_per_match_stats: SeriesStats;
-}
-
-// ── Tournaments ──
-export interface TournamentListItem {
-  tournament: string;
-  matches: number;
-  goals: number;
-  first_year: number;
-  last_year: number;
-  teams: number;
-  seasons: number;
-  avg_goals_per_match: number;
-}
-
-export interface TournamentDetail {
-  tournament: string;
-  matches: number;
-  goals: number;
-  first_year: number;
-  last_year: number;
-  seasons: number;
-  teams: number;
-  avg_goals_per_match: number;
-  home_win_pct: number;
-  away_win_pct: number;
-  draw_pct: number;
-  yearly_breakdown: Array<{
-    year: number;
-    matches: number;
-    goals: number;
-    avg: number;
-    home_wins: number;
-    away_wins: number;
-    draws: number;
-    hosts: string[];
-    top_teams: Record<string, number>;
-  }>;
-  top_hosts: Record<string, number>;
-  top_teams: Record<string, number>;
-}
-
-// ── Countries ──
-export interface CountryListItem {
-  country: string;
-  matches: number;
-  goals: number;
-  cities: number;
-  first_match: string;
-  last_match: string;
-}
-
-export interface CountryDetail {
-  country: string;
-  matches: number;
-  goals: number;
-  cities: number;
-  first_match: string;
-  last_match: string;
-  biggest_win: { score: string; teams: string; date: string } | null;
-  top_tournaments: Record<string, number>;
-  top_teams: Record<string, number>;
-  top_cities: Record<string, number>;
-}
-
-// ── Cities ──
-export interface CityListItem {
-  city: string;
-  country: string;
-  matches: number;
-  goals: number;
-  tournaments: number;
-}
-
-export interface CityDetail {
-  city: string;
-  country: string;
-  matches: number;
-  goals: number;
-  tournaments: number;
-  biggest_win: { score: string; teams: string; date: string } | null;
-  top_teams: Record<string, number>;
-  top_tournaments: Record<string, number>;
-}
-
-// ── Rankings ──
 export interface TeamRankingItem {
   rank: number;
   team: string;
   value: number;
-}
-
-export interface TeamRankingResponse {
-  stat: string;
-  top_n: number;
-  teams: TeamRankingItem[];
-}
-
-// ── Top scorers ──
-export interface TopScorerItem {
-  rank: number;
-  player: string;
-  goals: number;
-}
-
-export interface TopScorersResponse {
-  scorers: TopScorerItem[];
-  top_n: number;
 }
 
 // ── Biggest wins ──
@@ -229,4 +121,179 @@ export interface GoalsPerYearItem {
   goals: number;
   matches: number;
   ratio: number;
+}
+
+// ── Tournaments ──
+export interface TournamentListItem {
+  tournament: string;
+  first_year: number;
+  last_year: number;
+  editions: number;
+  matches: number;
+  total_goals: number;
+  home_wins: number;
+  away_wins: number;
+  draws: number;
+  avg_goals: number;
+  unique_teams: number;
+  seasons: string[];
+}
+
+export interface TournamentDetail {
+  tournament: string;
+  summary: {
+    first_year: number;
+    last_year: number;
+    editions: number;
+    matches: number;
+    total_goals: number;
+    avg_goals_per_match: number;
+    home_wins: number;
+    away_wins: number;
+    draws: number;
+    unique_teams: number;
+    biggest_win: BiggestWin | null;
+    top_teams_by_wins: TeamWinEntry[];
+  };
+  yearly: Array<{
+    year: number;
+    matches: number;
+    goals: number;
+    avg_goals: number;
+    home_wins: number;
+    away_wins: number;
+    draws: number;
+    teams: number;
+    host_country: string;
+  }>;
+}
+
+// ── Teams ──
+export interface TeamStats {
+  team: string;
+  matches_played: number;
+  wins: number;
+  draws: number;
+  losses: number;
+  win_rate: number;
+  goals_for_stats: StatsSeries;
+  goals_against_stats: StatsSeries;
+  goal_diff_stats: StatsSeries;
+}
+
+export interface TeamListItem {
+  team: string;
+  matches: number;
+  wins: number;
+  losses: number;
+  draws: number;
+  win_rate: number;
+}
+
+// ── Head-to-Head ──
+export interface HeadToHeadResponse {
+  team1: string;
+  team2: string;
+  team1_wins: number;
+  team2_wins: number;
+  draws: number;
+  total_matches: number;
+  team1_goals: number;
+  team2_goals: number;
+  team1_win_rate: number;
+  team2_win_rate: number;
+  team1_avg_goals: number;
+  team2_avg_goals: number;
+  total_goals_per_match_stats: {
+    mean: number;
+    median: number;
+    std: number;
+    min: number;
+    max: number;
+  };
+}
+
+// ── Countries ──
+export interface CountryListItem {
+  country: string;
+  matches: number;
+  total_goals: number;
+  home_wins: number;
+  away_wins: number;
+  draws: number;
+  unique_teams: number;
+  tournaments: number;
+  cities: number;
+  first_year: number;
+  last_year: number;
+  avg_goals: number;
+}
+
+export interface CountryDetail {
+  country: string;
+  summary: {
+    matches: number;
+    first_year: number;
+    last_year: number;
+    total_goals: number;
+    avg_goals_per_match: number;
+    home_wins: number;
+    away_wins: number;
+    draws: number;
+    unique_teams: number;
+    unique_tournaments: number;
+    unique_cities: number;
+    biggest_win: (BiggestWin & { city?: string }) | null;
+    top_teams_by_wins: TeamWinEntry[];
+    top_cities: Array<{ city: string; matches: number }>;
+    top_tournaments: Array<{ tournament: string; matches: number }>;
+  };
+}
+
+// ── Cities ──
+export interface CityListItem {
+  city: string;
+  country: string;
+  matches: number;
+  total_goals: number;
+  home_wins: number;
+  away_wins: number;
+  draws: number;
+  unique_teams: number;
+  tournaments: number;
+  first_year: number;
+  last_year: number;
+  avg_goals: number;
+}
+
+export interface CityDetail {
+  city: string;
+  country: string;
+  summary: {
+    matches: number;
+    first_year: number;
+    last_year: number;
+    total_goals: number;
+    avg_goals_per_match: number;
+    home_wins: number;
+    away_wins: number;
+    draws: number;
+    unique_teams: number;
+    unique_tournaments: number;
+    biggest_win: BiggestWin | null;
+    top_teams_by_wins: TeamWinEntry[];
+    top_tournaments: Array<{ tournament: string; matches: number }>;
+  };
+}
+
+// ── Top scorers ──
+export interface TopScorerItem {
+  rank: number;
+  player: string;
+  goals: number;
+}
+
+export interface TopScorersResponse {
+  scorers: TopScorerItem[];
+  top_n: number;
 }

@@ -5,7 +5,9 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function formatNumber(n: number): string {
+export function formatNumber(n: number | null | undefined): string {
+  if (n === null || n === undefined) return "—";
+  if (typeof n !== "number" || !isFinite(n)) return "—";
   return n.toLocaleString("en-US");
 }
 
