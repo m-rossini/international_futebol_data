@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { FilterBar } from "@/components/shared/FilterBar";
 import { DataTable } from "@/components/shared/DataTable";
@@ -28,34 +28,38 @@ function buildFilterQs(params: { tournaments: string; countries: string; date_fr
 
 export function GoalsPerYearClient() {
   const searchParams = useSearchParams();
-  const sp = useSearchParams();
-  const params = useMemo(() => ({
-    tournaments: sp.get("tournaments") || "",
-    countries: sp.get("countries") || "",
-    date_from: sp.get("date_from") || "",
-    date_to: sp.get("date_to") || "",
-  }), [sp]);
+  const tournaments = searchParams.get("tournaments") || "";
+  const countries = searchParams.get("countries") || "";
+  const dateFrom = searchParams.get("date_from") || "";
+  const dateTo = searchParams.get("date_to") || "";
   const [sortBy, setSortBy] = useState(searchParams.get("sort_by") || "goals");
   const [order, setOrder] = useState(searchParams.get("order") || "desc");
   const [data, setData] = useState<GoalsPerYearItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const fq = buildFilterQs(params);
-      const qs = `sort_by=${sortBy}&order=${order}${fq ? "&" + fq : ""}`;
-      const res = await fetch(`${API}/goals_per_year?${qs}`).then((r) => r.json());
-      setData(res);
-    } catch (err) {
-      console.error("Failed to load goals per year:", err);
-    }
-    setLoading(false);
-  }, [sortBy, order, params.tournaments, params.countries, params.date_from, params.date_to]);
-
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    let cancelled = false;
+    const params = { tournaments, countries, date_from: dateFrom, date_to: dateTo };
+    const fq = buildFilterQs(params);
+    const qs = `sort_by=${sortBy}&order=${order}${fq ? "&" + fq : ""}`;
+
+    async function load() {
+      if (!cancelled) setLoading(true);
+      try {
+        const res = await fetch(`${API}/goals_per_year?${qs}`).then((r) => r.json());
+        if (!cancelled) {
+          setData(res);
+          setLoading(false);
+        }
+      } catch (err) {
+        if (!cancelled) setLoading(false);
+        console.error("Failed to load goals per year:", err);
+      }
+    }
+
+    load();
+    return () => { cancelled = true; };
+  }, [sortBy, order, tournaments, countries, dateFrom, dateTo]);
 
   const sortedChart = [...data].sort((a, b) => a.year - b.year);
   const maxGoals = sortedChart.length > 0 ? Math.max(...sortedChart.map((d) => d.goals)) : 1;

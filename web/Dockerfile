@@ -16,4 +16,4 @@ RUN pnpm install
 COPY . .
 
 EXPOSE 3000
-CMD ["pnpm", "dev", "--port", "3000", "--hostname", "0.0.0.0"]
+CMD ["pnpm", "next", "dev", "--webpack", "--port", "3000", "--hostname", "0.0.0.0"]

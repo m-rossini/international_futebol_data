@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { StatsCard } from "@/components/shared/StatsCard";
 import { TopList } from "@/components/shared/TopList";
@@ -22,35 +22,40 @@ function buildFilterQs(params: { tournaments: string; countries: string; date_fr
 
 export function DashboardClient() {
   const sp = useSearchParams();
-  const params = useMemo(() => ({
-    tournaments: sp.get("tournaments") || "",
-    countries: sp.get("countries") || "",
-    date_from: sp.get("date_from") || "",
-    date_to: sp.get("date_to") || "",
-  }), [sp]);
+  const tournaments = sp.get("tournaments") || "";
+  const countries = sp.get("countries") || "";
+  const dateFrom = sp.get("date_from") || "";
+  const dateTo = sp.get("date_to") || "";
   const [summary, setSummary] = useState<SummaryResponse | null>(null);
   const [topTeams, setTopTeams] = useState<TeamRankingItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const fq = buildFilterQs(params);
-      const [summaryRes, teamsRes] = await Promise.all([
-        fetch(`${API}/summary${fq ? "?" + fq : ""}`).then((r) => r.json()),
-        fetch(`${API}/most/wins?top_n=10${fq ? "&" + fq : ""}`).then((r) => r.json()),
-      ]);
-      setSummary(summaryRes);
-      setTopTeams(teamsRes.teams || []);
-    } catch (err) {
-      console.error("Failed to load dashboard data:", err);
-    }
-    setLoading(false);
-  }, [params.tournaments, params.countries, params.date_from, params.date_to]);
-
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    let cancelled = false;
+    const params = { tournaments, countries, date_from: dateFrom, date_to: dateTo };
+    const fq = buildFilterQs(params);
+
+    async function load() {
+      if (!cancelled) setLoading(true);
+      try {
+        const [summaryRes, teamsRes] = await Promise.all([
+          fetch(`${API}/summary${fq ? "?" + fq : ""}`).then((r) => r.json()),
+          fetch(`${API}/most/wins?top_n=10${fq ? "&" + fq : ""}`).then((r) => r.json()),
+        ]);
+        if (!cancelled) {
+          setSummary(summaryRes);
+          setTopTeams(teamsRes.teams || []);
+          setLoading(false);
+        }
+      } catch (err) {
+        if (!cancelled) setLoading(false);
+        console.error("Failed to load dashboard data:", err);
+      }
+    }
+
+    load();
+    return () => { cancelled = true; };
+  }, [tournaments, countries, dateFrom, dateTo]);
 
   if (loading) {
     return (

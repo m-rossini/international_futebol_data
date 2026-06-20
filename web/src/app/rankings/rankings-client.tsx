@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { FilterBar } from "@/components/shared/FilterBar";
 import { TopList } from "@/components/shared/TopList";
@@ -32,34 +32,38 @@ function buildFilterQs(params: { tournaments: string; countries: string; date_fr
 
 export function RankingsClient() {
   const searchParams = useSearchParams();
-  const sp = useSearchParams();
-  const params = useMemo(() => ({
-    tournaments: sp.get("tournaments") || "",
-    countries: sp.get("countries") || "",
-    date_from: sp.get("date_from") || "",
-    date_to: sp.get("date_to") || "",
-  }), [sp]);
+  const tournaments = searchParams.get("tournaments") || "";
+  const countries = searchParams.get("countries") || "";
+  const dateFrom = searchParams.get("date_from") || "";
+  const dateTo = searchParams.get("date_to") || "";
   const [stat, setStat] = useState(searchParams.get("stat") || "wins");
   const [topN, setTopN] = useState(Number(searchParams.get("top_n") || 20));
   const [teams, setTeams] = useState<TeamRankingItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const fq = buildFilterQs(params);
-      const qs = `top_n=${topN}${fq ? "&" + fq : ""}`;
-      const res = await fetch(`${API}/most/${stat}?${qs}`).then((r) => r.json());
-      setTeams(res.teams || []);
-    } catch (err) {
-      console.error("Failed to load rankings:", err);
-    }
-    setLoading(false);
-  }, [stat, topN, params.tournaments, params.countries, params.date_from, params.date_to]);
-
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    let cancelled = false;
+    const params = { tournaments, countries, date_from: dateFrom, date_to: dateTo };
+    const fq = buildFilterQs(params);
+    const qs = `top_n=${topN}${fq ? "&" + fq : ""}`;
+
+    async function load() {
+      if (!cancelled) setLoading(true);
+      try {
+        const res = await fetch(`${API}/most/${stat}?${qs}`).then((r) => r.json());
+        if (!cancelled) {
+          setTeams(res.teams || []);
+          setLoading(false);
+        }
+      } catch (err) {
+        if (!cancelled) setLoading(false);
+        console.error("Failed to load rankings:", err);
+      }
+    }
+
+    load();
+    return () => { cancelled = true; };
+  }, [stat, topN, tournaments, countries, dateFrom, dateTo]);
 
   // Update URL when stat/topN changes
   useEffect(() => {

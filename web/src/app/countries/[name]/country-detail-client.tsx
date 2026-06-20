@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { StatsCard } from "@/components/shared/StatsCard";
@@ -23,31 +23,36 @@ function buildFilterQs(params: { tournaments: string; countries: string; date_fr
 }
 
 export function CountryDetailClient({ name }: { name: string }) {
-  const sp = useSearchParams();
-  const params = useMemo(() => ({
-    tournaments: sp.get("tournaments") || "",
-    countries: sp.get("countries") || "",
-    date_from: sp.get("date_from") || "",
-    date_to: sp.get("date_to") || "",
-  }), [sp]);
+  const searchParams = useSearchParams();
+  const tournaments = searchParams.get("tournaments") || "";
+  const countries = searchParams.get("countries") || "";
+  const dateFrom = searchParams.get("date_from") || "";
+  const dateTo = searchParams.get("date_to") || "";
   const [data, setData] = useState<CountryDetail | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const fq = buildFilterQs(params);
-      const res = await fetch(`${API}/country/${encodeURIComponent(name)}${fq ? "?" + fq : ""}`).then((r) => r.json());
-      setData(res);
-    } catch (err) {
-      console.error("Failed to load country:", err);
-    }
-    setLoading(false);
-  }, [name, params.tournaments, params.countries, params.date_from, params.date_to]);
-
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    let cancelled = false;
+    const params = { tournaments, countries, date_from: dateFrom, date_to: dateTo };
+    const fq = buildFilterQs(params);
+
+    async function load() {
+      if (!cancelled) setLoading(true);
+      try {
+        const res = await fetch(`${API}/country/${encodeURIComponent(name)}${fq ? "?" + fq : ""}`).then((r) => r.json());
+        if (!cancelled) {
+          setData(res);
+          setLoading(false);
+        }
+      } catch (err) {
+        if (!cancelled) setLoading(false);
+        console.error("Failed to load country:", err);
+      }
+    }
+
+    load();
+    return () => { cancelled = true; };
+  }, [name, tournaments, countries, dateFrom, dateTo]);
 
   if (loading) {
     return (

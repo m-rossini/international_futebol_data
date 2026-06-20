@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { FilterBar } from "@/components/shared/FilterBar";
@@ -23,13 +23,10 @@ function buildFilterQs(params: { tournaments: string; countries: string; date_fr
 
 export function HeadToHeadClient() {
   const searchParams = useSearchParams();
-  const sp = useSearchParams();
-  const filterParams = useMemo(() => ({
-    tournaments: sp.get("tournaments") || "",
-    countries: sp.get("countries") || "",
-    date_from: sp.get("date_from") || "",
-    date_to: sp.get("date_to") || "",
-  }), [sp]);
+  const tournaments = searchParams.get("tournaments") || "";
+  const countries = searchParams.get("countries") || "";
+  const dateFrom = searchParams.get("date_from") || "";
+  const dateTo = searchParams.get("date_to") || "";
   const [team1, setTeam1] = useState(searchParams.get("team1") || "");
   const [team2, setTeam2] = useState(searchParams.get("team2") || "");
   const [data, setData] = useState<HeadToHeadResponse | null>(null);
@@ -41,7 +38,8 @@ export function HeadToHeadClient() {
     setLoading(true);
     setError("");
     try {
-      const fq = buildFilterQs(filterParams);
+      const params = { tournaments, countries, date_from: dateFrom, date_to: dateTo };
+      const fq = buildFilterQs(params);
       const qs = `team1=${encodeURIComponent(team1.trim())}&team2=${encodeURIComponent(team2.trim())}${fq ? "&" + fq : ""}`;
       const res = await fetch(`${API}/head_to_head?${qs}`);
       if (!res.ok) {
@@ -56,7 +54,7 @@ export function HeadToHeadClient() {
       setData(null);
     }
     setLoading(false);
-  }, [team1, team2, filterParams.tournaments, filterParams.countries, filterParams.date_from, filterParams.date_to]);
+  }, [team1, team2, tournaments, countries, dateFrom, dateTo]);
 
   useEffect(() => {
     if (team1 && team2) fetchData();
