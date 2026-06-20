@@ -1,4 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+
+// Set env before module resolution so API_BASE is deterministic
+vi.hoisted(() => {
+  process.env.NEXT_PUBLIC_API_URL = "/api/proxy";
+});
+
 import { getSummary, getTeams, getTeam, getTournaments, getTournament } from "@/lib/api";
 
 const mockFetch = vi.fn();
