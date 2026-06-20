@@ -49,8 +49,8 @@ help:
 	@echo "    make web-run        Start dev server inside container"
 	@echo "    make web-shell      Open shell inside container"
 	@echo "    make web-logs       Tail container logs"
-	@echo "    make web-test       Type check + lint (ephemeral)"
-	@echo "    make web-test-cov   (placeholder)"
+	@echo "    make web-test       Run vitest + lint (ephemeral)"
+	@echo "    make web-test-cov   Run vitest with coverage (ephemeral)"
 	@echo ""
 
 # ═══════════════════════════════════════════════════════════
@@ -135,10 +135,13 @@ web-test: web-build
 	$(DOCKER) run --rm -t \
 		-v $(CURDIR)/web:/app \
 		$(IMG_WEB):dev \
-		sh -c "pnpm lint"
+		sh -c "pnpm vitest run && pnpm lint"
 
-web-test-cov:
-	@echo "(web-test-cov — placeholder, no test suite yet)"
+web-test-cov: web-build
+	$(DOCKER) run --rm -t \
+		-v $(CURDIR)/web:/app \
+		$(IMG_WEB):dev \
+		sh -c "pnpm vitest run --coverage"
 
 # ═══════════════════════════════════════════════════════════
 #  Full stack (docker compose)

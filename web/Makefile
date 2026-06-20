@@ -13,4 +13,4 @@ lint:
 	pnpm lint
 
 test:
-	@echo "No test suite yet"
+	pnpm vitest run
