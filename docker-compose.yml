@@ -23,10 +23,9 @@ services:
     build:
       context: ./web
       dockerfile: Dockerfile
-      target: development
     container_name: futebol-web
     ports:
-      - "3000:3000"
+      - "7500:3000"
     volumes:
       - ./web:/app
       - /app/node_modules

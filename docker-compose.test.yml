@@ -1,0 +1,29 @@
+services:
+  api-test:
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+      target: development
+    container_name: futebol-api-test
+    volumes:
+      - ./api:/app
+      - /home/perez/projetos/international_results:/home/perez/projetos/international_results:ro
+    environment:
+      - FORCE_COLOR=1
+    command:
+      - sh
+      - -c
+      - "uv sync && PYTHONPATH=football_stats uv run pytest tests/ -v --color=yes"
+
+  web-test:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+      target: development
+    container_name: futebol-web-test
+    volumes:
+      - ./web:/app
+    command:
+      - sh
+      - -c
+      - "pnpm lint"

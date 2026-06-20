@@ -1,49 +1,19 @@
-# ── Base stage ──
-FROM node:22-slim AS base
+FROM node:22-slim AS development
 
 WORKDIR /app
 
-# Enable pnpm
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@10 --activate
 
-# ── Dependencies ──
-FROM base AS deps
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl make \
+    && rm -rf /var/lib/apt/lists/*
 
-COPY package.json pnpm-lock.yaml* ./
-RUN pnpm install --frozen-lockfile
+COPY .npmrc package.json ./
+RUN pnpm install
 
-# ── Development stage ──
-FROM base AS development
-
-COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 EXPOSE 3000
-
 CMD ["pnpm", "dev", "--port", "3000", "--hostname", "0.0.0.0"]
-
-# ── Build stage ──
-FROM base AS builder
-
-COPY --from=deps /app/node_modules ./node_modules
-COPY . .
-
-ENV NEXT_TELEMETRY_DISABLED=1
-
-RUN pnpm build
-
-# ── Production stage ──
-FROM base AS production
-
-ENV NODE_ENV=production
-ENV NEXT_TELEMETRY_DISABLED=1
-
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
-
-EXPOSE 3000
-
-CMD ["node", "server.js"]
