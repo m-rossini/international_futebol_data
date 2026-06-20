@@ -4,7 +4,6 @@ import { useEffect, useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { FilterBar } from "@/components/shared/FilterBar";
-import { StatsCard } from "@/components/shared/StatsCard";
 import { formatNumber } from "@/lib/utils";
 import { Swords, Search } from "lucide-react";
 import type { HeadToHeadResponse } from "@/lib/types";
@@ -79,6 +78,7 @@ export function HeadToHeadClient() {
   }, [team1, team2, tournaments, countries, dateFrom, dateTo]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (team1 && team2) fetchData();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 

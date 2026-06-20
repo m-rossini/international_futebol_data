@@ -115,6 +115,7 @@ export function CityDetailClient({ name }: { name: string }) {
         <h1 className="page-title">{data.city}</h1>
         {data.country && (
           <div className="flex items-center gap-1.5 text-[14px] text-[#6C757D]">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={getFlagUrl(data.country, 24)} alt="" className="w-5 h-3.5 object-cover rounded-sm" />
             <Link href={`/countries/${encodeURIComponent(data.country)}`} className="hover:text-[#1A56DB]">
               {data.country}

@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { FilterBar } from "@/components/shared/FilterBar";
-import { formatNumber } from "@/lib/utils";
 import type { BiggestWinItem } from "@/lib/types";
 
 const API = "/api/proxy";

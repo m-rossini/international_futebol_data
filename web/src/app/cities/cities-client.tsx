@@ -81,6 +81,7 @@ export function CitiesClient() {
       key: "country", header: "Country", sortable: true,
       render: (c: CityListItem) => (
         <div className="flex items-center gap-2">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={getFlagUrl(c.country, 24)} alt="" className="w-5 h-3.5 object-cover rounded-sm" />
           <span>{c.country}</span>
         </div>

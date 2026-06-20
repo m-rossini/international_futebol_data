@@ -2,7 +2,6 @@ import type {
   FilterParams,
   SummaryResponse,
   TeamStats,
-  TeamListItem,
   HeadToHeadResponse,
   TournamentListItem,
   TournamentDetail,
