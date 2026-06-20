@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { FilterBar } from "@/components/shared/FilterBar";
@@ -10,6 +10,16 @@ import type { TournamentListItem } from "@/lib/types";
 
 const API = "/api/proxy";
 
+const SORTS = [
+  { key: "name", label: "Name" },
+  { key: "matches", label: "Matches" },
+  { key: "editions", label: "Editions" },
+  { key: "first_year", label: "First Year" },
+  { key: "total_goals", label: "Goals" },
+  { key: "unique_teams", label: "Teams" },
+];
+
+type SortKey = (typeof SORTS)[number]["key"];
 
 function buildFilterQs(params: { tournaments: string; countries: string; date_from: string; date_to: string }): string {
   const q = new URLSearchParams();
@@ -28,33 +38,33 @@ export function TournamentsClient() {
   const dateTo = searchParams.get("date_to") || "";
   const [tournamentList, setTournamentList] = useState<TournamentListItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [sortBy, setSortBy] = useState<SortKey>("name");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const fetchedRef = useRef(false);
 
   useEffect(() => {
+    if (fetchedRef.current) return;
+    fetchedRef.current = true;
+
     const controller = new AbortController();
-    let cancelled = false;
     const params = { tournaments, countries, date_from: dateFrom, date_to: dateTo };
     const fq = buildFilterQs(params);
 
     async function load() {
-      if (!cancelled) setLoading(true);
+      setLoading(true);
       try {
         const res = await fetch(`${API}/tournaments${fq ? "?" + fq : ""}`, { signal: controller.signal }).then((r) => r.json());
-        if (!cancelled) {
-          setTournamentList(res);
-          setLoading(false);
-        }
+        setTournamentList(res);
+        setLoading(false);
       } catch (err) {
         if ((err as Error).name === "AbortError") return;
-        if (!cancelled) setLoading(false);
+        setLoading(false);
         console.error("Failed to load tournaments:", err);
       }
     }
 
     load();
-    return () => {
-      cancelled = true;
-      controller.abort();
-    };
+    return () => { controller.abort(); };
   }, [tournaments, countries, dateFrom, dateTo]);
 
   if (loading) {
@@ -77,18 +87,58 @@ export function TournamentsClient() {
     );
   }
 
+  const sorted = [...tournamentList].sort((a, b) => {
+    let cmp: number;
+    if (sortBy === "name") {
+      cmp = a.tournament.localeCompare(b.tournament);
+    } else {
+      const lookup: Record<Exclude<SortKey, "name">, (item: TournamentListItem) => number> = {
+        matches: (x) => x.matches,
+        editions: (x) => x.editions,
+        first_year: (x) => x.first_year,
+        total_goals: (x) => x.total_goals,
+        unique_teams: (x) => x.unique_teams,
+      };
+      cmp = lookup[sortBy](a) - lookup[sortBy](b);
+    }
+    return sortDir === "asc" ? cmp : -cmp;
+  });
+
   return (
     <div>
       <h1 className="page-title mb-2">Tournaments</h1>
       <p className="text-[14px] text-[#6C757D] mb-4">
         {tournamentList.length} tournaments. Click a card to view details.
       </p>
-      <FilterBar showTournaments showCountries showDateRange />
+      <FilterBar showCountries showDateRange />
+
+      {/* Sort controls */}
+      <div className="card p-4 mb-6">
+        <div className="flex items-center gap-3 flex-wrap">
+          <span className="text-[13px] font-semibold text-[#6C757D]">Sort by:</span>
+          <div className="flex gap-1 flex-wrap">
+            {SORTS.map((s) => (
+              <button
+                key={s.key}
+                onClick={() => {
+                  if (sortBy === s.key) {
+                    setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+                  } else {
+                    setSortBy(s.key);
+                    setSortDir("desc");
+                  }
+                }}
+                className={`chip ${sortBy === s.key ? "active" : ""}`}
+              >
+                {s.label} {sortBy === s.key && (sortDir === "asc" ? "↑" : "↓")}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {[...tournamentList]
-          .sort((a, b) => a.tournament.localeCompare(b.tournament))
-          .map((t) => (
+        {sorted.map((t) => (
           <Link key={t.tournament} href={`/tournaments/${encodeURIComponent(t.tournament)}`}>
             <div className="card p-5 hover:shadow-md hover:border-[#1A56DB] transition-all cursor-pointer h-full">
               <div className="flex items-center gap-2 mb-3">

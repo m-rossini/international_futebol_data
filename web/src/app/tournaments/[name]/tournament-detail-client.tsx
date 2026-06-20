@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { StatsCard } from "@/components/shared/StatsCard";
@@ -9,10 +9,18 @@ import { FilterBar } from "@/components/shared/FilterBar";
 import { TopList } from "@/components/shared/TopList";
 import { formatNumber } from "@/lib/utils";
 import { ArrowLeft } from "lucide-react";
-import type { TournamentDetail } from "@/lib/types";
+import type { TournamentDetail, TeamCategoryItem } from "@/lib/types";
 
 const API = "/api/proxy";
 
+const TOP_TEAM_CATEGORIES: { key: keyof TournamentDetail["summary"]["top_teams"]; label: string }[] = [
+  { key: "by_wins", label: "Wins" },
+  { key: "by_losses", label: "Losses" },
+  { key: "by_draws", label: "Draws" },
+  { key: "by_goals_for", label: "Goals For" },
+  { key: "by_goals_against", label: "Goals Against" },
+  { key: "by_goal_diff", label: "Goal Diff" },
+];
 
 function buildFilterQs(params: { tournaments: string; countries: string; date_from: string; date_to: string }): string {
   const q = new URLSearchParams();
@@ -31,28 +39,32 @@ export function TournamentDetailClient({ name }: { name: string }) {
   const dateTo = searchParams.get("date_to") || "";
   const [data, setData] = useState<TournamentDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [topTeamCategory, setTopTeamCategory] = useState<string>("by_wins");
+  const fetchedRef = useRef(false);
 
   useEffect(() => {
-    let cancelled = false;
+    if (fetchedRef.current) return;
+    fetchedRef.current = true;
+
+    const controller = new AbortController();
     const params = { tournaments, countries, date_from: dateFrom, date_to: dateTo };
     const fq = buildFilterQs(params);
 
     async function load() {
-      if (!cancelled) setLoading(true);
+      setLoading(true);
       try {
-        const res = await fetch(`${API}/tournament/${encodeURIComponent(name)}${fq ? "?" + fq : ""}`).then((r) => r.json());
-        if (!cancelled) {
-          setData(res);
-          setLoading(false);
-        }
+        const res = await fetch(`${API}/tournament/${encodeURIComponent(name)}${fq ? "?" + fq : ""}`, { signal: controller.signal }).then((r) => r.json());
+        setData(res);
+        setLoading(false);
       } catch (err) {
-        if (!cancelled) setLoading(false);
+        if ((err as Error).name === "AbortError") return;
+        setLoading(false);
         console.error("Failed to load tournament:", err);
       }
     }
 
     load();
-    return () => { cancelled = true; };
+    return () => { controller.abort(); };
   }, [name, tournaments, countries, dateFrom, dateTo]);
 
   if (loading) {
@@ -86,17 +98,17 @@ export function TournamentDetailClient({ name }: { name: string }) {
   }
 
   const s = data.summary;
-  const topTeams = (s.top_teams_by_wins || [])
+  const topTeamsData = (s.top_teams?.[topTeamCategory as keyof typeof s.top_teams] as TeamCategoryItem[]) || [];
+  const topTeams = topTeamsData
     .slice(0, 10)
     .map((t, i) => ({
       rank: i + 1,
       name: t.team,
-      value: formatNumber(t.wins),
+      value: formatNumber(t.value),
       href: `/teams/${encodeURIComponent(t.team)}`,
     }));
 
   const homePct = s.matches > 0 ? (s.home_wins / s.matches) * 100 : 0;
-  const awayPct = s.matches > 0 ? (s.away_wins / s.matches) * 100 : 0;
   const drawPct = s.matches > 0 ? (s.draws / s.matches) * 100 : 0;
 
   return (
@@ -109,7 +121,7 @@ export function TournamentDetailClient({ name }: { name: string }) {
         {s.first_year} – {s.last_year} · {s.editions} editions · {s.unique_teams} teams
       </p>
 
-      <FilterBar showTournaments showCountries showDateRange />
+      <FilterBar showCountries showDateRange />
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
@@ -164,9 +176,29 @@ export function TournamentDetailClient({ name }: { name: string }) {
         </div>
       )}
 
-      {/* Top Teams */}
+      {/* Top Teams — multi-category */}
       <div className="mb-8">
-        <TopList title="🏆 Top Teams (by Wins)" items={topTeams} maxValue={s.top_teams_by_wins?.[0]?.wins || 1} />
+        <div className="card p-5">
+          <div className="flex items-center gap-3 flex-wrap mb-4">
+            <span className="text-[13px] font-semibold text-[#6C757D]">Top Teams by:</span>
+            <div className="flex gap-1 flex-wrap">
+              {TOP_TEAM_CATEGORIES.map((cat) => (
+                <button
+                  key={cat.key}
+                  onClick={() => setTopTeamCategory(cat.key)}
+                  className={`chip ${topTeamCategory === cat.key ? "active" : ""}`}
+                >
+                  {cat.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <TopList
+            title={`🏆 Top Teams (by ${TOP_TEAM_CATEGORIES.find((c) => c.key === topTeamCategory)?.label || "Wins"})`}
+            items={topTeams}
+            maxValue={topTeamsData[0]?.value || 1}
+          />
+        </div>
       </div>
     </div>
   );

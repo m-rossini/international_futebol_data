@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { TopList } from "@/components/shared/TopList";
 import { formatNumber } from "@/lib/utils";
@@ -13,8 +13,11 @@ export function TopScorersClient() {
   const [topN, setTopN] = useState(Number(searchParams.get("top_n") || 50));
   const [scorers, setScorers] = useState<TopScorerItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const fetchedRef = useRef(false);
 
   useEffect(() => {
+    if (fetchedRef.current) return;
+    fetchedRef.current = true;
     let cancelled = false;
 
     async function load() {

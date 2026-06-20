@@ -43,6 +43,20 @@ export interface TeamWinEntry {
   wins: number;
 }
 
+export interface TeamCategoryItem {
+  team: string;
+  value: number;
+}
+
+export interface TournamentTopTeams {
+  by_wins: TeamCategoryItem[];
+  by_losses: TeamCategoryItem[];
+  by_draws: TeamCategoryItem[];
+  by_goals_for: TeamCategoryItem[];
+  by_goals_against: TeamCategoryItem[];
+  by_goal_diff: TeamCategoryItem[];
+}
+
 export interface CityMatchEntry {
   city: string;
   matches: number;
@@ -154,6 +168,7 @@ export interface TournamentDetail {
     unique_teams: number;
     biggest_win: BiggestWin | null;
     top_teams_by_wins: TeamWinEntry[];
+    top_teams: TournamentTopTeams;
   };
   yearly: Array<{
     year: number;

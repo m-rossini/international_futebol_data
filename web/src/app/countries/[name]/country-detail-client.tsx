@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { StatsCard } from "@/components/shared/StatsCard";
@@ -29,8 +29,11 @@ export function CountryDetailClient({ name }: { name: string }) {
   const dateTo = searchParams.get("date_to") || "";
   const [data, setData] = useState<CountryDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const fetchedRef = useRef(false);
 
   useEffect(() => {
+    if (fetchedRef.current) return;
+    fetchedRef.current = true;
     let cancelled = false;
     const params = { tournaments, countries, date_from: dateFrom, date_to: dateTo };
     const fq = buildFilterQs(params);
@@ -116,7 +119,7 @@ export function CountryDetailClient({ name }: { name: string }) {
         {s.first_year} – {s.last_year} · {formatNumber(s.matches)} matches · {formatNumber(s.total_goals)} goals
       </p>
 
-      <FilterBar showTournaments showCountries showDateRange />
+      <FilterBar showCountries showDateRange />
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">

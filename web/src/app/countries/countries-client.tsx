@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FilterBar } from "@/components/shared/FilterBar";
 import { DataTable } from "@/components/shared/DataTable";
@@ -28,9 +28,11 @@ export function CountriesClient() {
   const dateTo = searchParams.get("date_to") || "";
   const [countryList, setCountryList] = useState<CountryListItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const fetchedRef = useRef(false);
 
   useEffect(() => {
-    const controller = new AbortController();
+    if (fetchedRef.current) return;
+    fetchedRef.current = true;
     let cancelled = false;
     const params = { tournaments, countries, date_from: dateFrom, date_to: dateTo };
     const fq = buildFilterQs(params);
@@ -38,23 +40,19 @@ export function CountriesClient() {
     async function load() {
       if (!cancelled) setLoading(true);
       try {
-        const res = await fetch(`${API}/countries${fq ? "?" + fq : ""}`, { signal: controller.signal }).then((r) => r.json());
+        const res = await fetch(`${API}/countries${fq ? "?" + fq : ""}`).then((r) => r.json());
         if (!cancelled) {
           setCountryList(res);
           setLoading(false);
         }
       } catch (err) {
-        if ((err as Error).name === "AbortError") return;
         if (!cancelled) setLoading(false);
         console.error("Failed to load countries:", err);
       }
     }
 
     load();
-    return () => {
-      cancelled = true;
-      controller.abort();
-    };
+    return () => { cancelled = true; };
   }, [tournaments, countries, dateFrom, dateTo]);
 
   if (loading) {
@@ -103,7 +101,7 @@ export function CountriesClient() {
       <p className="text-[14px] text-[#6C757D] mb-4">
         {countryList.length} countries where matches have been hosted.
       </p>
-      <FilterBar showTournaments showCountries showDateRange />
+      <FilterBar showCountries showDateRange />
       <DataTable
         columns={columns}
         data={countryList}

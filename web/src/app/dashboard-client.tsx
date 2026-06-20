@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { StatsCard } from "@/components/shared/StatsCard";
 import { TopList } from "@/components/shared/TopList";
@@ -28,8 +28,11 @@ export function DashboardClient() {
   const [summary, setSummary] = useState<SummaryResponse | null>(null);
   const [topTeams, setTopTeams] = useState<TeamRankingItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const fetchedRef = useRef(false);
 
   useEffect(() => {
+    if (fetchedRef.current) return;
+    fetchedRef.current = true;
     let cancelled = false;
     const params = { tournaments, countries, date_from: dateFrom, date_to: dateTo };
     const fq = buildFilterQs(params);
@@ -83,7 +86,7 @@ export function DashboardClient() {
         Overview of the entire dataset. Use filters to narrow the scope.
       </p>
 
-      <FilterBar showTournaments showCountries showDateRange />
+      <FilterBar showCountries showDateRange />
 
       {/* KPI Row */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
