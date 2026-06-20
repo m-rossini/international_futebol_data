@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { FilterBar } from "@/components/shared/FilterBar";
 import { TopList } from "@/components/shared/TopList";
-import { formatNumber } from "@/lib/utils";
+import { formatNumber, getFlagUrl } from "@/lib/utils";
 import type { TeamRankingItem } from "@/lib/types";
 
 const API = "/api/proxy";
@@ -84,6 +84,7 @@ export function RankingsClient() {
     name: t.team,
     value: formatNumber(t.value),
     href: `/teams/${encodeURIComponent(t.team)}`,
+    imageUrl: getFlagUrl(t.team, 24),
   }));
 
   return (

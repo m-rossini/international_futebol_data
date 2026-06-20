@@ -95,6 +95,7 @@ export function CityDetailClient({ name }: { name: string }) {
       name: t.team,
       value: formatNumber(t.wins),
       href: `/teams/${encodeURIComponent(t.team)}`,
+      imageUrl: getFlagUrl(t.team, 24),
     }));
 
   const topTournaments = (s.top_tournaments || [])

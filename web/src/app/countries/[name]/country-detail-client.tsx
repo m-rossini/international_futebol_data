@@ -6,7 +6,7 @@ import Link from "next/link";
 import { StatsCard } from "@/components/shared/StatsCard";
 import { FilterBar } from "@/components/shared/FilterBar";
 import { TopList } from "@/components/shared/TopList";
-import { formatNumber } from "@/lib/utils";
+import { formatNumber, getFlagUrl } from "@/lib/utils";
 import { ArrowLeft } from "lucide-react";
 import type { CountryDetail } from "@/lib/types";
 
@@ -95,6 +95,7 @@ export function CountryDetailClient({ name }: { name: string }) {
       name: t.team,
       value: formatNumber(t.wins),
       href: `/teams/${encodeURIComponent(t.team)}`,
+      imageUrl: getFlagUrl(t.team, 24),
     }));
 
   const topCities = (s.top_cities || [])

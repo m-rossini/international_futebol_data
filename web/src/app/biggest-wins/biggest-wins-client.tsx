@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { FilterBar } from "@/components/shared/FilterBar";
+import { getFlagUrl } from "@/lib/utils";
 import type { BiggestWinItem } from "@/lib/types";
 
 const API = "/api/proxy";
@@ -124,9 +125,13 @@ export function BiggestWinsClient() {
                   <td className="font-bold text-[#ADB5BD]">{w.rank}</td>
                   <td className="text-[13px] text-[#6C757D]">{w.date}</td>
                   <td>
-                    <Link href={`/teams/${encodeURIComponent(w.home_team)}`} className="text-[#1A56DB] hover:underline font-semibold">
-                      {w.home_team}
-                    </Link>
+                    <div className="flex items-center gap-1.5">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={getFlagUrl(w.home_team, 24)} alt="" className="w-5 h-3.5 object-cover rounded-sm shrink-0" />
+                      <Link href={`/teams/${encodeURIComponent(w.home_team)}`} className="text-[#1A56DB] hover:underline font-semibold">
+                        {w.home_team}
+                      </Link>
+                    </div>
                   </td>
                   <td className="text-center font-bold text-[16px] tabular-nums">
                     <span className="text-[#198754]">{w.home_score}</span>
@@ -134,9 +139,13 @@ export function BiggestWinsClient() {
                     <span className="text-[#DC3545]">{w.away_score}</span>
                   </td>
                   <td>
-                    <Link href={`/teams/${encodeURIComponent(w.away_team)}`} className="text-[#1A56DB] hover:underline">
-                      {w.away_team}
-                    </Link>
+                    <div className="flex items-center gap-1.5">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={getFlagUrl(w.away_team, 24)} alt="" className="w-5 h-3.5 object-cover rounded-sm shrink-0" />
+                      <Link href={`/teams/${encodeURIComponent(w.away_team)}`} className="text-[#1A56DB] hover:underline">
+                        {w.away_team}
+                      </Link>
+                    </div>
                   </td>
                   <td className="text-right">
                     <span className="badge badge-loss">+{w.goal_diff}</span>

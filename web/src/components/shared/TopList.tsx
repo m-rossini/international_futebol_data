@@ -10,6 +10,7 @@ interface TopListProps {
     sub?: string;
     href?: string;
     tooltip?: string;
+    imageUrl?: string;
   }>;
   maxValue?: number;
   barColor?: string;
@@ -41,11 +42,21 @@ export function TopList({
               {item.rank}
             </span>
             {item.href ? (
-              <Link href={item.href} className="flex-1 text-[14px] hover:text-[#1A56DB]">
+              <Link href={item.href} className="flex-1 text-[14px] hover:text-[#1A56DB] flex items-center gap-1.5">
+                {item.imageUrl && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={item.imageUrl} alt="" className="w-4.5 h-3 object-cover rounded-sm shrink-0" />
+                )}
                 {item.name}
               </Link>
             ) : (
-              <span className="flex-1 text-[14px]">{item.name}</span>
+              <span className="flex-1 text-[14px] flex items-center gap-1.5">
+                {item.imageUrl && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={item.imageUrl} alt="" className="w-4.5 h-3 object-cover rounded-sm shrink-0" />
+                )}
+                {item.name}
+              </span>
             )}
             <div className="flex-1 h-6 bg-[#F8F9FA] rounded-full overflow-hidden">
               <div

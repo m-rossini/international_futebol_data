@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { StatsCard } from "@/components/shared/StatsCard";
 import { TopList } from "@/components/shared/TopList";
 import { FilterBar } from "@/components/shared/FilterBar";
-import { formatNumber } from "@/lib/utils";
+import { formatNumber, getFlagUrl } from "@/lib/utils";
 import type { SummaryResponse, TeamRankingItem } from "@/lib/types";
 
 const API = "/api/proxy";
@@ -206,6 +206,8 @@ export function DashboardClient() {
           {topTeams.slice(0, 10).map((t, i) => (
             <div key={t.team} className="flex items-center gap-3">
               <span className="text-[#ADB5BD] font-bold text-[13px] w-6">{i + 1}</span>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={getFlagUrl(t.team, 24)} alt="" className="w-5 h-3.5 object-cover rounded-sm shrink-0" />
               <span className="text-[14px] w-32 truncate">{t.team}</span>
               <div className="flex-1 h-6 bg-[#F8F9FA] rounded-full overflow-hidden">
                 <div

@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { FilterBar } from "@/components/shared/FilterBar";
-import { formatNumber } from "@/lib/utils";
+import { formatNumber, getFlagUrl } from "@/lib/utils";
 import { Swords, Search } from "lucide-react";
 import type { HeadToHeadResponse } from "@/lib/types";
 
@@ -163,7 +163,9 @@ export function HeadToHeadClient() {
           {/* Matchup Summary */}
           <div className="card p-6 mb-6">
             <div className="text-center mb-6">
-              <h2 className="text-[24px] font-bold text-[#212529]">
+              <h2 className="text-[24px] font-bold text-[#212529] flex items-center justify-center gap-2 flex-wrap">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={getFlagUrl(data.team1, 24)} alt="" className="w-5 h-3.5 object-cover rounded-sm" />
                 <Link href={`/teams/${encodeURIComponent(data.team1)}`} className="hover:text-[#1A56DB]">
                   {data.team1}
                 </Link>
@@ -171,6 +173,8 @@ export function HeadToHeadClient() {
                 <Link href={`/teams/${encodeURIComponent(data.team2)}`} className="hover:text-[#1A56DB]">
                   {data.team2}
                 </Link>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={getFlagUrl(data.team2, 24)} alt="" className="w-5 h-3.5 object-cover rounded-sm" />
               </h2>
               <p className="text-[14px] text-[#6C757D] mt-1">{formatNumber(data.total_matches)} matches played</p>
             </div>
@@ -179,7 +183,11 @@ export function HeadToHeadClient() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Team 1 */}
               <div className="bg-[#F8F9FA] rounded-xl p-5">
-                <h3 className="text-[16px] font-semibold text-[#1A56DB] mb-4">{data.team1}</h3>
+                <h3 className="text-[16px] font-semibold text-[#1A56DB] mb-4 flex items-center gap-2">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={getFlagUrl(data.team1, 24)} alt="" className="w-5 h-3.5 object-cover rounded-sm" />
+                  {data.team1}
+                </h3>
                 <div className="space-y-3">
                   <div className="flex justify-between text-[14px]">
                     <span className="text-[#6C757D]">Wins</span>
@@ -209,7 +217,11 @@ export function HeadToHeadClient() {
 
               {/* Team 2 */}
               <div className="bg-[#F8F9FA] rounded-xl p-5">
-                <h3 className="text-[16px] font-semibold text-[#E83E8C] mb-4">{data.team2}</h3>
+                <h3 className="text-[16px] font-semibold text-[#E83E8C] mb-4 flex items-center gap-2">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={getFlagUrl(data.team2, 24)} alt="" className="w-5 h-3.5 object-cover rounded-sm" />
+                  {data.team2}
+                </h3>
                 <div className="space-y-3">
                   <div className="flex justify-between text-[14px]">
                     <span className="text-[#6C757D]">Wins</span>

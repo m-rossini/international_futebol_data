@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { StatsCard } from "@/components/shared/StatsCard";
 import { FilterBar } from "@/components/shared/FilterBar";
-import { formatNumber } from "@/lib/utils";
+import { formatNumber, getFlagUrl } from "@/lib/utils";
 import { ArrowLeft, Swords } from "lucide-react";
 import type { TeamStats } from "@/lib/types";
 
@@ -99,7 +99,11 @@ export function TeamDetailClient({ name }: { name: string }) {
           <Link href="/teams" className="text-[14px] text-[#1A56DB] hover:underline flex items-center gap-1 mb-1">
             <ArrowLeft size={14} /> Back to Teams
           </Link>
-          <h1 className="page-title mb-1">{team.team}</h1>
+          <h1 className="page-title mb-1 flex items-center gap-2">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={getFlagUrl(team.team, 28)} alt="" className="w-5 h-3.5 object-cover rounded-sm shrink-0" />
+            {team.team}
+          </h1>
           <p className="text-[14px] text-[#6C757D]">
             {formatNumber(team.matches_played)} matches · {formatNumber(team.wins)}W · {formatNumber(team.losses)}L · {formatNumber(team.draws)}D
           </p>
