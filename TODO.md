@@ -2,7 +2,6 @@
 
 ## Add WEB tests [DONE in commit adding vitest + 5 test files, 49 tests]
 
-## Add icon with country flag when team is referenced.
 ## Add MCP Server on the API side 
 ## Add OpenObserve to the compose
 ## Add Tracking for the API Side
