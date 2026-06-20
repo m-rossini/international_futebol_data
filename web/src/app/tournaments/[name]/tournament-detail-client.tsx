@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { StatsCard } from "@/components/shared/StatsCard";
+import { DataTable } from "@/components/shared/DataTable";
 import { FilterBar } from "@/components/shared/FilterBar";
 import { TopList } from "@/components/shared/TopList";
 import { formatNumber } from "@/lib/utils";
@@ -59,6 +60,15 @@ export function TournamentDetailClient({ name }: { name: string }) {
       <div>
         <div className="skeleton h-8 w-48 mb-2 rounded" />
         <div className="skeleton h-5 w-32 mb-6 rounded" />
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <div key={i} className="card p-5">
+              <div className="skeleton h-4 w-20 mb-2 rounded" />
+              <div className="skeleton h-10 w-24 rounded" />
+            </div>
+          ))}
+        </div>
+        <div className="card p-5 mb-6"><div className="skeleton h-[240px] rounded" /></div>
       </div>
     );
   }
@@ -135,36 +145,21 @@ export function TournamentDetailClient({ name }: { name: string }) {
           </div>
 
           <div className="overflow-x-auto">
-            <table className="data-table w-full text-[13px]">
-              <thead>
-                <tr>
-                  <th>Year</th>
-                  <th>Matches</th>
-                  <th>Goals</th>
-                  <th>Avg</th>
-                  <th>Home Wins</th>
-                  <th>Away Wins</th>
-                  <th>Draws</th>
-                  <th>Hosts</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.yearly
-                  .sort((a, b) => b.year - a.year)
-                  .map((yb) => (
-                    <tr key={yb.year}>
-                      <td className="font-semibold">{yb.year}</td>
-                      <td>{formatNumber(yb.matches)}</td>
-                      <td>{formatNumber(yb.goals)}</td>
-                      <td>{yb.avg_goals.toFixed(2)}</td>
-                      <td>{yb.home_wins}</td>
-                      <td>{yb.away_wins}</td>
-                      <td>{yb.draws}</td>
-                      <td className="text-[#6C757D]">{yb.host_country}</td>
-                    </tr>
-                  ))}
-              </tbody>
-            </table>
+            <DataTable
+              columns={[
+                { key: "year", header: "Year", sortable: true, render: (yb: typeof data.yearly[0]) => <span className="font-semibold">{yb.year}</span> },
+                { key: "matches", header: "Matches", sortable: true, render: (yb: typeof data.yearly[0]) => formatNumber(yb.matches) },
+                { key: "goals", header: "Goals", sortable: true, render: (yb: typeof data.yearly[0]) => formatNumber(yb.goals) },
+                { key: "avg_goals", header: "Avg", sortable: true, render: (yb: typeof data.yearly[0]) => yb.avg_goals.toFixed(2) },
+                { key: "home_wins", header: "Home Wins", sortable: true },
+                { key: "away_wins", header: "Away Wins", sortable: true },
+                { key: "draws", header: "Draws", sortable: true },
+                { key: "host_country", header: "Hosts", sortable: true, render: (yb: typeof data.yearly[0]) => <span className="text-[#6C757D]">{yb.host_country}</span> },
+              ]}
+              data={data.yearly}
+              keyField="year"
+              defaultSort={{ key: "year", dir: "desc" }}
+            />
           </div>
         </div>
       )}

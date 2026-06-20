@@ -169,7 +169,7 @@ def _team_aggregate(results: pd.DataFrame) -> pd.DataFrame:
 
 
 def most_teams(results: pd.DataFrame, stat: str, top_n: int = 20) -> list:
-    """Top N teams by a given aggregate stat."""
+    """Top N teams by a given aggregate stat, returning all aggregate stats."""
     if results.empty:
         return []
 
@@ -186,8 +186,13 @@ def most_teams(results: pd.DataFrame, stat: str, top_n: int = 20) -> list:
     if stat in ("win_rate", "loss_rate"):
         agg = agg[agg["matches_played"] >= _MIN_MATCHES_FOR_RATES]
 
-    result = agg.nlargest(top_n, col)[["team", col]].to_dict(orient="records")
-    if col in ("goals_for", "goals_against", "matches_played"):
-        for row in result:
-            row[col] = int(row[col])
-    return result
+    # Sort by requested stat and return ALL aggregate columns
+    # so clients can show wins/losses/draws/rates regardless of sort key
+    result = agg.nlargest(top_n, col).copy()
+
+    # Ensure integer columns are proper int type
+    for int_col in ["wins", "losses", "draws", "goals_for", "goals_against", "matches_played"]:
+        if int_col in result.columns:
+            result[int_col] = result[int_col].astype(int)
+
+    return result.to_dict(orient="records")

@@ -30,6 +30,7 @@ export function CountriesClient() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const controller = new AbortController();
     let cancelled = false;
     const params = { tournaments, countries, date_from: dateFrom, date_to: dateTo };
     const fq = buildFilterQs(params);
@@ -37,26 +38,43 @@ export function CountriesClient() {
     async function load() {
       if (!cancelled) setLoading(true);
       try {
-        const res = await fetch(`${API}/countries${fq ? "?" + fq : ""}`).then((r) => r.json());
+        const res = await fetch(`${API}/countries${fq ? "?" + fq : ""}`, { signal: controller.signal }).then((r) => r.json());
         if (!cancelled) {
           setCountryList(res);
           setLoading(false);
         }
       } catch (err) {
+        if ((err as Error).name === "AbortError") return;
         if (!cancelled) setLoading(false);
         console.error("Failed to load countries:", err);
       }
     }
 
     load();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
   }, [tournaments, countries, dateFrom, dateTo]);
 
   if (loading) {
     return (
       <div>
-        <h1 className="page-title mb-2">Countries</h1>
-        <p className="text-[14px] text-[#6C757D] mb-4">Loading...</p>
+        <div className="skeleton h-10 w-40 mb-2 rounded" />
+        <div className="skeleton h-5 w-64 mb-4 rounded" />
+        <div className="skeleton h-[52px] mb-6 rounded" />
+        <div className="card p-5">
+          {Array.from({ length: 12 }).map((_, i) => (
+            <div key={i} className="flex items-center gap-4 mb-3">
+              <div className="skeleton h-4 w-6 rounded" />
+              <div className="skeleton h-5 w-5 rounded-sm" />
+              <div className="skeleton h-5 w-32 rounded" />
+              <div className="skeleton h-4 w-16 rounded ml-auto" />
+              <div className="skeleton h-4 w-16 rounded" />
+              <div className="skeleton h-4 w-24 rounded" />
+            </div>
+          ))}
+        </div>
       </div>
     );
   }

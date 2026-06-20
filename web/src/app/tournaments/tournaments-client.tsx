@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { FilterBar } from "@/components/shared/FilterBar";
 import { formatNumber } from "@/lib/utils";
@@ -30,6 +30,7 @@ export function TournamentsClient() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const controller = new AbortController();
     let cancelled = false;
     const params = { tournaments, countries, date_from: dateFrom, date_to: dateTo };
     const fq = buildFilterQs(params);
@@ -37,26 +38,41 @@ export function TournamentsClient() {
     async function load() {
       if (!cancelled) setLoading(true);
       try {
-        const res = await fetch(`${API}/tournaments${fq ? "?" + fq : ""}`).then((r) => r.json());
+        const res = await fetch(`${API}/tournaments${fq ? "?" + fq : ""}`, { signal: controller.signal }).then((r) => r.json());
         if (!cancelled) {
           setTournamentList(res);
           setLoading(false);
         }
       } catch (err) {
+        if ((err as Error).name === "AbortError") return;
         if (!cancelled) setLoading(false);
         console.error("Failed to load tournaments:", err);
       }
     }
 
     load();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
   }, [tournaments, countries, dateFrom, dateTo]);
 
   if (loading) {
     return (
       <div>
-        <h1 className="page-title mb-2">Tournaments</h1>
-        <p className="text-[14px] text-[#6C757D] mb-4">Loading...</p>
+        <div className="skeleton h-10 w-48 mb-2 rounded" />
+        <div className="skeleton h-5 w-64 mb-4 rounded" />
+        <div className="skeleton h-[52px] mb-6 rounded" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Array.from({ length: 9 }).map((_, i) => (
+            <div key={i} className="card p-5">
+              <div className="skeleton h-5 w-32 mb-3 rounded" />
+              <div className="skeleton h-4 w-24 mb-2 rounded" />
+              <div className="skeleton h-4 w-20 mb-2 rounded" />
+              <div className="skeleton h-4 w-16 rounded" />
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
@@ -70,7 +86,9 @@ export function TournamentsClient() {
       <FilterBar showTournaments showCountries showDateRange />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {tournamentList.map((t) => (
+        {[...tournamentList]
+          .sort((a, b) => a.tournament.localeCompare(b.tournament))
+          .map((t) => (
           <Link key={t.tournament} href={`/tournaments/${encodeURIComponent(t.tournament)}`}>
             <div className="card p-5 hover:shadow-md hover:border-[#1A56DB] transition-all cursor-pointer h-full">
               <div className="flex items-center gap-2 mb-3">
