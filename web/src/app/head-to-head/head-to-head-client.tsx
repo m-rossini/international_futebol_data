@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { FilterBar } from "@/components/shared/FilterBar";
@@ -11,17 +11,8 @@ import type { HeadToHeadResponse } from "@/lib/types";
 
 const API = "/api/proxy";
 
-function useQueryParams() {
-  const sp = useSearchParams();
-  return {
-    tournaments: sp.get("tournaments") || "",
-    countries: sp.get("countries") || "",
-    date_from: sp.get("date_from") || "",
-    date_to: sp.get("date_to") || "",
-  };
-}
 
-function buildFilterQs(params: ReturnType<typeof useQueryParams>): string {
+function buildFilterQs(params: { tournaments: string; countries: string; date_from: string; date_to: string }): string {
   const q = new URLSearchParams();
   if (params.tournaments) q.set("tournaments", params.tournaments);
   if (params.countries) q.set("countries", params.countries);
@@ -32,7 +23,13 @@ function buildFilterQs(params: ReturnType<typeof useQueryParams>): string {
 
 export function HeadToHeadClient() {
   const searchParams = useSearchParams();
-  const filterParams = useQueryParams();
+  const sp = useSearchParams();
+  const filterParams = useMemo(() => ({
+    tournaments: sp.get("tournaments") || "",
+    countries: sp.get("countries") || "",
+    date_from: sp.get("date_from") || "",
+    date_to: sp.get("date_to") || "",
+  }), [sp]);
   const [team1, setTeam1] = useState(searchParams.get("team1") || "");
   const [team2, setTeam2] = useState(searchParams.get("team2") || "");
   const [data, setData] = useState<HeadToHeadResponse | null>(null);

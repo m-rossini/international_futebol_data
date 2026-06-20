@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { FilterBar } from "@/components/shared/FilterBar";
 import { DataTable } from "@/components/shared/DataTable";
@@ -16,17 +16,8 @@ const SORT_OPTIONS = [
   { value: "ratio", label: "Avg/Game" },
 ];
 
-function useQueryParams() {
-  const sp = useSearchParams();
-  return {
-    tournaments: sp.get("tournaments") || "",
-    countries: sp.get("countries") || "",
-    date_from: sp.get("date_from") || "",
-    date_to: sp.get("date_to") || "",
-  };
-}
 
-function buildFilterQs(params: ReturnType<typeof useQueryParams>): string {
+function buildFilterQs(params: { tournaments: string; countries: string; date_from: string; date_to: string }): string {
   const q = new URLSearchParams();
   if (params.tournaments) q.set("tournaments", params.tournaments);
   if (params.countries) q.set("countries", params.countries);
@@ -37,7 +28,13 @@ function buildFilterQs(params: ReturnType<typeof useQueryParams>): string {
 
 export function GoalsPerYearClient() {
   const searchParams = useSearchParams();
-  const params = useQueryParams();
+  const sp = useSearchParams();
+  const params = useMemo(() => ({
+    tournaments: sp.get("tournaments") || "",
+    countries: sp.get("countries") || "",
+    date_from: sp.get("date_from") || "",
+    date_to: sp.get("date_to") || "",
+  }), [sp]);
   const [sortBy, setSortBy] = useState(searchParams.get("sort_by") || "goals");
   const [order, setOrder] = useState(searchParams.get("order") || "desc");
   const [data, setData] = useState<GoalsPerYearItem[]>([]);
