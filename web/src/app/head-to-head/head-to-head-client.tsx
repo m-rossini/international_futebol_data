@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { FilterBar } from "@/components/shared/FilterBar";
@@ -32,7 +32,6 @@ export function HeadToHeadClient() {
   const [data, setData] = useState<HeadToHeadResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const fetchedRef = useRef(false);
 
   const fetchData = useCallback(async () => {
     if (!team1.trim() || !team2.trim()) return;
@@ -80,8 +79,6 @@ export function HeadToHeadClient() {
   }, [team1, team2, tournaments, countries, dateFrom, dateTo]);
 
   useEffect(() => {
-    if (fetchedRef.current) return;
-    fetchedRef.current = true;
     if (team1 && team2) fetchData();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 

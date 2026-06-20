@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FilterBar } from "@/components/shared/FilterBar";
 import { DataTable } from "@/components/shared/DataTable";
@@ -28,11 +28,8 @@ export function CountriesClient() {
   const dateTo = searchParams.get("date_to") || "";
   const [countryList, setCountryList] = useState<CountryListItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const fetchedRef = useRef(false);
 
   useEffect(() => {
-    if (fetchedRef.current) return;
-    fetchedRef.current = true;
     let cancelled = false;
     const params = { tournaments, countries, date_from: dateFrom, date_to: dateTo };
     const fq = buildFilterQs(params);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { FilterBar } from "@/components/shared/FilterBar";
 import { DataTable } from "@/components/shared/DataTable";
@@ -36,11 +36,8 @@ export function GoalsPerYearClient() {
   const [order, setOrder] = useState(searchParams.get("order") || "desc");
   const [data, setData] = useState<GoalsPerYearItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const fetchedRef = useRef(false);
 
   useEffect(() => {
-    if (fetchedRef.current) return;
-    fetchedRef.current = true;
     let cancelled = false;
     const params = { tournaments, countries, date_from: dateFrom, date_to: dateTo };
     const fq = buildFilterQs(params);

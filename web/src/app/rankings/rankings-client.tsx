@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { FilterBar } from "@/components/shared/FilterBar";
 import { TopList } from "@/components/shared/TopList";
@@ -40,11 +40,8 @@ export function RankingsClient() {
   const [topN, setTopN] = useState(Number(searchParams.get("top_n") || 20));
   const [teams, setTeams] = useState<TeamRankingItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const fetchedRef = useRef(false);
 
   useEffect(() => {
-    if (fetchedRef.current) return;
-    fetchedRef.current = true;
     let cancelled = false;
     const params = { tournaments, countries, date_from: dateFrom, date_to: dateTo };
     const fq = buildFilterQs(params);

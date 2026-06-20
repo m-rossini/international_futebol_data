@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { StatsCard } from "@/components/shared/StatsCard";
@@ -40,11 +40,8 @@ export function TournamentDetailClient({ name }: { name: string }) {
   const [data, setData] = useState<TournamentDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [topTeamCategory, setTopTeamCategory] = useState<string>("by_wins");
-  const fetchedRef = useRef(false);
 
   useEffect(() => {
-    if (fetchedRef.current) return;
-    fetchedRef.current = true;
 
     const controller = new AbortController();
     const params = { tournaments, countries, date_from: dateFrom, date_to: dateTo };
