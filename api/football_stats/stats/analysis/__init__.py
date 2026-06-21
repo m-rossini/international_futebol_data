@@ -30,6 +30,7 @@ from .goals import (
 
 from .team import (
     team_win_rate,
+    team_yearly,
     team_vs_team,
     most_teams,
     _team_aggregate,

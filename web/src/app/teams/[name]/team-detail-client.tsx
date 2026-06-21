@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { StatsCard } from "@/components/shared/StatsCard";
 import { FilterBar } from "@/components/shared/FilterBar";
+import { TeamYearlyChart } from "@/components/shared/TeamYearlyChart";
 import { formatNumber, getFlagUrl } from "@/lib/utils";
 import { ArrowLeft, Swords } from "lucide-react";
 import type { TeamStats } from "@/lib/types";
@@ -206,6 +207,13 @@ export function TeamDetailClient({ name }: { name: string }) {
               <div className="text-[20px] font-bold">{ga.iqr?.toFixed(2) || "—"}</div>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Yearly Performance Chart */}
+      {team.yearly && team.yearly.length > 0 && (
+        <div className="mb-8">
+          <TeamYearlyChart yearly={team.yearly} />
         </div>
       )}
     </div>

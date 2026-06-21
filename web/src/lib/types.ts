@@ -184,6 +184,16 @@ export interface TournamentDetail {
 }
 
 // ── Teams ──
+export interface TeamYearlyItem {
+  year: number;
+  matches_played: number;
+  wins: number;
+  losses: number;
+  draws: number;
+  goals_for: number;
+  goals_against: number;
+}
+
 export interface TeamStats {
   team: string;
   matches_played: number;
@@ -194,6 +204,7 @@ export interface TeamStats {
   goals_for_stats: StatsSeries;
   goals_against_stats: StatsSeries;
   goal_diff_stats: StatsSeries;
+  yearly: TeamYearlyItem[];
 }
 
 export interface TeamListItem {

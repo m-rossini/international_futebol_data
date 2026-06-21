@@ -1,18 +1,19 @@
-# Improvement so be made 
-1. All Filters Should be pre populated such as tournament, Countries, Cities and the data shouuld be a cache, sionce it will be widely used.
-1. In teams list, when a team is clicked, it shows the stats, I want to see a ditribution graph as well where the user can sleect, wins, losses, draws, gf , gc over time
-1. Tournament Detail List should be clickable so we can go digging into that tournament season details
+# TODO
 
-## Add MCP Server on the API side [DONE — 15 tools via FastMCP, stdio+SSE transport, containerized]
-## Add OpenObserve to the compose
-## Add Tracking for the API Side
-## Add Tracking for the WEB Side
+- [ ] Pre-populate filter dropdowns (tournaments, countries, cities) with cached data
+- [ ] Tournament detail: make seasons clickable to drill into season details
 
-Done:
-- [x] Add WEB tests [DONE in commit adding vitest + 5 test files, 49 tests]
-- [x] Add stand alone commands to start in Make
-- [x] .gitignore shouldnt be common?/btw
-- [x] create readme at api
-- [x] update readme in web
-- [x] update readme at root
+---
+
+## Done
+
+- [x] Add MCP Server (15 tools via FastMCP, stdio+SSE)
+- [x] Add OpenObserve to compose (service, volumes, health check)
+- [x] Add API tracking (OpenTelemetry auto-instrumentation → OTLP)
+- [x] Add web tracking (client-side page views, API call timing, error tracking)
 - [x] Add WEB tests (vitest, 49 tests, 5 files)
+- [x] Add standalone commands to Makefile
+- [x] Create READMEs (root, api, web)
+- [x] Fix .gitignore
+- [x] Team detail: distribution graph (wins/losses/draws/GF/GC over time) — Nivo ResponsiveLine with metric toggle
+- [x] OpenObserve: fix ports (HTTP→5080), auth (Basic), healthcheck (service_started fallback), password strength

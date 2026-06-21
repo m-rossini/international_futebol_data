@@ -11,7 +11,16 @@ services:
     volumes:
       - ./api:/app
       - /home/perez/projetos/international_results:/home/perez/projetos/international_results:ro
-    command: ["uv", "run", "python", "football_stats/server.py", "--host", "0.0.0.0", "--port", "7531"]
+    environment:
+      - OTEL_SERVICE_NAME=futebol-api
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://openobserve:5080/api/default
+      - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+      - OTEL_EXPORTER_OTLP_HEADERS=Authorization=Basic YWRtaW5AZnV0ZWJvbC5sb2NhbDpGdXRlYm9sQDEyMw==
+      - OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED=true
+    command: ["uv", "run", "opentelemetry-instrument", "python", "football_stats/server.py", "--host", "0.0.0.0", "--port", "7531"]
+    depends_on:
+      openobserve:
+        condition: service_started
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:7531/health"]
       interval: 10s
@@ -32,7 +41,35 @@ services:
       - /app/.next
     environment:
       - NEXT_PUBLIC_API_URL=http://api:7531
+      - NEXT_PUBLIC_OO_ENDPOINT=http://localhost:5080
+      - NEXT_PUBLIC_OO_BASIC_AUTH=YWRtaW5AZnV0ZWJvbC5sb2NhbDpGdXRlYm9sQDEyMw==
+      - NEXT_PUBLIC_OO_ORG=default
+      - NEXT_PUBLIC_OO_STREAM=web_events
     depends_on:
       api:
         condition: service_healthy
     restart: unless-stopped
+
+  openobserve:
+    image: openobserve/openobserve:latest
+    container_name: futebol-observe
+    ports:
+      - "5080:5080"
+      - "5081:5081"
+    volumes:
+      - oo_data:/data
+    environment:
+      - ZO_ROOT_USER_EMAIL=admin@futebol.local
+      - ZO_ROOT_USER_PASSWORD=Futebol@123
+      - ZO_DATA_DIR=/data
+      - ZO_COMPACT_ENABLED=true
+      - ZO_COMPACT_INTERVAL=60
+    healthcheck:
+      test: ["CMD", "/openobserve", "--healthcheck"]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+    restart: unless-stopped
+
+volumes:
+  oo_data:

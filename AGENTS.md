@@ -146,5 +146,9 @@ Do not:
 - Change unrelated code.
 - Introduce new dependencies without justification.
 - Disable tests to make builds pass.
+- NEVER DOWNLOAD SOFTWARE
+- NEVER PUSH TO GIT, EVEN WHEN I ASK. NEVER.
+- NEVER ACCESS FILES OUTSIDE THE BOUNDARIES OF CURRENT DIRECTORY.
+- NEVER DELETE FILES
 
 Prefer minimal, targeted changes.

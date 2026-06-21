@@ -11,6 +11,7 @@ from .analysis import (
     biggest_wins,
     top_scorers,
     team_win_rate,
+    team_yearly,
     goals_per_year,
     results_metadata,
     goalscorers_metadata,
@@ -82,7 +83,10 @@ class QueryEngine:
             canonical = self._resolve_team_name(team_name)
         except ValueError:
             return {"error": True, "message": f"Team '{team_name}' not found in the data."}
-        return team_win_rate(self._filtered_results(filters), canonical)
+        r = self._filtered_results(filters)
+        result = team_win_rate(r, canonical)
+        result["yearly"] = team_yearly(r, canonical)
+        return result
 
     def head_to_head(self, team1: str, team2: str, filters: Optional[FilterParams] = None) -> dict:
         logger.debug("Head-to-head: %s vs %s", team1, team2)

@@ -14,6 +14,7 @@ import type {
   BiggestWinItem,
   GoalsPerYearItem,
 } from "./types";
+import { trackApiCall } from "./tracking";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "/api/proxy";
 
@@ -30,12 +31,22 @@ function buildFilterQuery(filters?: FilterParams): string {
 
 async function fetchApi<T>(path: string, query?: string): Promise<T> {
   const url = `${API_BASE}${path}${query ? `?${query}` : ""}`;
-  const res = await fetch(url);
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`API error ${res.status}: ${text}`);
+  const start = performance.now();
+  let status = 0;
+  let error: string | undefined;
+  try {
+    const res = await fetch(url);
+    status = res.status;
+    if (!res.ok) {
+      const text = await res.text();
+      error = `API error ${res.status}: ${text}`;
+      throw new Error(error);
+    }
+    return res.json();
+  } finally {
+    const duration = performance.now() - start;
+    trackApiCall(path, duration, status, error);
   }
-  return res.json();
 }
 
 // ── Meta ──

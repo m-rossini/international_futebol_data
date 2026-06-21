@@ -19,6 +19,53 @@ _MOST_TEAM_STATS = {
 }
 
 
+def team_yearly(results: pd.DataFrame, team: str) -> list[dict]:
+    """Year-by-year wins/losses/draws/goals for a team, sorted by year asc."""
+    if results.empty:
+        return []
+
+    # Build a single DataFrame with all of this team's appearances
+    home = results.loc[results["home_team"] == team, ["date", "home_score", "away_score"]].copy()
+    home["result"] = home.apply(
+        lambda r: "win" if r["home_score"] > r["away_score"] else ("loss" if r["home_score"] < r["away_score"] else "draw"),
+        axis=1,
+    )
+    home["goals_for"] = home["home_score"]
+    home["goals_against"] = home["away_score"]
+
+    away = results.loc[results["away_team"] == team, ["date", "home_score", "away_score"]].copy()
+    away["result"] = away.apply(
+        lambda r: "win" if r["away_score"] > r["home_score"] else ("loss" if r["away_score"] < r["home_score"] else "draw"),
+        axis=1,
+    )
+    away["goals_for"] = away["away_score"]
+    away["goals_against"] = away["home_score"]
+
+    matches = pd.concat([home, away], ignore_index=True)
+    matches["year"] = pd.to_datetime(matches["date"], utc=True).dt.year
+
+    yearly = (
+        matches.groupby("year")
+        .agg(
+            matches_played=("result", "count"),
+            wins=("result", lambda x: (x == "win").sum()),
+            losses=("result", lambda x: (x == "loss").sum()),
+            draws=("result", lambda x: (x == "draw").sum()),
+            goals_for=("goals_for", "sum"),
+            goals_against=("goals_against", "sum"),
+        )
+        .reset_index()
+        .sort_values("year")
+    )
+
+    # Convert int columns after pandas
+    for col in ["matches_played", "wins", "losses", "draws", "goals_for", "goals_against"]:
+        yearly[col] = yearly[col].astype(int)
+    yearly["year"] = yearly["year"].astype(int)
+
+    return yearly.to_dict(orient="records")
+
+
 def team_win_rate(results: pd.DataFrame, team: str) -> dict:
     """Calculate win/draw/loss stats for a given team, with advanced goal statistics."""
     home_wins = results[(results["home_team"] == team) & (results["home_score"] > results["away_score"])]

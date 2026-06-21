@@ -65,8 +65,21 @@ The API expects a `results.csv` dataset. Mount your data directory in `docker-co
 │    ├─ GET  /biggest_wins                         │
 │    ├─ GET  /goals_per_year                       │
 │    └─ POST /reload                               │
+│                                                   │
+│  OpenObserve  :5080 (UI) / :5081 (ingest)        │
+│    ├─ OTLP traces (API auto-instrumentation)     │
+│    └─ JSON logs (web client-side events)         │
 └─────────────────────────────────────────────────┘
 ```
+
+## Observability
+
+The stack includes [OpenObserve](https://openobserve.com) for performance monitoring:
+
+- **API tracing** — FastAPI is auto-instrumented with OpenTelemetry. Every request generates traces and spans sent via OTLP to OpenObserve. Includes request duration, status codes, and exceptions.
+- **Web analytics** — Client-side page views, API call durations, and errors are batched and sent to OpenObserve's JSON ingestion API.
+
+OpenObserve UI is available at **http://localhost:5080** (credentials: `admin@futebol.local` / `Futebol@123`).
 
 ### Key Endpoints
 
