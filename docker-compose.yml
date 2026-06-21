@@ -15,7 +15,7 @@ services:
       - OTEL_SERVICE_NAME=futebol-api
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://openobserve:5080/api/default
       - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
-      - OTEL_EXPORTER_OTLP_HEADERS=Authorization=Basic YWRtaW5AZnV0ZWJvbC5sb2NhbDpGdXRlYm9sQDEyMw==
+      - OTEL_EXPORTER_OTLP_HEADERS=Authorization=Basic YWRtaW5AZnV0ZWJvbC5sb2NhbDpGdXRlYm9sQDEyMw==,stream-name=api_logs
       - OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED=true
     command: ["uv", "run", "opentelemetry-instrument", "python", "football_stats/server.py", "--host", "0.0.0.0", "--port", "7531"]
     depends_on:
@@ -23,9 +23,11 @@ services:
         condition: service_started
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:7531/health"]
-      interval: 10s
+      interval: 3m
       timeout: 5s
-      retries: 5
+      retries: 3
+      start_interval: 5s
+      start_period: 30s
     restart: unless-stopped
 
   web:

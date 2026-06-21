@@ -5,6 +5,8 @@
  * Disabled when NEXT_PUBLIC_OO_ENDPOINT is not set.
  */
 
+// NOTE: NEXT_PUBLIC_* vars are inlined at compile time.
+// Must be at module scope, NOT inside a function body.
 const OO_ENDPOINT = process.env.NEXT_PUBLIC_OO_ENDPOINT;
 const OO_BASIC_AUTH = process.env.NEXT_PUBLIC_OO_BASIC_AUTH;
 const OO_ORG = process.env.NEXT_PUBLIC_OO_ORG || "default";
@@ -18,28 +20,27 @@ interface TrackEvent {
 }
 
 const buffer: TrackEvent[] = [];
+const INGEST_URL = OO_ENDPOINT
+  ? `${OO_ENDPOINT}/api/${OO_ORG}/${OO_STREAM}/_json`
+  : "";
 let timer: ReturnType<typeof setInterval> | null = null;
-let enabled = false;
-
-function getIngestUrl(): string {
-  return `${OO_ENDPOINT}/api/${OO_ORG}/${OO_STREAM}/_json`;
-}
 
 async function flush(): Promise<void> {
-  if (buffer.length === 0) return;
+  if (buffer.length === 0 || !INGEST_URL) return;
   const batch = buffer.splice(0);
   try {
     const headers: Record<string, string> = { "Content-Type": "application/json" };
     if (OO_BASIC_AUTH) headers["Authorization"] = `Basic ${OO_BASIC_AUTH}`;
-    await fetch(getIngestUrl(), {
+    const res = await fetch(INGEST_URL, {
       method: "POST",
       headers,
       body: JSON.stringify(batch),
-      // fire-and-forget
-      keepalive: true,
     });
-  } catch {
-    // silently ignore — don't break the app
+    if (!res.ok) {
+      console.warn("[tracking] ingest returned", res.status);
+    }
+  } catch (err) {
+    console.warn("[tracking] flush failed:", err);
   }
 }
 
@@ -52,8 +53,7 @@ function scheduleFlush(): void {
  * Init tracking. Called once on app load.
  */
 export function initTracking(): void {
-  if (!OO_ENDPOINT) return;
-  enabled = true;
+  if (!INGEST_URL) return;
   scheduleFlush();
 
   // Flush on page unload
@@ -66,7 +66,6 @@ export function initTracking(): void {
  * Track a generic event.
  */
 export function track(type: string, data: Record<string, unknown> = {}): void {
-  if (!enabled) return;
   buffer.push({
     _timestamp: Date.now() * 1000, // microseconds
     type,
