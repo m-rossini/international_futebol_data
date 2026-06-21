@@ -55,8 +55,8 @@ class TestTournament:
         resp = client.get(f"/tournament/{_KNOWN_TOURNAMENT}")
         teams = resp.json()["summary"]["top_teams_by_wins"]
         assert len(teams) > 0
-        _assert_keys(teams[0], {"team", "wins"}, "top_teams")
-        assert isinstance(teams[0]["wins"], int)
+        _assert_keys(teams[0], {"team", "value"}, "top_teams")
+        assert isinstance(teams[0]["value"], int)
 
     # ------------------------------------------------------------------
     #  Filter tests

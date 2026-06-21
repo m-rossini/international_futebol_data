@@ -14,7 +14,7 @@ DATA_DIR    = $(shell dirname $(DATA_TARGET) 2>/dev/null)
 # ── Phony targets ─────────────────────────────────────────
 .PHONY: help \
         api-build api-up api-down api-run api-shell api-logs \
-        api-test api-test-cov \
+        api-test api-test-cov api-mcp \
         web-build web-up web-down web-run web-shell web-logs \
         web-test web-test-cov \
         up down test
@@ -41,6 +41,7 @@ help:
 	@echo "    make api-logs       Tail container logs"
 	@echo "    make api-test       Run pytest (ephemeral)"
 	@echo "    make api-test-cov   Run pytest with coverage"
+	@echo "    make api-mcp        Run MCP server via SSE (ephemeral, port 7532)"
 	@echo ""
 	@echo "  WEB (dev container — attach VS Code)"
 	@echo "    make web-build      Build image"
@@ -99,6 +100,14 @@ api-test-cov: api-build
 		-v $(DATA_DIR):$(DATA_DIR):ro \
 		$(IMG_API):dev \
 		sh -c "uv sync && PYTHONPATH=football_stats uv run pytest tests/ -v --color=yes --cov=football_stats --cov-report=term-missing"
+
+api-mcp: api-build
+	$(DOCKER) run --rm -it \
+		-p 7532:7532 \
+		-v $(CURDIR)/api:/app \
+		-v $(DATA_DIR):$(DATA_DIR):ro \
+		$(IMG_API):dev \
+		uv run python football_stats/mcp_server.py --transport sse --port 7532
 
 # ═══════════════════════════════════════════════════════════
 #  Web
