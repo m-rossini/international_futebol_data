@@ -1,6 +1,9 @@
 # TODO
 
 - [ ] Pre-populate filter dropdowns (tournaments, countries, cities) with cached data
+    - All screens that have a filter should whenever possible to pre load the filter so users can choose instead of type
+    - Filters that allow typing should be telescophic
+    - Filters should be compoenents tha toculd be resued in multipl edistincts screens
 - [ ] Tournament detail: make seasons clickable to drill into season details
 
 ---
