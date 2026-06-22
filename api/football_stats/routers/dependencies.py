@@ -59,21 +59,25 @@ class FilterParamsDep:
 
     def __init__(
         self,
-        tournaments: Optional[list[str]] = Query(None, description="Filter by tournament name (can repeat)"),
-        countries: Optional[list[str]] = Query(None, description="Filter by host country (can repeat)"),
+        tournaments: Optional[list[str]] = Query(None, description="Filter by tournament name (can repeat or be comma-separated)"),
+        countries: Optional[list[str]] = Query(None, description="Filter by host country (can repeat or be comma-separated)"),
         date_from: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
         date_to: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
     ):
-        # FastAPI may pass a single string instead of a list when only one
-        # value is supplied for a repeated query param — coerce to list.
-        if isinstance(tournaments, str):
-            tournaments = [tournaments]
-        if isinstance(countries, str):
-            countries = [countries]
+        def _split(v: Optional[list[str]]) -> Optional[list[str]]:
+            """Normalise: split comma-separated strings into a flat list."""
+            if v is None:
+                return None
+            if isinstance(v, str):
+                v = [v]
+            result: list[str] = []
+            for item in v:
+                result.extend(s.strip() for s in item.split(",") if s.strip())
+            return result or None
 
         self._inner = FilterParams(
-            tournaments=tournaments,
-            countries=countries,
+            tournaments=_split(tournaments),
+            countries=_split(countries),
             date_from=date_from,
             date_to=date_to,
         )

@@ -1,8 +1,11 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { X } from "lucide-react";
+import { FilterDropdown } from "./FilterDropdown";
+import { getFilterOptions } from "@/lib/api";
+import type { FilterOptions } from "@/lib/types";
 
 interface FilterBarProps {
   showTournaments?: boolean;
@@ -19,17 +22,39 @@ export function FilterBar({
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const [tournaments, setTournaments] = useState(searchParams.get("tournaments") || "");
-  const [countries, setCountries] = useState(searchParams.get("countries") || "");
+  // Parse comma-separated URL params into arrays
+  const parseParam = (key: string): string[] => {
+    const val = searchParams.get(key) || "";
+    return val ? val.split(",").map((s) => s.trim()).filter(Boolean) : [];
+  };
+
+  const [tournaments, setTournaments] = useState<string[]>(() => parseParam("tournaments"));
+  const [countries, setCountries] = useState<string[]>(() => parseParam("countries"));
   const [dateFrom, setDateFrom] = useState(searchParams.get("date_from") || "");
   const [dateTo, setDateTo] = useState(searchParams.get("date_to") || "");
+  const [options, setOptions] = useState<FilterOptions | null>(null);
+  const [optionsLoading, setOptionsLoading] = useState(true);
+  const optionsLoaded = useRef(false);
 
-  const activeCount = [tournaments, countries, dateFrom, dateTo].filter(Boolean).length;
+  // Load filter options once
+  useEffect(() => {
+    if (optionsLoaded.current) return;
+    optionsLoaded.current = true;
+    getFilterOptions()
+      .then((o) => { setOptions(o); setOptionsLoading(false); })
+      .catch(() => { setOptionsLoading(false); });
+  }, []);
+
+  const activeCount =
+    (tournaments.length > 0 ? 1 : 0) +
+    (countries.length > 0 ? 1 : 0) +
+    (dateFrom ? 1 : 0) +
+    (dateTo ? 1 : 0);
 
   const apply = useCallback(() => {
     const params = new URLSearchParams();
-    if (tournaments.trim()) params.set("tournaments", tournaments.trim());
-    if (countries.trim()) params.set("countries", countries.trim());
+    if (tournaments.length > 0) params.set("tournaments", tournaments.join(","));
+    if (countries.length > 0) params.set("countries", countries.join(","));
     if (dateFrom) params.set("date_from", dateFrom);
     if (dateTo) params.set("date_to", dateTo);
     const qs = params.toString();
@@ -37,8 +62,8 @@ export function FilterBar({
   }, [router, pathname, tournaments, countries, dateFrom, dateTo]);
 
   const clear = useCallback(() => {
-    setTournaments("");
-    setCountries("");
+    setTournaments([]);
+    setCountries([]);
     setDateFrom("");
     setDateTo("");
     router.push(pathname);
@@ -49,23 +74,23 @@ export function FilterBar({
       <div className="flex items-center gap-3 flex-wrap">
         <span className="text-[13px] font-semibold text-[#6C757D]">Filters:</span>
         {showTournaments && (
-          <input
-            type="text"
-            className="border border-[#E9ECEF] rounded-lg px-3 py-2 text-[14px] w-[220px] focus:outline-none focus:border-[#1A56DB] focus:shadow-[0_0_0_3px_#E8F0FE]"
-            placeholder="Tournaments (e.g. FIFA World Cup)"
-            value={tournaments}
-            onChange={(e) => setTournaments(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && apply()}
+          <FilterDropdown
+            id="filter-tournaments"
+            label="Tournaments"
+            options={options?.tournaments || []}
+            selected={tournaments}
+            onChange={setTournaments}
+            loading={optionsLoading}
           />
         )}
         {showCountries && (
-          <input
-            type="text"
-            className="border border-[#E9ECEF] rounded-lg px-3 py-2 text-[14px] w-[220px] focus:outline-none focus:border-[#1A56DB] focus:shadow-[0_0_0_3px_#E8F0FE]"
-            placeholder="Countries (e.g. Brazil, Germany)"
-            value={countries}
-            onChange={(e) => setCountries(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && apply()}
+          <FilterDropdown
+            id="filter-countries"
+            label="Countries"
+            options={options?.countries || []}
+            selected={countries}
+            onChange={setCountries}
+            loading={optionsLoading}
           />
         )}
         {showDateRange && (

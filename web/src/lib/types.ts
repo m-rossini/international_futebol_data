@@ -8,6 +8,13 @@ export interface FilterParams {
   date_to?: string;
 }
 
+// ── Filter options (pre-populated dropdown values) ──
+export interface FilterOptions {
+  tournaments: string[];
+  countries: string[];
+  cities: string[];
+}
+
 // ── Shared ──
 export interface StatsSeries {
   count: number;
@@ -322,4 +329,51 @@ export interface TopScorerItem {
 export interface TopScorersResponse {
   scorers: TopScorerItem[];
   top_n: number;
+}
+
+// ── Season detail ──
+export interface SeasonMatchItem {
+  date: string;
+  home_team: string;
+  away_team: string;
+  home_score: number;
+  away_score: number;
+  city?: string;
+  country?: string;
+}
+
+export interface SeasonStandingItem {
+  team: string;
+  matches_played: number;
+  wins: number;
+  draws: number;
+  losses: number;
+  goals_for: number;
+  goals_against: number;
+  goal_diff: number;
+  points: number;
+}
+
+export interface SeasonDetail {
+  tournament: string;
+  year: number;
+  host_country?: string;
+  summary: {
+    matches: number;
+    total_goals: number;
+    avg_goals_per_match: number;
+    home_wins: number;
+    away_wins: number;
+    draws: number;
+    unique_teams: number;
+    biggest_win: {
+      date: string;
+      home_team: string;
+      away_team: string;
+      home_score: number;
+      away_score: number;
+    } | null;
+  };
+  standings: SeasonStandingItem[];
+  matches_list: SeasonMatchItem[];
 }

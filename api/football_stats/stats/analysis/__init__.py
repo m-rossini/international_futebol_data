@@ -44,6 +44,7 @@ from .ranking import (
 from .tournament import (
     tournaments_list,
     tournament_info,
+    season_info,
 )
 
 from .city import (

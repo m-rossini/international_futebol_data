@@ -28,3 +28,13 @@ async def tournament_endpoint(tournament_name: str, filters: FilterParamsDep = D
     require_data()
     logger.debug("GET /tournament/%s", tournament_name)
     return engine.tournament(tournament_name, filters.inner)
+
+
+@router.get("/tournament/{tournament_name}/season/{year}")
+async def season_endpoint(tournament_name: str, year: int, filters: FilterParamsDep = Depends()):
+    """Detailed stats for a specific tournament edition (season).
+    Returns match list, team standings, and edition summary.
+    Optional filters: ``?countries=Germany``"""
+    require_data()
+    logger.debug("GET /tournament/%s/season/%d", tournament_name, year)
+    return engine.season(tournament_name, year, filters.inner)

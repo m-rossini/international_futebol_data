@@ -214,3 +214,108 @@ def tournament_info(results: pd.DataFrame, tournament: str, top_n: int = 10) -> 
         },
         "yearly": yearly_list,
     }
+
+
+def season_info(results: pd.DataFrame, tournament: str, year: int) -> dict:
+    """Detailed stats for a specific tournament edition (season / year).
+
+    Returns match list, team standings, and edition summary.
+    """
+    df = results[results["tournament"] == tournament].copy()
+    if df.empty:
+        raise ValueError(f"Unknown tournament: '{tournament}'")
+
+    df = enrich_match_results(df)
+    df = df[df["year"] == year]
+    if df.empty:
+        raise ValueError(f"No data for tournament '{tournament}' in year {year}")
+
+    # -- edition summary --
+    matches = len(df)
+    total_goals = int(df["total_goals"].sum())
+    avg_goals = round(total_goals / matches, 2) if matches else 0
+    home_wins = int(df["home_win"].sum())
+    away_wins = int(df["away_win"].sum())
+    draws = int(df["draw"].sum())
+    unique_teams = int(pd.concat([df["home_team"], df["away_team"]]).nunique())
+    host = df["country"].mode().iloc[0] if len(df) else None
+
+    # -- biggest win --
+    biggest_win = biggest_single_win(df)
+
+    # -- matches list --
+    matches_list = []
+    for _, row in df.sort_values("date").iterrows():
+        matches_list.append({
+            "date": str(row["date"]),
+            "home_team": row["home_team"],
+            "away_team": row["away_team"],
+            "home_score": int(row["home_score"]),
+            "away_score": int(row["away_score"]),
+            "city": row.get("city"),
+            "country": row.get("country"),
+        })
+
+    # -- team standings --
+    home = df[["home_team", "home_score", "away_score"]].copy()
+    home.columns = ["team", "goals_for", "goals_against"]
+    away = df[["away_team", "away_score", "home_score"]].copy()
+    away.columns = ["team", "goals_for", "goals_against"]
+    combined = pd.concat([home, away], ignore_index=True)
+
+    standings = combined.groupby("team").agg(
+        matches_played=("goals_for", "count"),
+        goals_for=("goals_for", "sum"),
+        goals_against=("goals_against", "sum"),
+    ).reset_index()
+
+    hw = df[df["home_win"] == 1].groupby("home_team").size()
+    aw = df[df["away_win"] == 1].groupby("away_team").size()
+    hl = df[(df["home_win"] == 0) & (df["draw"] == 0)].groupby("home_team").size()
+    al = df[(df["away_win"] == 0) & (df["draw"] == 0)].groupby("away_team").size()
+    hd = df[df["draw"] == 1].groupby("home_team").size()
+    ad = df[df["draw"] == 1].groupby("away_team").size()
+
+    def _safe_add(s1, s2):
+        return s1.add(s2, fill_value=0)
+
+    wins = _safe_add(hw, aw)
+    losses = _safe_add(hl, al)
+    draw_counts = _safe_add(hd, ad)
+
+    standings = standings.merge(wins.rename("wins"), left_on="team", right_index=True, how="left")
+    standings = standings.merge(losses.rename("losses"), left_on="team", right_index=True, how="left")
+    standings = standings.merge(draw_counts.rename("draws"), left_on="team", right_index=True, how="left")
+    standings = standings.fillna(0)
+    for col in ["wins", "losses", "draws", "goals_for", "goals_against", "matches_played"]:
+        if col in standings.columns:
+            standings[col] = standings[col].astype(int)
+    standings["goal_diff"] = standings["goals_for"] - standings["goals_against"]
+
+    # sort by points (3 for win, 1 for draw), then goal diff, then goals for
+    standings["points"] = standings["wins"] * 3 + standings["draws"]
+    standings = standings.sort_values(
+        ["points", "goal_diff", "goals_for"],
+        ascending=[False, False, False],
+    ).reset_index(drop=True)
+
+    standings_list = standings[["team", "matches_played", "wins", "draws", "losses",
+                                "goals_for", "goals_against", "goal_diff", "points"]].to_dict(orient="records")
+
+    return {
+        "tournament": tournament,
+        "year": year,
+        "host_country": host,
+        "summary": {
+            "matches": matches,
+            "total_goals": total_goals,
+            "avg_goals_per_match": avg_goals,
+            "home_wins": home_wins,
+            "away_wins": away_wins,
+            "draws": draws,
+            "unique_teams": unique_teams,
+            "biggest_win": biggest_win,
+        },
+        "standings": standings_list,
+        "matches_list": matches_list,
+    }

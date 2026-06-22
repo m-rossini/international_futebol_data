@@ -5,7 +5,7 @@ import logging
 from fastapi import APIRouter, HTTPException
 
 from .dependencies import _MOST_VALID_STATS, load_version, require_data, state
-from stats.models import HealthResponse, ReloadResponse, RootResponse, VersionResponse
+from stats.models import HealthResponse, ReloadResponse, RootResponse, VersionResponse, FilterOptionsResponse
 
 logger = logging.getLogger("stats.server.meta")
 
@@ -38,6 +38,20 @@ async def health():
 async def version():
     """Return the current application version."""
     return {"version": load_version()}
+
+
+@router.get("/filters", response_model=FilterOptionsResponse)
+async def filter_options():
+    """Return distinct filter values (tournaments, countries, cities) populated
+    from the cached data. Useful for pre-populating UI dropdowns.
+    """
+    require_data()
+    results = state.results
+    return {
+        "tournaments": sorted(results["tournament"].dropna().unique().tolist()),
+        "countries": sorted(results["country"].dropna().unique().tolist()),
+        "cities": sorted(results["city"].dropna().unique().tolist()),
+    }
 
 
 @router.get("/", response_model=RootResponse)

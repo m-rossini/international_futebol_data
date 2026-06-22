@@ -2,15 +2,11 @@
  * Client-side tracking — sends structured events to OpenObserve.
  *
  * Events are batched and flushed periodically (every 5s or on page unload).
- * Disabled when NEXT_PUBLIC_OO_ENDPOINT is not set.
+ * Proxied through Next.js API route to avoid CORS (OpenObserve POST
+ * responses lack Access-Control-Allow-Origin headers).
  */
 
-// NOTE: NEXT_PUBLIC_* vars are inlined at compile time.
-// Must be at module scope, NOT inside a function body.
-const OO_ENDPOINT = process.env.NEXT_PUBLIC_OO_ENDPOINT;
-const OO_BASIC_AUTH = process.env.NEXT_PUBLIC_OO_BASIC_AUTH;
-const OO_ORG = process.env.NEXT_PUBLIC_OO_ORG || "default";
-const OO_STREAM = process.env.NEXT_PUBLIC_OO_STREAM || "web_events";
+const INGEST_URL = "/api/ingest"; // same-origin proxy → OpenObserve
 const BATCH_INTERVAL = 5000;
 
 interface TrackEvent {
@@ -20,20 +16,15 @@ interface TrackEvent {
 }
 
 const buffer: TrackEvent[] = [];
-const INGEST_URL = OO_ENDPOINT
-  ? `${OO_ENDPOINT}/api/${OO_ORG}/${OO_STREAM}/_json`
-  : "";
 let timer: ReturnType<typeof setInterval> | null = null;
 
 async function flush(): Promise<void> {
-  if (buffer.length === 0 || !INGEST_URL) return;
+  if (buffer.length === 0) return;
   const batch = buffer.splice(0);
   try {
-    const headers: Record<string, string> = { "Content-Type": "application/json" };
-    if (OO_BASIC_AUTH) headers["Authorization"] = `Basic ${OO_BASIC_AUTH}`;
     const res = await fetch(INGEST_URL, {
       method: "POST",
-      headers,
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(batch),
     });
     if (!res.ok) {
@@ -53,7 +44,6 @@ function scheduleFlush(): void {
  * Init tracking. Called once on app load.
  */
 export function initTracking(): void {
-  if (!INGEST_URL) return;
   scheduleFlush();
 
   // Flush on page unload

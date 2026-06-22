@@ -23,6 +23,7 @@ from .analysis import (
     most_cities,
     tournaments_list,
     tournament_info,
+    season_info,
     cities_list,
     city_info,
     countries_list,
@@ -124,6 +125,14 @@ class QueryEngine:
         logger.debug("Tournament info requested: %s", name)
         try:
             return tournament_info(self._filtered_results(filters), name)
+        except ValueError as e:
+            return {"error": True, "message": str(e)}
+
+    def season(self, tournament_name: str, year: int, filters: Optional[FilterParams] = None) -> dict:
+        """Detailed stats for a specific tournament edition (season)."""
+        logger.debug("Season info requested: %s / %d", tournament_name, year)
+        try:
+            return season_info(self._filtered_results(filters), tournament_name, year)
         except ValueError as e:
             return {"error": True, "message": str(e)}
 

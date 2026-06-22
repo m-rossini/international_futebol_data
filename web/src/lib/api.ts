@@ -1,5 +1,6 @@
 import type {
   FilterParams,
+  FilterOptions,
   SummaryResponse,
   TeamStats,
   HeadToHeadResponse,
@@ -13,10 +14,11 @@ import type {
   TopScorersResponse,
   BiggestWinItem,
   GoalsPerYearItem,
+  SeasonDetail,
 } from "./types";
 import { trackApiCall } from "./tracking";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "/api/proxy";
+const API_BASE = "/api/proxy";
 
 function buildFilterQuery(filters?: FilterParams): string {
   const params = new URLSearchParams();
@@ -52,6 +54,11 @@ async function fetchApi<T>(path: string, query?: string): Promise<T> {
 // ── Meta ──
 export async function getHealth() {
   return fetchApi<{ status: string; data_loaded: boolean }>("/health");
+}
+
+/** Return all distinct filter values for pre-populating dropdowns. */
+export async function getFilterOptions(): Promise<FilterOptions> {
+  return fetchApi<FilterOptions>("/filters");
 }
 
 // ── Summary (Dashboard) ──
@@ -99,6 +106,17 @@ export async function getTournaments(filters?: FilterParams) {
 export async function getTournament(name: string, filters?: FilterParams) {
   return fetchApi<TournamentDetail>(
     `/tournament/${encodeURIComponent(name)}`,
+    buildFilterQuery(filters)
+  );
+}
+
+export async function getSeason(
+  tournamentName: string,
+  year: number,
+  filters?: FilterParams
+) {
+  return fetchApi<SeasonDetail>(
+    `/tournament/${encodeURIComponent(tournamentName)}/season/${year}`,
     buildFilterQuery(filters)
   );
 }

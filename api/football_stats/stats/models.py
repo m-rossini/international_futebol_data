@@ -335,6 +335,58 @@ class TournamentInfoResponse(BaseModel):
 
 
 # ===========================================================================
+#  GET /tournament/{name}/season/{year}
+# ===========================================================================
+
+class SeasonMatchItem(BaseModel):
+    date: str
+    home_team: str
+    away_team: str
+    home_score: int
+    away_score: int
+    city: Optional[str] = None
+    country: Optional[str] = None
+
+    model_config = ConfigDict(extra="allow")
+
+
+class SeasonStandingItem(BaseModel):
+    team: str
+    matches_played: int
+    wins: int
+    draws: int
+    losses: int
+    goals_for: int
+    goals_against: int
+    goal_diff: int
+    points: int
+
+    model_config = ConfigDict(extra="allow")
+
+
+class SeasonSummary(BaseModel):
+    matches: int
+    total_goals: int
+    avg_goals_per_match: float
+    home_wins: int
+    away_wins: int
+    draws: int
+    unique_teams: int
+    biggest_win: Optional[BiggestWinSummary] = None
+
+
+class SeasonInfoResponse(BaseModel):
+    tournament: str
+    year: int
+    host_country: Optional[str] = None
+    summary: SeasonSummary
+    standings: list[SeasonStandingItem]
+    matches_list: list[SeasonMatchItem]
+    error: Optional[bool] = None
+    message: Optional[str] = None
+
+
+# ===========================================================================
 #  GET /cities  &  GET /city/{name}
 # ===========================================================================
 
@@ -453,6 +505,20 @@ class ReloadResponse(BaseModel):
     goalscorers_loaded: int
     shootouts_loaded: int
     former_names_loaded: int
+
+
+# ===========================================================================
+#  GET /
+# ===========================================================================
+
+# ===========================================================================
+#  GET /filters
+# ===========================================================================
+
+class FilterOptionsResponse(BaseModel):
+    tournaments: list[str]
+    countries: list[str]
+    cities: list[str]
 
 
 # ===========================================================================

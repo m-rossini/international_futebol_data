@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { StatsCard } from "@/components/shared/StatsCard";
 import { DataTable } from "@/components/shared/DataTable";
@@ -32,6 +32,7 @@ function buildFilterQs(params: { tournaments: string; countries: string; date_fr
 }
 
 export function TournamentDetailClient({ name }: { name: string }) {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const tournaments = searchParams.get("tournaments") || "";
   const countries = searchParams.get("countries") || "";
@@ -168,6 +169,11 @@ export function TournamentDetailClient({ name }: { name: string }) {
               data={data.yearly}
               keyField="year"
               defaultSort={{ key: "year", dir: "desc" }}
+              onRowClick={(yb) => {
+                router.push(
+                  `/tournaments/${encodeURIComponent(name)}/${yb.year}`
+                );
+              }}
             />
           </div>
         </div>
