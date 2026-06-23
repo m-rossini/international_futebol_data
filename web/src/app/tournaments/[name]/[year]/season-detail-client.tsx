@@ -322,8 +322,8 @@ export function SeasonDetailClient({
         <h3 className="section-title mb-4">⚽ Match Results</h3>
         <DataTable
           columns={matchesColumns}
-          data={data.matches_list}
-          keyField="date"
+          data={data.matches_list.map((m, i) => ({ ...m, _idx: i }))}
+          keyField="_idx"
           defaultSort={{ key: "date", dir: "asc" }}
         />
       </div>

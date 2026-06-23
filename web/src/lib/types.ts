@@ -260,6 +260,8 @@ export interface CountryListItem {
   first_year: number;
   last_year: number;
   avg_goals: number;
+  win_rate: number;
+  loss_rate: number;
 }
 
 export interface CountryDetail {
@@ -278,6 +280,7 @@ export interface CountryDetail {
     unique_cities: number;
     biggest_win: (BiggestWin & { city?: string }) | null;
     top_teams_by_wins: TeamWinEntry[];
+    top_teams?: TournamentTopTeams;
     top_cities: Array<{ city: string; matches: number }>;
     top_tournaments: Array<{ tournament: string; matches: number }>;
   };
@@ -297,6 +300,8 @@ export interface CityListItem {
   first_year: number;
   last_year: number;
   avg_goals: number;
+  win_rate: number;
+  loss_rate: number;
 }
 
 export interface CityDetail {
@@ -315,6 +320,7 @@ export interface CityDetail {
     unique_tournaments: number;
     biggest_win: BiggestWin | null;
     top_teams_by_wins: TeamWinEntry[];
+    top_teams?: TournamentTopTeams;
     top_tournaments: Array<{ tournament: string; matches: number }>;
   };
 }

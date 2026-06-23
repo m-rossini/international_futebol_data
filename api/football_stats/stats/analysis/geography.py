@@ -53,6 +53,10 @@ class GeographyStats:
             if col in agg.columns:
                 agg[col] = agg[col].astype(int)
 
+        # computed rates
+        agg["win_rate"] = round(agg["home_wins"] / agg["matches"] * 100, 1)
+        agg["loss_rate"] = round(agg["away_wins"] / agg["matches"] * 100, 1)
+
         return agg.sort_values("matches", ascending=False).to_dict(orient="records")
 
     def info(
@@ -100,8 +104,53 @@ class GeographyStats:
             bw_row = df.nlargest(1, "goal_diff").iloc[0]
             biggest_win = post_process_biggest(biggest_win, bw_row)
 
-        # top teams
-        top_teams = df["winner"].value_counts().head(top_n)
+        # -- per-team aggregates for multi-category rankings --
+        home = df[["home_team", "home_score", "away_score"]].copy()
+        home.columns = ["team", "goals_for", "goals_against"]
+        away = df[["away_team", "away_score", "home_score"]].copy()
+        away.columns = ["team", "goals_for", "goals_against"]
+        combined = pd.concat([home, away], ignore_index=True)
+
+        per_team = combined.groupby("team").agg(
+            matches_played=("goals_for", "count"),
+            goals_for=("goals_for", "sum"),
+            goals_against=("goals_against", "sum"),
+        ).reset_index()
+
+        hw = df[df["home_win"] == 1].groupby("home_team").size()
+        aw = df[df["away_win"] == 1].groupby("away_team").size()
+        hl = df[(df["home_win"] == 0) & (df["draw"] == 0)].groupby("home_team").size()
+        al = df[(df["away_win"] == 0) & (df["draw"] == 0)].groupby("away_team").size()
+        hd = df[df["draw"] == 1].groupby("home_team").size()
+        ad = df[df["draw"] == 1].groupby("away_team").size()
+
+        def _safe_add(s1, s2):
+            return s1.add(s2, fill_value=0)
+
+        wins = _safe_add(hw, aw)
+        losses = _safe_add(hl, al)
+        team_draws = _safe_add(hd, ad)
+
+        per_team = per_team.merge(wins.rename("wins"), left_on="team", right_index=True, how="left")
+        per_team = per_team.merge(losses.rename("losses"), left_on="team", right_index=True, how="left")
+        per_team = per_team.merge(team_draws.rename("draws"), left_on="team", right_index=True, how="left")
+        per_team = per_team.fillna(0)
+        for col in ["wins", "losses", "draws", "goals_for", "goals_against"]:
+            if col in per_team.columns:
+                per_team[col] = per_team[col].astype(int)
+        per_team["goal_diff"] = per_team["goals_for"] - per_team["goals_against"]
+
+        def _top_n(pdf, col, n):
+            return pdf.nlargest(n, col)[["team", col]].rename(columns={col: "value"}).to_dict(orient="records")
+
+        multi_top_teams = {
+            "by_wins": _top_n(per_team, "wins", top_n),
+            "by_losses": _top_n(per_team, "losses", top_n),
+            "by_draws": _top_n(per_team, "draws", top_n),
+            "by_goals_for": _top_n(per_team, "goals_for", top_n),
+            "by_goals_against": _top_n(per_team, "goals_against", top_n),
+            "by_goal_diff": _top_n(per_team, "goal_diff", top_n),
+        }
 
         # top tournaments
         top_tournaments = df["tournament"].value_counts().head(top_n)
@@ -118,7 +167,8 @@ class GeographyStats:
             "unique_teams": unique_teams,
             "unique_tournaments": unique_tournaments,
             "biggest_win": biggest_win,
-            "top_teams_by_wins": [{"team": t, "wins": int(w)} for t, w in top_teams.items()],
+            "top_teams_by_wins": multi_top_teams["by_wins"],
+            "top_teams": multi_top_teams,
             "top_tournaments": [{"tournament": t, "matches": int(m)} for t, m in top_tournaments.items()],
         }
         if extra_summary:

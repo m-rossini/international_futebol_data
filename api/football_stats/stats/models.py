@@ -277,6 +277,21 @@ class TopTeamItem(BaseModel):
     wins: int
 
 
+class TeamCategoryItem(BaseModel):
+    team: str
+    value: int
+
+
+class TopTeams(BaseModel):
+    """Multi-category team rankings (wins, losses, draws, goals for/against/diff)."""
+    by_wins: list[TeamCategoryItem]
+    by_losses: list[TeamCategoryItem]
+    by_draws: list[TeamCategoryItem]
+    by_goals_for: list[TeamCategoryItem]
+    by_goals_against: list[TeamCategoryItem]
+    by_goal_diff: list[TeamCategoryItem]
+
+
 class TopCountryItem(BaseModel):
     country: str
     matches: int
@@ -420,6 +435,7 @@ class CitySummary(BaseModel):
     unique_tournaments: int
     biggest_win: Optional[BiggestWinSummary] = None
     top_teams_by_wins: list[TopTeamItem]
+    top_teams: Optional[TopTeams] = None
     top_tournaments: list[dict[str, Any]] = Field(default_factory=list)
 
 
@@ -466,6 +482,7 @@ class CountrySummary(BaseModel):
     unique_cities: int
     biggest_win: Optional[BiggestWinSummary] = None
     top_teams_by_wins: list[TopTeamItem]
+    top_teams: Optional[TopTeams] = None
     top_tournaments: list[dict[str, Any]] = Field(default_factory=list)
     top_cities: list[dict[str, Any]] = Field(default_factory=list)
 

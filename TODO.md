@@ -1,15 +1,24 @@
 # TODO
 
-- [ ] 1 - Tournament detail: 
+- [x] 1 - Tournament detail: 
     - [x] make seasons clickable to drill into season details
-    - Draw Rate is Wrong
-    - Remove Filter by Tournament, since a tournament is already chosen and selected
-- [ ] Country list: Sort by win rate, loss rate
-- [ ] Dashboard:
-    - Currently top teams is just by wins. It should be by any value such as the one in top teams as in tournaments, it actually should be the same component
-- [ ] Fixes:
-    - Tournament, Select A tournament Details and the filter shows tournament. It should mnot. I guess the Cpmpoenent could be the same, however the part of tournament selection in it should be hidden.
-    - Same as Country details in country page, it goes to a detaul page with  country as a filter when a given country is already previsouly selected.
+    - [x] Draw Rate is Wrong — was returning per-team dict instead of scalar int (variable shadowing bug)
+    - [x] Remove Filter by Tournament — now passes `showTournaments={false}`
+- [x] 2 - Country list
+    - [x] Add win_rate & loss_rate columns (backend + frontend)
+    - [x] Add sort chips (Matches, Win Rate, Loss Rate, Goals, Cities, First/Last Year)
+    - [x] Hide the countries filter from countries page and country detail page
+- [x] 3 - Cities list
+    - [x] Multi-category top teams tabs (by wins, losses, draws, goals for, goals against, goal diff) on city detail page
+    - [x] Same multi-category top teams on country detail page
+    - [x] Backend: GeographyStats.info() now computes per-team stats for all categories
+    - [x] Hide countries filter on city detail page
+- [x] Dashboard:
+    - [x] Multi-category top teams tabs (wins, losses, draws, goals for, goals against)
+- [x] Fixes:
+    - [x] Tournament detail hides tournament filter ✅
+    - [x] Country detail hides countries filter ✅
+    - [x] City detail hides countries filter ✅
 ---
 
 ## Done

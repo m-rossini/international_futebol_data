@@ -4,11 +4,22 @@ import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { FilterBar } from "@/components/shared/FilterBar";
 import { DataTable } from "@/components/shared/DataTable";
-import { formatNumber, getFlagUrl } from "@/lib/utils";
+import { formatNumber, getFlagUrl, winRateClass } from "@/lib/utils";
 import type { CountryListItem } from "@/lib/types";
 
 const API = "/api/proxy";
 
+const SORTS = [
+  { key: "matches", label: "Matches" },
+  { key: "win_rate", label: "Win Rate" },
+  { key: "loss_rate", label: "Loss Rate" },
+  { key: "total_goals", label: "Goals" },
+  { key: "cities", label: "Cities" },
+  { key: "first_year", label: "First Year" },
+  { key: "last_year", label: "Last Year" },
+];
+
+type SortKey = (typeof SORTS)[number]["key"];
 
 function buildFilterQs(params: { tournaments: string; countries: string; date_from: string; date_to: string }): string {
   const q = new URLSearchParams();
@@ -28,6 +39,8 @@ export function CountriesClient() {
   const dateTo = searchParams.get("date_to") || "";
   const [countryList, setCountryList] = useState<CountryListItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [sortBy, setSortBy] = useState<SortKey>("matches");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
   useEffect(() => {
     let cancelled = false;
@@ -74,6 +87,18 @@ export function CountriesClient() {
     );
   }
 
+  const sorted = [...countryList].sort((a, b) => {
+    let cmp: number;
+    if (sortBy === "matches" || sortBy === "total_goals" || sortBy === "cities" ||
+        sortBy === "first_year" || sortBy === "last_year") {
+      cmp = a[sortBy] - b[sortBy];
+    } else {
+      cmp = a[sortBy] - b[sortBy];
+    }
+    if (Number.isNaN(cmp)) cmp = 0;
+    return sortDir === "asc" ? cmp : -cmp;
+  });
+
   const columns = [
     { key: "_rank", header: "#", render: (_: CountryListItem, idx: number) => idx + 1, className: "w-12" },
     {
@@ -87,6 +112,18 @@ export function CountriesClient() {
       ),
     },
     { key: "matches", header: "Matches", sortable: true, render: (c: CountryListItem) => formatNumber(c.matches) },
+    {
+      key: "win_rate", header: "Win Rate", sortable: true,
+      render: (c: CountryListItem) => (
+        <span className={`badge ${winRateClass(c.win_rate)}`}>{c.win_rate.toFixed(1)}%</span>
+      ),
+    },
+    {
+      key: "loss_rate", header: "Loss Rate", sortable: true,
+      render: (c: CountryListItem) => (
+        <span className="text-[13px] text-[#6C757D]">{c.loss_rate.toFixed(1)}%</span>
+      ),
+    },
     { key: "total_goals", header: "Goals", sortable: true, render: (c: CountryListItem) => formatNumber(c.total_goals) },
     { key: "cities", header: "Cities", sortable: true },
     { key: "first_year", header: "First Year", sortable: true },
@@ -99,10 +136,36 @@ export function CountriesClient() {
       <p className="text-[14px] text-[#6C757D] mb-4">
         {countryList.length} countries where matches have been hosted.
       </p>
-      <FilterBar showCountries showDateRange />
+      <FilterBar showTournaments showCountries={false} showDateRange />
+
+      {/* Sort controls */}
+      <div className="card p-4 mb-6">
+        <div className="flex items-center gap-3 flex-wrap">
+          <span className="text-[13px] font-semibold text-[#6C757D]">Sort by:</span>
+          <div className="flex gap-1 flex-wrap">
+            {SORTS.map((s) => (
+              <button
+                key={s.key}
+                onClick={() => {
+                  if (sortBy === s.key) {
+                    setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+                  } else {
+                    setSortBy(s.key);
+                    setSortDir("desc");
+                  }
+                }}
+                className={`chip ${sortBy === s.key ? "active" : ""}`}
+              >
+                {s.label} {sortBy === s.key && (sortDir === "asc" ? "↑" : "↓")}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
       <DataTable
         columns={columns}
-        data={countryList}
+        data={sorted}
         keyField="country"
         defaultSort={{ key: "matches", dir: "desc" }}
         onRowClick={(c) => router.push(`/countries/${encodeURIComponent(c.country)}`)}

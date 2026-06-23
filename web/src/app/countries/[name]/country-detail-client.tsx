@@ -8,9 +8,18 @@ import { FilterBar } from "@/components/shared/FilterBar";
 import { TopList } from "@/components/shared/TopList";
 import { formatNumber, getFlagUrl } from "@/lib/utils";
 import { ArrowLeft } from "lucide-react";
-import type { CountryDetail } from "@/lib/types";
+import type { CountryDetail, TeamCategoryItem } from "@/lib/types";
 
 const API = "/api/proxy";
+
+const TOP_TEAM_CATEGORIES: { key: keyof NonNullable<CountryDetail["summary"]["top_teams"]>; label: string }[] = [
+  { key: "by_wins", label: "Wins" },
+  { key: "by_losses", label: "Losses" },
+  { key: "by_draws", label: "Draws" },
+  { key: "by_goals_for", label: "Goals For" },
+  { key: "by_goals_against", label: "Goals Against" },
+  { key: "by_goal_diff", label: "Goal Diff" },
+];
 
 function buildFilterQs(params: { tournaments: string; countries: string; date_from: string; date_to: string }): string {
   const q = new URLSearchParams();
@@ -29,6 +38,7 @@ export function CountryDetailClient({ name }: { name: string }) {
   const dateTo = searchParams.get("date_to") || "";
   const [data, setData] = useState<CountryDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [topTeamCategory, setTopTeamCategory] = useState<string>("by_wins");
 
   useEffect(() => {
     let cancelled = false;
@@ -88,12 +98,13 @@ export function CountryDetailClient({ name }: { name: string }) {
 
   const s = data.summary;
 
-  const topTeams = (s.top_teams_by_wins || [])
+  const topTeamsData = (s.top_teams?.[topTeamCategory as keyof typeof s.top_teams] as TeamCategoryItem[]) || s.top_teams_by_wins || [];
+  const topTeams = topTeamsData
     .slice(0, 10)
-    .map((t, i) => ({
+    .map((t: TeamCategoryItem, i: number) => ({
       rank: i + 1,
       name: t.team,
-      value: formatNumber(t.wins),
+      value: formatNumber(t.value),
       href: `/teams/${encodeURIComponent(t.team)}`,
       imageUrl: getFlagUrl(t.team, 24),
     }));
@@ -117,7 +128,7 @@ export function CountryDetailClient({ name }: { name: string }) {
         {s.first_year} – {s.last_year} · {formatNumber(s.matches)} matches · {formatNumber(s.total_goals)} goals
       </p>
 
-      <FilterBar showCountries showDateRange />
+      <FilterBar showTournaments showCountries={false} showDateRange />
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
@@ -129,9 +140,33 @@ export function CountryDetailClient({ name }: { name: string }) {
         <StatsCard label="Draws" value={s.draws} />
       </div>
 
-      {/* Lists */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        <TopList title="👥 Top Teams" items={topTeams} maxValue={s.top_teams_by_wins?.[0]?.wins || 1} />
+      {/* Top Teams — multi-category */}
+      {s.top_teams && (
+        <div className="card p-5 mb-8">
+          <div className="flex items-center gap-3 flex-wrap mb-4">
+            <span className="text-[13px] font-semibold text-[#6C757D]">Top Teams by:</span>
+            <div className="flex gap-1 flex-wrap">
+              {TOP_TEAM_CATEGORIES.map((cat) => (
+                <button
+                  key={cat.key}
+                  onClick={() => setTopTeamCategory(cat.key)}
+                  className={`chip ${topTeamCategory === cat.key ? "active" : ""}`}
+                >
+                  {cat.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <TopList
+            title={`🏆 Top Teams (by ${TOP_TEAM_CATEGORIES.find((c) => c.key === topTeamCategory)?.label || "Wins"})`}
+            items={topTeams}
+            maxValue={topTeamsData[0]?.value || 1}
+          />
+        </div>
+      )}
+
+      {/* Top Cities */}
+      <div className="card p-5 mb-8">
         <TopList title="🏙️ Top Cities" items={topCities} maxValue={s.top_cities?.[0]?.matches || 1} />
       </div>
 

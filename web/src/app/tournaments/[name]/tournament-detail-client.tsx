@@ -107,6 +107,7 @@ export function TournamentDetailClient({ name }: { name: string }) {
     }));
 
   const homePct = s.matches > 0 ? (s.home_wins / s.matches) * 100 : 0;
+  const awayPct = s.matches > 0 ? (s.away_wins / s.matches) * 100 : 0;
   const drawPct = s.matches > 0 ? (s.draws / s.matches) * 100 : 0;
 
   return (
@@ -119,7 +120,7 @@ export function TournamentDetailClient({ name }: { name: string }) {
         {s.first_year} – {s.last_year} · {s.editions} editions · {s.unique_teams} teams
       </p>
 
-      <FilterBar showCountries showDateRange />
+      <FilterBar showTournaments={false} showCountries showDateRange />
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
@@ -130,6 +131,7 @@ export function TournamentDetailClient({ name }: { name: string }) {
         <StatsCard label="Goals" value={formatNumber(s.total_goals)} sub={`${s.avg_goals_per_match.toFixed(2)} avg/match`} />
         <StatsCard label="Teams" value={s.unique_teams} />
         <StatsCard label="Home Win Rate" value={`${homePct.toFixed(0)}%`} subColor="success" />
+        <StatsCard label="Away Win Rate" value={`${awayPct.toFixed(0)}%`} subColor="danger" />
         <StatsCard label="Draw Rate" value={`${drawPct.toFixed(0)}%`} subColor="warning" />
       </div>
 

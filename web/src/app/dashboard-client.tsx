@@ -10,6 +10,14 @@ import type { SummaryResponse, TeamRankingItem } from "@/lib/types";
 
 const API = "/api/proxy";
 
+const TOP_TEAM_CATEGORIES: { key: string; label: string }[] = [
+  { key: "wins", label: "Wins" },
+  { key: "losses", label: "Losses" },
+  { key: "draws", label: "Draws" },
+  { key: "goals_for", label: "Goals For" },
+  { key: "goals_against", label: "Goals Against" },
+];
+
 function buildFilterQs(params: { tournaments: string; countries: string; date_from: string; date_to: string }): string {
   const q = new URLSearchParams();
   if (params.tournaments) q.set("tournaments", params.tournaments);
@@ -27,6 +35,7 @@ export function DashboardClient() {
   const dateTo = sp.get("date_to") || "";
   const [summary, setSummary] = useState<SummaryResponse | null>(null);
   const [topTeams, setTopTeams] = useState<TeamRankingItem[]>([]);
+  const [topTeamCategory, setTopTeamCategory] = useState<string>("wins");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -39,16 +48,15 @@ export function DashboardClient() {
       try {
         const [summaryRes, teamsRes] = await Promise.all([
           fetch(`${API}/summary${fq ? "?" + fq : ""}`).then((r) => r.json()),
-          fetch(`${API}/most/wins?top_n=10${fq ? "&" + fq : ""}`).then((r) => r.json()),
+          fetch(`${API}/most/${topTeamCategory}?top_n=10${fq ? "&" + fq : ""}`).then((r) => r.json()),
         ]);
         if (!cancelled) {
           setSummary(summaryRes);
-          // /most/wins returns { stat, top_n, ranking: [{ team, wins }] }
           const rawRanking = (teamsRes.ranking || []) as Array<Record<string, unknown>>;
           const mapped: TeamRankingItem[] = rawRanking.map((item, idx) => ({
             rank: idx + 1,
             team: String(item.team || ""),
-            value: Number((item as Record<string, number>).wins ?? 0),
+            value: Number((item as Record<string, number>)[topTeamCategory] ?? 0),
           }));
           setTopTeams(mapped);
           setLoading(false);
@@ -61,7 +69,7 @@ export function DashboardClient() {
 
     load();
     return () => { cancelled = true; };
-  }, [tournaments, countries, dateFrom, dateTo]);
+  }, [tournaments, countries, dateFrom, dateTo, topTeamCategory]);
 
   if (loading) {
     return (
@@ -199,9 +207,22 @@ export function DashboardClient() {
         )}
       </div>
 
-      {/* Top Teams bar chart */}
+      {/* Top Teams — multi-category */}
       <div className="card p-5 mb-8">
-        <h3 className="section-title mb-4">👥 Top Teams (by Wins)</h3>
+        <div className="flex items-center gap-3 flex-wrap mb-4">
+          <span className="text-[13px] font-semibold text-[#6C757D]">Top Teams by:</span>
+          <div className="flex gap-1 flex-wrap">
+            {TOP_TEAM_CATEGORIES.map((cat) => (
+              <button
+                key={cat.key}
+                onClick={() => setTopTeamCategory(cat.key)}
+                className={`chip ${topTeamCategory === cat.key ? "active" : ""}`}
+              >
+                {cat.label}
+              </button>
+            ))}
+          </div>
+        </div>
         <div className="space-y-3">
           {topTeams.slice(0, 10).map((t, i) => (
             <div key={t.team} className="flex items-center gap-3">

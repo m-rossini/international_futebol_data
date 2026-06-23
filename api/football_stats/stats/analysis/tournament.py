@@ -139,11 +139,11 @@ def tournament_info(results: pd.DataFrame, tournament: str, top_n: int = 10) -> 
 
     wins = _safe_add(hw, aw)
     losses = _safe_add(hl, al)
-    draws = _safe_add(hd, ad)
+    team_draws = _safe_add(hd, ad)
 
     per_team = per_team.merge(wins.rename("wins"), left_on="team", right_index=True, how="left")
     per_team = per_team.merge(losses.rename("losses"), left_on="team", right_index=True, how="left")
-    per_team = per_team.merge(draws.rename("draws"), left_on="team", right_index=True, how="left")
+    per_team = per_team.merge(team_draws.rename("draws"), left_on="team", right_index=True, how="left")
     per_team = per_team.fillna(0)
     for col in ["wins", "losses", "draws", "goals_for", "goals_against"]:
         if col in per_team.columns:
