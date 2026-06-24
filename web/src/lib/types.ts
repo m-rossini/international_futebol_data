@@ -225,6 +225,18 @@ export interface TeamListItem {
 }
 
 // ── Head-to-Head ──
+export interface H2HMatchItem {
+  date: string;
+  home_team: string;
+  away_team: string;
+  home_score: number;
+  away_score: number;
+  tournament?: string;
+  city?: string;
+  country?: string;
+  neutral?: boolean;
+}
+
 export interface HeadToHeadResponse {
   team1: string;
   team2: string;
@@ -238,6 +250,7 @@ export interface HeadToHeadResponse {
   team2_win_rate: number;
   team1_avg_goals: number;
   team2_avg_goals: number;
+  matches_list: H2HMatchItem[];
   total_goals_per_match_stats: {
     mean: number;
     median: number;

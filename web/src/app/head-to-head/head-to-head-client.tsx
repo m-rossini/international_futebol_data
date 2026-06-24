@@ -83,6 +83,7 @@ export function HeadToHeadClient() {
         team2_win_rate: totalMatches > 0 ? (t2_wins / totalMatches) * 100 : 0,
         team1_avg_goals: totalMatches > 0 ? t1_goals / totalMatches : 0,
         team2_avg_goals: totalMatches > 0 ? t2_goals / totalMatches : 0,
+        matches_list: (json.matches_list as HeadToHeadResponse["matches_list"]) || [],
         total_goals_per_match_stats: json.total_goals_per_match_stats as HeadToHeadResponse["total_goals_per_match_stats"],
       });
     } catch (err) {
@@ -294,7 +295,68 @@ export function HeadToHeadClient() {
               </div>
             </div>
           )}
+          {/* Match History */}
+          {data.matches_list && data.matches_list.length > 0 && (
+            <div className="card p-5 mb-6">
+              <h3 className="section-title mb-4">⚽ Match History</h3>
+              <div className="overflow-x-auto">
+                <table className="data-table w-full">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Home</th>
+                      <th className="text-center">Score</th>
+                      <th>Away</th>
+                      <th>Tournament</th>
+                      <th>City</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.matches_list.map((m, i) => (
+                      <tr key={i}>
+                        <td className="text-[13px] text-[#6C757D] whitespace-nowrap">
+                          {m.date?.slice(0, 10)}
+                        </td>
+                        <td>
+                          <div className="flex items-center gap-1.5">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={getFlagUrl(m.home_team, 24)} alt="" className="w-5 h-3.5 object-cover rounded-sm shrink-0" />
+                            <span className={m.home_team === data.team1 ? "font-semibold text-[#1A56DB]" : "font-semibold text-[#E83E8C]"}>
+                              {m.home_team}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="text-center font-bold text-[15px] tabular-nums whitespace-nowrap">
+                          <span className={m.home_score > m.away_score ? "text-[#198754]" : m.home_score < m.away_score ? "text-[#DC3545]" : "text-[#FD7E14]"}>
+                            {m.home_score}
+                          </span>
+                          <span className="text-[#ADB5BD] mx-1">–</span>
+                          <span className={m.away_score > m.home_score ? "text-[#198754]" : m.away_score < m.home_score ? "text-[#DC3545]" : "text-[#FD7E14]"}>
+                            {m.away_score}
+                          </span>
+                        </td>
+                        <td>
+                          <div className="flex items-center gap-1.5">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={getFlagUrl(m.away_team, 24)} alt="" className="w-5 h-3.5 object-cover rounded-sm shrink-0" />
+                            <span className={m.away_team === data.team1 ? "font-semibold text-[#1A56DB]" : "font-semibold text-[#E83E8C]"}>
+                              {m.away_team}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="text-[13px] text-[#6C757D]">{m.tournament || "—"}</td>
+                        <td className="text-[13px] text-[#6C757D]">
+                          {m.city || "—"}{m.country ? `, ${m.country}` : ""}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </>
+
       )}
 
       {!data && !loading && (

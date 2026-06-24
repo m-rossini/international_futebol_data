@@ -154,12 +154,28 @@ class TeamResponse(BaseModel):
 #  GET /head_to_head
 # ===========================================================================
 
+class H2HMatchItem(BaseModel):
+    """A single match between two teams in head-to-head results."""
+    date: str
+    home_team: str
+    away_team: str
+    home_score: int
+    away_score: int
+    tournament: Optional[str] = None
+    city: Optional[str] = None
+    country: Optional[str] = None
+    neutral: Optional[bool] = None
+
+    model_config = ConfigDict(extra="allow")
+
+
 class HeadToHeadResponse(BaseModel):
     team1: str
     team2: str
     matches: int
     draws: int
     total_goals_per_match_stats: Optional[SeriesStats] = None
+    matches_list: list[H2HMatchItem] = Field(default_factory=list)
     error: Optional[bool] = None
     message: Optional[str] = None
 

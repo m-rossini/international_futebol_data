@@ -142,6 +142,22 @@ def team_vs_team(results: pd.DataFrame, team1: str, team2: str) -> dict:
         (matches["away_team"] == team2)
     ]["away_score"].sum()
 
+    # -- matches list (chronological) --
+    matches_sorted = matches.sort_values("date")
+    matches_list = []
+    for _, row in matches_sorted.iterrows():
+        matches_list.append({
+            "date": str(row["date"]),
+            "home_team": row["home_team"],
+            "away_team": row["away_team"],
+            "home_score": int(row["home_score"]),
+            "away_score": int(row["away_score"]),
+            "tournament": row.get("tournament"),
+            "city": row.get("city"),
+            "country": row.get("country"),
+            "neutral": bool(row.get("neutral", False)) if "neutral" in row.index else None,
+        })
+
     result = {
         "team1": team1,
         "team2": team2,
@@ -151,6 +167,7 @@ def team_vs_team(results: pd.DataFrame, team1: str, team2: str) -> dict:
         "draws": draws,
         f"{team1}_goals": int(team1_goals),
         f"{team2}_goals": int(team2_goals),
+        "matches_list": matches_list,
     }
 
     # Add advanced goal stats if there are matches between the two teams
