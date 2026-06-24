@@ -1,24 +1,24 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { StatsCard } from "@/components/shared/StatsCard";
-import { TopList } from "@/components/shared/TopList";
 import { FilterBar } from "@/components/shared/FilterBar";
+import { DecadeChart } from "@/components/shared/DecadeChart";
 import { formatNumber, getFlagUrl } from "@/lib/utils";
-import type { SummaryResponse, TeamRankingItem } from "@/lib/types";
+import type { SummaryResponse, TeamRankingItem, GoalsPerYearItem } from "@/lib/types";
 
 const API = "/api/proxy";
 
-const TOP_TEAM_CATEGORIES: { key: string; label: string }[] = [
-  { key: "wins", label: "Wins" },
-  { key: "losses", label: "Losses" },
-  { key: "draws", label: "Draws" },
-  { key: "goals_for", label: "Goals For" },
-  { key: "goals_against", label: "Goals Against" },
+const TOP_TEAM_CATEGORIES: { key: string; label: string; valueKey: string }[] = [
+  { key: "wins", label: "Wins", valueKey: "wins" },
+  { key: "losses", label: "Losses", valueKey: "losses" },
+  { key: "draws", label: "Draws", valueKey: "draws" },
+  { key: "goals_pro", label: "Goals For", valueKey: "goals_for" },
+  { key: "goals_against", label: "Goals Against", valueKey: "goals_against" },
 ];
 
-function buildFilterQs(params: { tournaments: string; countries: string; date_from: string; date_to: string }): string {
+function buildQs(params: { tournaments: string; countries: string; date_from: string; date_to: string }): string {
   const q = new URLSearchParams();
   if (params.tournaments) q.set("tournaments", params.tournaments);
   if (params.countries) q.set("countries", params.countries);
@@ -27,36 +27,62 @@ function buildFilterQs(params: { tournaments: string; countries: string; date_fr
   return q.toString();
 }
 
+// ── decade aggregation ──
+interface DecadeDatum {
+  decade: string;
+  matches: number;
+  goals: number;
+}
+
+function buildDecades(yearly: GoalsPerYearItem[]): DecadeDatum[] {
+  const map = new Map<number, { matches: number; goals: number }>();
+  yearly.forEach((y) => {
+    const d = Math.floor(y.year / 10) * 10;
+    if (!map.has(d)) map.set(d, { matches: 0, goals: 0 });
+    const e = map.get(d)!;
+    e.matches += y.matches;
+    e.goals += y.goals;
+  });
+  return Array.from(map.entries())
+    .sort(([a], [b]) => a - b)
+    .map(([decade, v]) => ({ decade: `${decade}s`, ...v }));
+}
+
 export function DashboardClient() {
   const sp = useSearchParams();
   const tournaments = sp.get("tournaments") || "";
   const countries = sp.get("countries") || "";
   const dateFrom = sp.get("date_from") || "";
   const dateTo = sp.get("date_to") || "";
+
   const [summary, setSummary] = useState<SummaryResponse | null>(null);
   const [topTeams, setTopTeams] = useState<TeamRankingItem[]>([]);
   const [topTeamCategory, setTopTeamCategory] = useState<string>("wins");
+  const [yearlyData, setYearlyData] = useState<GoalsPerYearItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
     const params = { tournaments, countries, date_from: dateFrom, date_to: dateTo };
-    const fq = buildFilterQs(params);
+    const fq = buildQs(params);
+    const cat = TOP_TEAM_CATEGORIES.find((c) => c.key === topTeamCategory) || TOP_TEAM_CATEGORIES[0];
 
     async function load() {
       if (!cancelled) setLoading(true);
       try {
-        const [summaryRes, teamsRes] = await Promise.all([
+        const [summaryRes, teamsRes, gpyRes] = await Promise.all([
           fetch(`${API}/summary${fq ? "?" + fq : ""}`).then((r) => r.json()),
-          fetch(`${API}/most/${topTeamCategory}?top_n=10${fq ? "&" + fq : ""}`).then((r) => r.json()),
+          fetch(`${API}/most/${cat.key}?top_n=10${fq ? "&" + fq : ""}`).then((r) => r.json()),
+          fetch(`${API}/goals_per_year?sort_by=year&order=asc${fq ? "&" + fq : ""}`).then((r) => r.json()),
         ]);
         if (!cancelled) {
           setSummary(summaryRes);
+          setYearlyData(gpyRes || []);
           const rawRanking = (teamsRes.ranking || []) as Array<Record<string, unknown>>;
           const mapped: TeamRankingItem[] = rawRanking.map((item, idx) => ({
             rank: idx + 1,
             team: String(item.team || ""),
-            value: Number((item as Record<string, number>)[topTeamCategory] ?? 0),
+            value: Number((item as Record<string, number>)[cat.valueKey] ?? 0),
           }));
           setTopTeams(mapped);
           setLoading(false);
@@ -71,6 +97,8 @@ export function DashboardClient() {
     return () => { cancelled = true; };
   }, [tournaments, countries, dateFrom, dateTo, topTeamCategory]);
 
+  const decades = useMemo(() => buildDecades(yearlyData), [yearlyData]);
+
   if (loading) {
     return (
       <div>
@@ -83,6 +111,10 @@ export function DashboardClient() {
   const r = summary?.results;
   const g = summary?.goalscorers;
   const ha = r?.home_advantage;
+
+  // max for bar scaling
+  const maxDecadeMatches = decades.length > 0 ? Math.max(...decades.map((d) => d.matches)) : 1;
+  const maxDecadeGoals = decades.length > 0 ? Math.max(...decades.map((d) => d.goals)) : 1;
 
   return (
     <div>
@@ -103,44 +135,26 @@ export function DashboardClient() {
         <StatsCard label="Scorers" value={g?.unique_scorers ? formatNumber(g.unique_scorers) : "—"} sub="All time" />
       </div>
 
-      {/* Charts row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        {/* Matches Over Time */}
-        <div className="card p-5">
-          <h3 className="section-title mb-4">📈 Matches Per Year</h3>
-          {r?.match_distribution?.matches_per_year && (
-            <>
-              <div className="h-[240px] flex items-end gap-[2px] px-4 pb-2">
-                {Object.entries(r.match_distribution.matches_per_year)
-                  .sort(([a], [b]) => a.localeCompare(b))
-                  .map(([year, val]) => {
-                    const maxVal = Math.max(...Object.values(r.match_distribution.matches_per_year));
-                    const pct = maxVal > 0 ? (val / maxVal) * 100 : 0;
-                    return (
-                      <div
-                        key={year}
-                        className="bg-[#1A56DB] rounded-t-sm flex-1"
-                        style={{ height: `${pct}%`, opacity: 0.5 + pct / 200 }}
-                        title={`${year}: ${val} matches`}
-                      />
-                    );
-                  })}
-              </div>
-              <div className="flex justify-between mt-2 text-[11px] text-[#ADB5BD]">
-                <span>{Object.keys(r.match_distribution.matches_per_year).sort()[0]}</span>
-                <span>{Object.keys(r.match_distribution.matches_per_year).sort().slice(-1)[0]}</span>
-              </div>
-            </>
-          )}
+      {/* Scoring Rate by Decade */}
+      {yearlyData.length > 0 && (
+        <div className="card p-5 mb-8">
+          <h3 className="section-title mb-2">⚽ Goals per Match by Decade</h3>
+          <p className="text-[12px] text-[#ADB5BD] mb-1">
+            How scoring rate has changed over time · dashed line = all-time average
+          </p>
+          <DecadeChart yearly={yearlyData} />
         </div>
+      )}
 
-        {/* Win/Loss/Draw — SVG pie */}
+      {/* Side-by-side: Match Outcomes + Matches by Decade */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        {/* Match Outcomes pie */}
         <div className="card p-5">
           <h3 className="section-title mb-4">📊 Match Outcomes</h3>
           {ha && (
             <>
               <div className="flex items-center justify-center" style={{ height: 200 }}>
-                <svg viewBox="0 0 200 200" width="180" height="180">
+                <svg viewBox="0 0 200 200" width="170" height="170">
                   <circle cx="100" cy="100" r="70" fill="none" stroke="#198754" strokeWidth="30"
                     strokeDasharray={`${ha.home_win_pct * 4.4} 440`} strokeDashoffset="0"
                     transform="rotate(-90 100 100)" />
@@ -168,43 +182,48 @@ export function DashboardClient() {
             </>
           )}
         </div>
-      </div>
 
-      {/* Top lists */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        {r?.match_distribution?.matches_per_tournament && (
-          <TopList
-            title="🏆 Top Tournaments"
-            viewAllHref="/tournaments"
-            items={Object.entries(r.match_distribution.matches_per_tournament)
-              .sort(([, a], [, b]) => b - a)
-              .slice(0, 5)
-              .map(([name, val], i) => ({ rank: i + 1, name, value: formatNumber(val), sub: "matches" }))}
-          />
-        )}
-        {g && (
-          <div className="card p-5">
-            <h3 className="section-title mb-4">⚽ Goalscorers</h3>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="text-center p-3 bg-[#F8F9FA] rounded-lg">
-                <div className="text-[18px] font-bold">{formatNumber(g.unique_scorers)}</div>
-                <div className="text-[12px] text-[#6C757D]">Unique Scorers</div>
+        {/* Matches & Goals by Decade — stacked bar chart */}
+        <div className="card p-5">
+          <h3 className="section-title mb-2">📅 Matches &amp; Goals by Decade</h3>
+          <p className="text-[11px] text-[#ADB5BD] mb-3">Top label: matches · Bottom: total goals</p>
+          {decades.length > 0 && (
+            <>
+              <div className="h-[190px] flex items-end gap-[3px] px-3 pb-1">
+                {decades.map((d) => {
+                  const matchPct = (d.matches / maxDecadeMatches) * 100;
+                  const goalPct = (d.goals / maxDecadeGoals) * 100;
+                  return (
+                    <div key={d.decade} className="flex-1 flex flex-col items-center gap-0.5" title={`${d.decade}: ${formatNumber(d.matches)} matches, ${formatNumber(d.goals)} goals`}>
+                      <span className="text-[9px] text-[#6C757D] leading-none">{formatNumber(d.matches)}</span>
+                      <div className="w-full flex flex-col justify-end" style={{ height: 155 }}>
+                        <div
+                          className="w-full bg-[#1A56DB] rounded-t-sm"
+                          style={{ height: `${Math.max(3, matchPct)}%`, opacity: 0.65 + matchPct / 300 }}
+                        />
+                        <div
+                          className="w-full bg-[#DC3545] rounded-t-sm"
+                          style={{ height: `${Math.max(3, goalPct)}%`, opacity: 0.5 + goalPct / 300 }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-              <div className="text-center p-3 bg-[#F8F9FA] rounded-lg">
-                <div className="text-[18px] font-bold">{formatNumber(g.own_goals)}</div>
-                <div className="text-[12px] text-[#6C757D]">Own Goals</div>
+              <div className="flex justify-between mt-2 px-3">
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-1.5 text-[11px]"><span className="w-2.5 h-2.5 rounded-sm inline-block bg-[#1A56DB]" /> Matches</div>
+                  <div className="flex items-center gap-1.5 text-[11px]"><span className="w-2.5 h-2.5 rounded-sm inline-block bg-[#DC3545]" /> Goals</div>
+                </div>
+                <div className="flex gap-6 text-[11px] text-[#ADB5BD]">
+                  {decades.filter((_, i) => i === 0 || i === decades.length - 1).map((d) => (
+                    <span key={d.decade}>{d.decade}</span>
+                  ))}
+                </div>
               </div>
-              <div className="text-center p-3 bg-[#F8F9FA] rounded-lg">
-                <div className="text-[18px] font-bold">{formatNumber(g.total_goals_recorded)}</div>
-                <div className="text-[12px] text-[#6C757D]">Goals Recorded</div>
-              </div>
-              <div className="text-center p-3 bg-[#F8F9FA] rounded-lg">
-                <div className="text-[18px] font-bold">{g.unique_teams_scored_for}</div>
-                <div className="text-[12px] text-[#6C757D]">Teams Scored For</div>
-              </div>
-            </div>
-          </div>
-        )}
+            </>
+          )}
+        </div>
       </div>
 
       {/* Top Teams — multi-category */}
