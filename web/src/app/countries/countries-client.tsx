@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { FilterBar } from "@/components/shared/FilterBar";
 import { DataTable } from "@/components/shared/DataTable";
 import { formatNumber, getFlagUrl, winRateClass } from "@/lib/utils";
+import { useFilterHref } from "@/lib/use-filter-href";
 import type { CountryListItem } from "@/lib/types";
 
 const API = "/api/proxy";
@@ -32,6 +33,7 @@ function buildFilterQs(params: { tournaments: string; countries: string; date_fr
 
 export function CountriesClient() {
   const router = useRouter();
+  const to = useFilterHref();
   const searchParams = useSearchParams();
   const tournaments = searchParams.get("tournaments") || "";
   const countries = searchParams.get("countries") || "";
@@ -168,7 +170,7 @@ export function CountriesClient() {
         data={sorted}
         keyField="country"
         defaultSort={{ key: "matches", dir: "desc" }}
-        onRowClick={(c) => router.push(`/countries/${encodeURIComponent(c.country)}`)}
+        onRowClick={(c) => router.push(to(`/countries/${encodeURIComponent(c.country)}`))}
       />
     </div>
   );

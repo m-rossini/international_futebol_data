@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { FilterBar } from "@/components/shared/FilterBar";
 import { DataTable } from "@/components/shared/DataTable";
 import { formatNumber, winRateClass, getFlagUrl } from "@/lib/utils";
+import { useFilterHref } from "@/lib/use-filter-href";
 import type { TeamListItem } from "@/lib/types";
 
 const API = "/api/proxy";
@@ -21,6 +22,7 @@ function buildFilterQs(params: { tournaments: string; countries: string; date_fr
 
 export function TeamsClient() {
   const router = useRouter();
+  const to = useFilterHref();
   const searchParams = useSearchParams();
   const tournaments = searchParams.get("tournaments") || "";
   const countries = searchParams.get("countries") || "";
@@ -118,7 +120,7 @@ export function TeamsClient() {
         data={teams}
         keyField="team"
         defaultSort={{ key: "matches", dir: "desc" }}
-        onRowClick={(t) => router.push(`/teams/${encodeURIComponent(t.team)}`)}
+        onRowClick={(t) => router.push(to(`/teams/${encodeURIComponent(t.team)}`))}
       />
     </div>
   );

@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { FilterBar } from "@/components/shared/FilterBar";
 import { getFlagUrl } from "@/lib/utils";
+import { useFilterHref } from "@/lib/use-filter-href";
 import type { BiggestWinItem } from "@/lib/types";
 
 const API = "/api/proxy";
@@ -28,6 +29,7 @@ export function BiggestWinsClient() {
   const [topN, setTopN] = useState(Number(searchParams.get("top_n") || 25));
   const [wins, setWins] = useState<BiggestWinItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const to = useFilterHref();
 
   useEffect(() => {
     let cancelled = false;
@@ -128,7 +130,7 @@ export function BiggestWinsClient() {
                     <div className="flex items-center gap-1.5">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={getFlagUrl(w.home_team, 24)} alt="" className="w-5 h-3.5 object-cover rounded-sm shrink-0" />
-                      <Link href={`/teams/${encodeURIComponent(w.home_team)}`} className="text-[#1A56DB] hover:underline font-semibold">
+                      <Link href={to(`/teams/${encodeURIComponent(w.home_team)}`)} className="text-[#1A56DB] hover:underline font-semibold">
                         {w.home_team}
                       </Link>
                     </div>
@@ -142,7 +144,7 @@ export function BiggestWinsClient() {
                     <div className="flex items-center gap-1.5">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={getFlagUrl(w.away_team, 24)} alt="" className="w-5 h-3.5 object-cover rounded-sm shrink-0" />
-                      <Link href={`/teams/${encodeURIComponent(w.away_team)}`} className="text-[#1A56DB] hover:underline">
+                      <Link href={to(`/teams/${encodeURIComponent(w.away_team)}`)} className="text-[#1A56DB] hover:underline">
                         {w.away_team}
                       </Link>
                     </div>

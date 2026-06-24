@@ -58,7 +58,7 @@ export function FilterBar({
     if (dateFrom) params.set("date_from", dateFrom);
     if (dateTo) params.set("date_to", dateTo);
     const qs = params.toString();
-    router.push(qs ? `${pathname}?${qs}` : pathname);
+    router.replace(qs ? `${pathname}?${qs}` : pathname);
   }, [router, pathname, tournaments, countries, dateFrom, dateTo]);
 
   const clear = useCallback(() => {
@@ -66,7 +66,7 @@ export function FilterBar({
     setCountries([]);
     setDateFrom("");
     setDateTo("");
-    router.push(pathname);
+    router.replace(pathname);
   }, [router, pathname]);
 
   return (

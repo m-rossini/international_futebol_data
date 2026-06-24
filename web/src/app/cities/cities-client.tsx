@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { FilterBar } from "@/components/shared/FilterBar";
 import { DataTable } from "@/components/shared/DataTable";
 import { formatNumber, getFlagUrl } from "@/lib/utils";
+import { useFilterHref } from "@/lib/use-filter-href";
 import type { CityListItem } from "@/lib/types";
 
 const API = "/api/proxy";
@@ -21,6 +22,7 @@ function buildFilterQs(params: { tournaments: string; countries: string; date_fr
 
 export function CitiesClient() {
   const router = useRouter();
+  const to = useFilterHref();
   const searchParams = useSearchParams();
   const tournaments = searchParams.get("tournaments") || "";
   const countries = searchParams.get("countries") || "";
@@ -104,7 +106,7 @@ export function CitiesClient() {
         data={cities}
         keyField="city"
         defaultSort={{ key: "matches", dir: "desc" }}
-        onRowClick={(c) => router.push(`/cities/${encodeURIComponent(c.city)}`)}
+        onRowClick={(c) => router.push(to(`/cities/${encodeURIComponent(c.city)}`))}
       />
     </div>
   );

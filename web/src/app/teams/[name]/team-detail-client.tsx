@@ -7,6 +7,7 @@ import { StatsCard } from "@/components/shared/StatsCard";
 import { FilterBar } from "@/components/shared/FilterBar";
 import { TeamYearlyChart } from "@/components/shared/TeamYearlyChart";
 import { formatNumber, getFlagUrl } from "@/lib/utils";
+import { useFilterHref } from "@/lib/use-filter-href";
 import { ArrowLeft, Swords } from "lucide-react";
 import type { TeamStats } from "@/lib/types";
 
@@ -29,6 +30,7 @@ export function TeamDetailClient({ name }: { name: string }) {
   const dateTo = searchParams.get("date_to") || "";
   const [team, setTeam] = useState<TeamStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const to = useFilterHref();
 
   useEffect(() => {
     let cancelled = false;
@@ -77,7 +79,7 @@ export function TeamDetailClient({ name }: { name: string }) {
   if (!team) {
     return (
       <div>
-        <Link href="/teams" className="text-[14px] text-[#1A56DB] hover:underline flex items-center gap-1 mb-4">
+        <Link href={to("/teams")} className="text-[14px] text-[#1A56DB] hover:underline flex items-center gap-1 mb-4">
           <ArrowLeft size={14} /> Back to Teams
         </Link>
         <h1 className="page-title mb-2">Team Not Found</h1>
@@ -97,7 +99,7 @@ export function TeamDetailClient({ name }: { name: string }) {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <Link href="/teams" className="text-[14px] text-[#1A56DB] hover:underline flex items-center gap-1 mb-1">
+          <Link href={to("/teams")} className="text-[14px] text-[#1A56DB] hover:underline flex items-center gap-1 mb-1">
             <ArrowLeft size={14} /> Back to Teams
           </Link>
           <h1 className="page-title mb-1 flex items-center gap-2">
@@ -110,7 +112,7 @@ export function TeamDetailClient({ name }: { name: string }) {
           </p>
         </div>
         <Link
-          href={`/head-to-head?team1=${encodeURIComponent(team.team)}`}
+          href={to(`/head-to-head?team1=${encodeURIComponent(team.team)}`)}
           className="flex items-center gap-2 bg-[#1A56DB] text-white rounded-lg px-4 py-2.5 text-[14px] font-semibold hover:bg-[#0D3B9E]"
         >
           <Swords size={16} /> Compare

@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { FilterBar } from "@/components/shared/FilterBar";
 import { formatNumber } from "@/lib/utils";
+import { useFilterHref } from "@/lib/use-filter-href";
 import { Trophy, Calendar, Users, Target } from "lucide-react";
 import type { TournamentListItem } from "@/lib/types";
 
@@ -32,6 +33,7 @@ function buildFilterQs(params: { tournaments: string; countries: string; date_fr
 
 export function TournamentsClient() {
   const searchParams = useSearchParams();
+  const to = useFilterHref();
   const tournaments = searchParams.get("tournaments") || "";
   const countries = searchParams.get("countries") || "";
   const dateFrom = searchParams.get("date_from") || "";
@@ -136,7 +138,7 @@ export function TournamentsClient() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {sorted.map((t) => (
-          <Link key={t.tournament} href={`/tournaments/${encodeURIComponent(t.tournament)}`}>
+          <Link key={t.tournament} href={to(`/tournaments/${encodeURIComponent(t.tournament)}`)}>
             <div className="card p-5 hover:shadow-md hover:border-[#1A56DB] transition-all cursor-pointer h-full">
               <div className="flex items-center gap-2 mb-3">
                 <Trophy size={18} className="text-[#FD7E14]" />

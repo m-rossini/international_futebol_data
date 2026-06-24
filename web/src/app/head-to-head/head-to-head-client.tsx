@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { FilterBar } from "@/components/shared/FilterBar";
 import { formatNumber, getFlagUrl } from "@/lib/utils";
+import { useFilterHref } from "@/lib/use-filter-href";
 import { Swords, Search } from "lucide-react";
 import type { HeadToHeadResponse } from "@/lib/types";
 
@@ -31,6 +32,7 @@ export function HeadToHeadClient() {
   const [data, setData] = useState<HeadToHeadResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const to = useFilterHref();
 
   const fetchData = useCallback(async () => {
     if (!team1.trim() || !team2.trim()) return;
@@ -166,11 +168,11 @@ export function HeadToHeadClient() {
               <h2 className="text-[24px] font-bold text-[#212529] flex items-center justify-center gap-2 flex-wrap">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={getFlagUrl(data.team1, 24)} alt="" className="w-5 h-3.5 object-cover rounded-sm" />
-                <Link href={`/teams/${encodeURIComponent(data.team1)}`} className="hover:text-[#1A56DB]">
+                <Link href={to(`/teams/${encodeURIComponent(data.team1)}`)} className="hover:text-[#1A56DB]">
                   {data.team1}
                 </Link>
                 <span className="text-[#ADB5BD] mx-3">vs</span>
-                <Link href={`/teams/${encodeURIComponent(data.team2)}`} className="hover:text-[#1A56DB]">
+                <Link href={to(`/teams/${encodeURIComponent(data.team2)}`)} className="hover:text-[#1A56DB]">
                   {data.team2}
                 </Link>
                 {/* eslint-disable-next-line @next/next/no-img-element */}

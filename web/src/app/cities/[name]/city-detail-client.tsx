@@ -7,6 +7,7 @@ import { StatsCard } from "@/components/shared/StatsCard";
 import { FilterBar } from "@/components/shared/FilterBar";
 import { TopList } from "@/components/shared/TopList";
 import { formatNumber, getFlagUrl } from "@/lib/utils";
+import { useFilterHref } from "@/lib/use-filter-href";
 import { ArrowLeft } from "lucide-react";
 import type { CityDetail, TeamCategoryItem } from "@/lib/types";
 
@@ -36,6 +37,7 @@ export function CityDetailClient({ name }: { name: string }) {
   const countries = searchParams.get("countries") || "";
   const dateFrom = searchParams.get("date_from") || "";
   const dateTo = searchParams.get("date_to") || "";
+  const to = useFilterHref();
   const [data, setData] = useState<CityDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [topTeamCategory, setTopTeamCategory] = useState<string>("by_wins");
@@ -105,7 +107,7 @@ export function CityDetailClient({ name }: { name: string }) {
       rank: i + 1,
       name: t.team,
       value: formatNumber(t.value),
-      href: `/teams/${encodeURIComponent(t.team)}`,
+      href: to(`/teams/${encodeURIComponent(t.team)}`),
       imageUrl: getFlagUrl(t.team, 24),
     }));
 
@@ -115,7 +117,7 @@ export function CityDetailClient({ name }: { name: string }) {
       rank: i + 1,
       name: t.tournament,
       value: formatNumber(t.matches),
-      href: `/tournaments/${encodeURIComponent(t.tournament)}`,
+      href: to(`/tournaments/${encodeURIComponent(t.tournament)}`),
     }));
 
   return (
@@ -129,7 +131,7 @@ export function CityDetailClient({ name }: { name: string }) {
           <div className="flex items-center gap-1.5 text-[14px] text-[#6C757D]">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={getFlagUrl(data.country, 24)} alt="" className="w-5 h-3.5 object-cover rounded-sm" />
-            <Link href={`/countries/${encodeURIComponent(data.country)}`} className="hover:text-[#1A56DB]">
+            <Link href={to(`/countries/${encodeURIComponent(data.country)}`)} className="hover:text-[#1A56DB]">
               {data.country}
             </Link>
           </div>

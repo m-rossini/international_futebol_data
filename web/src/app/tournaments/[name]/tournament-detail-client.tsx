@@ -8,6 +8,7 @@ import { DataTable } from "@/components/shared/DataTable";
 import { FilterBar } from "@/components/shared/FilterBar";
 import { TopList } from "@/components/shared/TopList";
 import { formatNumber } from "@/lib/utils";
+import { useFilterHref } from "@/lib/use-filter-href";
 import { ArrowLeft } from "lucide-react";
 import type { TournamentDetail, TeamCategoryItem } from "@/lib/types";
 
@@ -41,6 +42,7 @@ export function TournamentDetailClient({ name }: { name: string }) {
   const [data, setData] = useState<TournamentDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [topTeamCategory, setTopTeamCategory] = useState<string>("by_wins");
+  const to = useFilterHref();
 
   useEffect(() => {
 
@@ -103,7 +105,7 @@ export function TournamentDetailClient({ name }: { name: string }) {
       rank: i + 1,
       name: t.team,
       value: formatNumber(t.value),
-      href: `/teams/${encodeURIComponent(t.team)}`,
+      href: to(`/teams/${encodeURIComponent(t.team)}`),
     }));
 
   const homePct = s.matches > 0 ? (s.home_wins / s.matches) * 100 : 0;
@@ -173,7 +175,7 @@ export function TournamentDetailClient({ name }: { name: string }) {
               defaultSort={{ key: "year", dir: "desc" }}
               onRowClick={(yb) => {
                 router.push(
-                  `/tournaments/${encodeURIComponent(name)}/${yb.year}`
+                  to(`/tournaments/${encodeURIComponent(name)}/${yb.year}`)
                 );
               }}
             />

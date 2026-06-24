@@ -6,6 +6,7 @@ import { ArrowLeft, Trophy, MapPin, Calendar, Target, Users } from "lucide-react
 import { StatsCard } from "@/components/shared/StatsCard";
 import { DataTable } from "@/components/shared/DataTable";
 import { getFlagUrl, formatNumber } from "@/lib/utils";
+import { useFilterHref } from "@/lib/use-filter-href";
 import type { SeasonDetail, SeasonStandingItem, SeasonMatchItem } from "@/lib/types";
 
 const API = "/api/proxy";
@@ -19,6 +20,7 @@ export function SeasonDetailClient({
 }) {
   const [data, setData] = useState<SeasonDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const to = useFilterHref();
 
   useEffect(() => {
     const controller = new AbortController();
@@ -69,7 +71,7 @@ export function SeasonDetailClient({
     return (
       <div>
         <Link
-          href={`/tournaments/${encodeURIComponent(tournamentName)}`}
+          href={to(`/tournaments/${encodeURIComponent(tournamentName)}`)}
           className="text-[14px] text-[#1A56DB] hover:underline flex items-center gap-1 mb-4"
         >
           <ArrowLeft size={14} /> Back to {tournamentName}
@@ -247,7 +249,7 @@ export function SeasonDetailClient({
   return (
     <div>
       <Link
-        href={`/tournaments/${encodeURIComponent(tournamentName)}`}
+        href={to(`/tournaments/${encodeURIComponent(tournamentName)}`)}
         className="text-[14px] text-[#1A56DB] hover:underline flex items-center gap-1 mb-1"
       >
         <ArrowLeft size={14} /> Back to {tournamentName}
@@ -312,7 +314,7 @@ export function SeasonDetailClient({
           keyField="team"
           defaultSort={{ key: "points", dir: "desc" }}
           onRowClick={(item) => {
-            window.location.href = `/teams/${encodeURIComponent(item.team)}`;
+            window.location.href = to(`/teams/${encodeURIComponent(item.team)}`);
           }}
         />
       </div>

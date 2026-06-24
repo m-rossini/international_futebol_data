@@ -7,6 +7,7 @@ import { StatsCard } from "@/components/shared/StatsCard";
 import { FilterBar } from "@/components/shared/FilterBar";
 import { TopList } from "@/components/shared/TopList";
 import { formatNumber, getFlagUrl } from "@/lib/utils";
+import { useFilterHref } from "@/lib/use-filter-href";
 import { ArrowLeft } from "lucide-react";
 import type { CountryDetail, TeamCategoryItem } from "@/lib/types";
 
@@ -39,6 +40,7 @@ export function CountryDetailClient({ name }: { name: string }) {
   const [data, setData] = useState<CountryDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [topTeamCategory, setTopTeamCategory] = useState<string>("by_wins");
+  const to = useFilterHref();
 
   useEffect(() => {
     let cancelled = false;
@@ -105,7 +107,7 @@ export function CountryDetailClient({ name }: { name: string }) {
       rank: i + 1,
       name: t.team,
       value: formatNumber(t.value),
-      href: `/teams/${encodeURIComponent(t.team)}`,
+      href: to(`/teams/${encodeURIComponent(t.team)}`),
       imageUrl: getFlagUrl(t.team, 24),
     }));
 
@@ -115,7 +117,7 @@ export function CountryDetailClient({ name }: { name: string }) {
       rank: i + 1,
       name: c.city,
       value: formatNumber(c.matches),
-      href: `/cities/${encodeURIComponent(c.city)}`,
+      href: to(`/cities/${encodeURIComponent(c.city)}`),
     }));
 
   return (
