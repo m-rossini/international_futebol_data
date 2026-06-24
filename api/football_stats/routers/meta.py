@@ -51,6 +51,10 @@ async def filter_options():
         "tournaments": sorted(results["tournament"].dropna().unique().tolist()),
         "countries": sorted(results["country"].dropna().unique().tolist()),
         "cities": sorted(results["city"].dropna().unique().tolist()),
+        "teams": sorted(
+            set(results["home_team"].dropna().unique().tolist())
+            | set(results["away_team"].dropna().unique().tolist())
+        ),
     }
 
 

@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { FilterBar } from "@/components/shared/FilterBar";
+import { AutocompleteInput } from "@/components/shared/AutocompleteInput";
 import { formatNumber, getFlagUrl } from "@/lib/utils";
 import { useFilterHref } from "@/lib/use-filter-href";
-import { Swords, Search } from "lucide-react";
+import { getFilterOptions } from "@/lib/api";
+import { Swords } from "lucide-react";
 import type { HeadToHeadResponse } from "@/lib/types";
 
 const API = "/api/proxy";
@@ -33,6 +35,18 @@ export function HeadToHeadClient() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const to = useFilterHref();
+  const [teams, setTeams] = useState<string[]>([]);
+  const [teamsLoading, setTeamsLoading] = useState(true);
+  const teamsLoaded = useRef(false);
+
+  // Pre-load team names for autocomplete
+  useEffect(() => {
+    if (teamsLoaded.current) return;
+    teamsLoaded.current = true;
+    getFilterOptions()
+      .then((o) => { setTeams(o.teams || []); setTeamsLoading(false); })
+      .catch(() => { setTeamsLoading(false); });
+  }, []);
 
   const fetchData = useCallback(async () => {
     if (!team1.trim() || !team2.trim()) return;
@@ -107,34 +121,28 @@ export function HeadToHeadClient() {
         <div className="flex items-center gap-4 flex-wrap md:flex-nowrap">
           <div className="flex-1">
             <label className="text-[13px] font-semibold text-[#6C757D] block mb-1">Team 1</label>
-            <div className="relative">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#ADB5BD]" />
-              <input
-                type="text"
-                value={team1}
-                onChange={(e) => setTeam1(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleCompare()}
-                placeholder="e.g. Brazil"
-                className="w-full border border-[#E9ECEF] rounded-lg pl-9 pr-4 py-2.5 text-[15px] focus:outline-none focus:border-[#1A56DB] focus:shadow-[0_0_0_3px_#E8F0FE]"
-              />
-            </div>
+            <AutocompleteInput
+              id="h2h-team1"
+              placeholder="e.g. Brazil"
+              options={teams}
+              value={team1}
+              onChange={setTeam1}
+              loading={teamsLoading}
+            />
           </div>
           <div className="flex items-center pt-5">
             <Swords size={24} className="text-[#ADB5BD]" />
           </div>
           <div className="flex-1">
             <label className="text-[13px] font-semibold text-[#6C757D] block mb-1">Team 2</label>
-            <div className="relative">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#ADB5BD]" />
-              <input
-                type="text"
-                value={team2}
-                onChange={(e) => setTeam2(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleCompare()}
-                placeholder="e.g. Argentina"
-                className="w-full border border-[#E9ECEF] rounded-lg pl-9 pr-4 py-2.5 text-[15px] focus:outline-none focus:border-[#1A56DB] focus:shadow-[0_0_0_3px_#E8F0FE]"
-              />
-            </div>
+            <AutocompleteInput
+              id="h2h-team2"
+              placeholder="e.g. Argentina"
+              options={teams}
+              value={team2}
+              onChange={setTeam2}
+              loading={teamsLoading}
+            />
           </div>
           <div className="pt-5">
             <button

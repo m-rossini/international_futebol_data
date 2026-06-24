@@ -13,6 +13,7 @@ export interface FilterOptions {
   tournaments: string[];
   countries: string[];
   cities: string[];
+  teams: string[];
 }
 
 // ── Shared ──

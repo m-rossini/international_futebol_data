@@ -536,6 +536,7 @@ class FilterOptionsResponse(BaseModel):
     tournaments: list[str]
     countries: list[str]
     cities: list[str]
+    teams: list[str]
 
 
 # ===========================================================================
