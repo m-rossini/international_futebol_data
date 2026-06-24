@@ -77,10 +77,16 @@ export function HeadToHeadClient() {
         team2_wins: t2_wins,
         draws: json.draws as number,
         total_matches: totalMatches,
+        team1_losses: t2_wins,
+        team2_losses: t1_wins,
         team1_goals: t1_goals,
         team2_goals: t2_goals,
         team1_win_rate: totalMatches > 0 ? (t1_wins / totalMatches) * 100 : 0,
         team2_win_rate: totalMatches > 0 ? (t2_wins / totalMatches) * 100 : 0,
+        team1_loss_rate: totalMatches > 0 ? (t2_wins / totalMatches) * 100 : 0,
+        team2_loss_rate: totalMatches > 0 ? (t1_wins / totalMatches) * 100 : 0,
+        team1_draw_rate: totalMatches > 0 ? ((json.draws as number) / totalMatches) * 100 : 0,
+        team2_draw_rate: totalMatches > 0 ? ((json.draws as number) / totalMatches) * 100 : 0,
         team1_avg_goals: totalMatches > 0 ? t1_goals / totalMatches : 0,
         team2_avg_goals: totalMatches > 0 ? t2_goals / totalMatches : 0,
         matches_list: (json.matches_list as HeadToHeadResponse["matches_list"]) || [],
@@ -202,27 +208,46 @@ export function HeadToHeadClient() {
                 <div className="space-y-3">
                   <div className="flex justify-between text-[14px]">
                     <span className="text-[#6C757D]">Wins</span>
-                    <span className="font-bold text-[#198754]">{data.team1_wins}</span>
+                    <span className="font-bold text-[#198754]">{data.team1_wins} <span className="font-normal text-[#ADB5BD] text-[12px] ml-1">{data.team1_win_rate.toFixed(0)}%</span></span>
                   </div>
                   <div className="flex justify-between text-[14px]">
-                    <span className="text-[#6C757D]">Win Rate</span>
-                    <span className="font-bold">{data.team1_win_rate.toFixed(1)}%</span>
+                    <span className="text-[#6C757D]">Losses</span>
+                    <span className="font-bold text-[#DC3545]">{data.team1_losses} <span className="font-normal text-[#ADB5BD] text-[12px] ml-1">{data.team1_loss_rate.toFixed(0)}%</span></span>
                   </div>
                   <div className="flex justify-between text-[14px]">
-                    <span className="text-[#6C757D]">Goals</span>
-                    <span className="font-bold">{formatNumber(data.team1_goals)}</span>
+                    <span className="text-[#6C757D]">Draws</span>
+                    <span className="font-bold text-[#FD7E14]">{data.draws} <span className="font-normal text-[#ADB5BD] text-[12px] ml-1">{data.team1_draw_rate.toFixed(0)}%</span></span>
                   </div>
-                  <div className="flex justify-between text-[14px]">
-                    <span className="text-[#6C757D]">Avg Goals/Match</span>
-                    <span className="font-bold">{data.team1_avg_goals.toFixed(2)}</span>
+                  <div className="border-t border-[#E9ECEF] pt-3 mt-3">
+                    <div className="flex justify-between text-[14px]">
+                      <span className="text-[#6C757D]">Goals</span>
+                      <span className="font-bold">{formatNumber(data.team1_goals)}</span>
+                    </div>
+                    <div className="flex justify-between text-[14px] mt-2">
+                      <span className="text-[#6C757D]">Avg Goals/Match</span>
+                      <span className="font-bold">{data.team1_avg_goals.toFixed(2)}</span>
+                    </div>
                   </div>
                 </div>
-                {/* Win rate bar */}
-                <div className="mt-4 h-2 bg-[#E9ECEF] rounded-full overflow-hidden">
+                {/* Stacked bar: wins (blue) | draws (orange) | losses (red) */}
+                <div className="mt-4 h-2 bg-[#E9ECEF] rounded-full overflow-hidden flex">
                   <div
-                    className="h-full bg-[#1A56DB] rounded-full"
+                    className="h-full bg-[#1A56DB]"
                     style={{ width: `${data.team1_win_rate}%` }}
                   />
+                  <div
+                    className="h-full bg-[#FD7E14]"
+                    style={{ width: `${data.team1_draw_rate}%` }}
+                  />
+                  <div
+                    className="h-full bg-[#DC3545]"
+                    style={{ width: `${data.team1_loss_rate}%` }}
+                  />
+                </div>
+                <div className="flex justify-center gap-4 mt-2 text-[11px]">
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-[#1A56DB] inline-block" /> W {data.team1_win_rate.toFixed(0)}%</span>
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-[#FD7E14] inline-block" /> D {data.team1_draw_rate.toFixed(0)}%</span>
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-[#DC3545] inline-block" /> L {data.team1_loss_rate.toFixed(0)}%</span>
                 </div>
               </div>
 
@@ -236,37 +261,47 @@ export function HeadToHeadClient() {
                 <div className="space-y-3">
                   <div className="flex justify-between text-[14px]">
                     <span className="text-[#6C757D]">Wins</span>
-                    <span className="font-bold text-[#198754]">{data.team2_wins}</span>
+                    <span className="font-bold text-[#198754]">{data.team2_wins} <span className="font-normal text-[#ADB5BD] text-[12px] ml-1">{data.team2_win_rate.toFixed(0)}%</span></span>
                   </div>
                   <div className="flex justify-between text-[14px]">
-                    <span className="text-[#6C757D]">Win Rate</span>
-                    <span className="font-bold">{data.team2_win_rate.toFixed(1)}%</span>
+                    <span className="text-[#6C757D]">Losses</span>
+                    <span className="font-bold text-[#DC3545]">{data.team2_losses} <span className="font-normal text-[#ADB5BD] text-[12px] ml-1">{data.team2_loss_rate.toFixed(0)}%</span></span>
                   </div>
                   <div className="flex justify-between text-[14px]">
-                    <span className="text-[#6C757D]">Goals</span>
-                    <span className="font-bold">{formatNumber(data.team2_goals)}</span>
+                    <span className="text-[#6C757D]">Draws</span>
+                    <span className="font-bold text-[#FD7E14]">{data.draws} <span className="font-normal text-[#ADB5BD] text-[12px] ml-1">{data.team2_draw_rate.toFixed(0)}%</span></span>
                   </div>
-                  <div className="flex justify-between text-[14px]">
-                    <span className="text-[#6C757D]">Avg Goals/Match</span>
-                    <span className="font-bold">{data.team2_avg_goals.toFixed(2)}</span>
+                  <div className="border-t border-[#E9ECEF] pt-3 mt-3">
+                    <div className="flex justify-between text-[14px]">
+                      <span className="text-[#6C757D]">Goals</span>
+                      <span className="font-bold">{formatNumber(data.team2_goals)}</span>
+                    </div>
+                    <div className="flex justify-between text-[14px] mt-2">
+                      <span className="text-[#6C757D]">Avg Goals/Match</span>
+                      <span className="font-bold">{data.team2_avg_goals.toFixed(2)}</span>
+                    </div>
                   </div>
                 </div>
-                {/* Win rate bar */}
-                <div className="mt-4 h-2 bg-[#E9ECEF] rounded-full overflow-hidden">
+                {/* Stacked bar: wins (pink) | draws (orange) | losses (red) */}
+                <div className="mt-4 h-2 bg-[#E9ECEF] rounded-full overflow-hidden flex">
                   <div
-                    className="h-full bg-[#E83E8C] rounded-full"
+                    className="h-full bg-[#E83E8C]"
                     style={{ width: `${data.team2_win_rate}%` }}
                   />
+                  <div
+                    className="h-full bg-[#FD7E14]"
+                    style={{ width: `${data.team2_draw_rate}%` }}
+                  />
+                  <div
+                    className="h-full bg-[#DC3545]"
+                    style={{ width: `${data.team2_loss_rate}%` }}
+                  />
                 </div>
-              </div>
-            </div>
-
-            {/* Draws */}
-            <div className="mt-6 text-center">
-              <div className="text-[14px] text-[#6C757D]">Draws</div>
-              <div className="text-[28px] font-bold text-[#FD7E14]">{data.draws}</div>
-              <div className="text-[13px] text-[#ADB5BD]">
-                {((data.draws / data.total_matches) * 100).toFixed(1)}% of matches
+                <div className="flex justify-center gap-4 mt-2 text-[11px]">
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-[#E83E8C] inline-block" /> W {data.team2_win_rate.toFixed(0)}%</span>
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-[#FD7E14] inline-block" /> D {data.team2_draw_rate.toFixed(0)}%</span>
+                  <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-[#DC3545] inline-block" /> L {data.team2_loss_rate.toFixed(0)}%</span>
+                </div>
               </div>
             </div>
           </div>

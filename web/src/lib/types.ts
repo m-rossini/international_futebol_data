@@ -244,10 +244,16 @@ export interface HeadToHeadResponse {
   team2_wins: number;
   draws: number;
   total_matches: number;
+  team1_losses: number;
+  team2_losses: number;
   team1_goals: number;
   team2_goals: number;
   team1_win_rate: number;
   team2_win_rate: number;
+  team1_loss_rate: number;
+  team2_loss_rate: number;
+  team1_draw_rate: number;
+  team2_draw_rate: number;
   team1_avg_goals: number;
   team2_avg_goals: number;
   matches_list: H2HMatchItem[];
