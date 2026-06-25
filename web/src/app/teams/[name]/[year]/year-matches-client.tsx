@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { DataTable, type Column } from "@/components/shared/DataTable";
+import { AutocompleteInput } from "@/components/shared/AutocompleteInput";
 import type { MatchItem, TeamMatchesByYear } from "@/lib/types";
 
 const API = "/api/proxy";
@@ -17,7 +18,24 @@ function buildQs(params: URLSearchParams): string {
   return q.toString();
 }
 
-function resultLabel(m: MatchItem, teamName: string): { label: string; cls: string } {
+function formatDate(raw: string): string {
+  // API returns "2022-11-24 00:00:00" — use just the date portion
+  const d = new Date(raw.slice(0, 10) + "T00:00:00");
+  return d.toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+function isoInputDate(raw: string): string {
+  return raw.slice(0, 10); // → "2022-11-24"
+}
+
+function resultLabel(
+  m: MatchItem,
+  teamName: string,
+): { label: string; cls: string } {
   const isHome = m.home_team === teamName;
   const gf = isHome ? m.home_score : m.away_score;
   const ga = isHome ? m.away_score : m.home_score;
@@ -39,6 +57,14 @@ export function YearMatchesClient({ teamName, year }: Props) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // --- client-side filter state ---
+  const [filtOpponent, setFiltOpponent] = useState<string[]>([]);
+  const [filtTournament, setFiltTournament] = useState<string[]>([]);
+  const [filtCountry, setFiltCountry] = useState<string[]>([]);
+  const [filtCity, setFiltCity] = useState<string[]>([]);
+  const [filtDateFrom, setFiltDateFrom] = useState("");
+  const [filtDateTo, setFiltDateTo] = useState("");
+
   const qs = useMemo(() => buildQs(sp), [sp]);
 
   useEffect(() => {
@@ -57,6 +83,13 @@ export function YearMatchesClient({ teamName, year }: Props) {
             setError(json.message || "Team not found");
           } else {
             setData(json);
+            // Reset local filters when new data arrives
+            setFiltOpponent([]);
+            setFiltTournament([]);
+            setFiltCountry([]);
+            setFiltCity([]);
+            setFiltDateFrom("");
+            setFiltDateTo("");
           }
           setLoading(false);
         }
@@ -74,6 +107,51 @@ export function YearMatchesClient({ teamName, year }: Props) {
     };
   }, [teamName, year, qs]);
 
+  // --- derived lists from loaded data ---
+  const filterOptions = useMemo(() => {
+    if (!data?.matches_list) {
+      return { opponents: [], tournaments: [], countries: [], cities: [] };
+    }
+    const opponents = new Set<string>();
+    const tournaments = new Set<string>();
+    const countries = new Set<string>();
+    const cities = new Set<string>();
+    for (const m of data.matches_list) {
+      if (m.home_team !== teamName) opponents.add(m.home_team);
+      if (m.away_team !== teamName) opponents.add(m.away_team);
+      if (m.tournament) tournaments.add(m.tournament);
+      if (m.country) countries.add(m.country);
+      if (m.city) cities.add(m.city);
+    }
+    return {
+      opponents: [...opponents].sort(),
+      tournaments: [...tournaments].sort(),
+      countries: [...countries].sort(),
+      cities: [...cities].sort(),
+    };
+  }, [data, teamName]);
+
+  // --- filtered matches ---
+  const filtered = useMemo(() => {
+    if (!data?.matches_list) return [];
+    return data.matches_list.filter((m) => {
+      if (
+        filtOpponent.length > 0 &&
+        !filtOpponent.includes(m.home_team) &&
+        !filtOpponent.includes(m.away_team)
+      )
+        return false;
+      if (filtTournament.length > 0 && m.tournament && !filtTournament.includes(m.tournament))
+        return false;
+      if (filtCountry.length > 0 && m.country && !filtCountry.includes(m.country))
+        return false;
+      if (filtCity.length > 0 && m.city && !filtCity.includes(m.city)) return false;
+      if (filtDateFrom && isoInputDate(m.date) < filtDateFrom) return false;
+      if (filtDateTo && isoInputDate(m.date) > filtDateTo) return false;
+      return true;
+    });
+  }, [data, filtOpponent, filtTournament, filtCountry, filtCity, filtDateFrom, filtDateTo]);
+
   const handleBack = useCallback(() => {
     const params = new URLSearchParams(sp.toString());
     const q = params.toString();
@@ -83,19 +161,7 @@ export function YearMatchesClient({ teamName, year }: Props) {
   // Column defs that close over teamName
   const matchColumns: Column<MatchItem>[] = useMemo(
     () => [
-      {
-        key: "date",
-        header: "Date",
-        sortable: true,
-        render: (m) => {
-          const d = new Date(`${m.date}T00:00:00`);
-          return d.toLocaleDateString("en-GB", {
-            day: "2-digit",
-            month: "short",
-            year: "numeric",
-          });
-        },
-      },
+      { key: "date", header: "Date", sortable: true, render: (m) => formatDate(m.date) },
       { key: "tournament", header: "Tournament", sortable: true },
       { key: "city", header: "City", sortable: true },
       { key: "country", header: "Country", sortable: true },
@@ -137,20 +203,29 @@ export function YearMatchesClient({ teamName, year }: Props) {
     [teamName],
   );
 
-  // Summary counts
+  // Summary counts (based on filtered data)
   const summary = useMemo(() => {
-    if (!data?.matches_list) return null;
+    if (filtered.length === 0) return null;
     let wins = 0;
     let losses = 0;
     let draws = 0;
-    for (const m of data.matches_list) {
+    for (const m of filtered) {
       const r = resultLabel(m, teamName);
       if (r.label === "W") wins++;
       else if (r.label === "L") losses++;
       else draws++;
     }
-    return { wins, losses, draws, total: data.matches_list.length };
-  }, [data, teamName]);
+    return { wins, losses, draws, total: filtered.length };
+  }, [filtered, teamName]);
+
+  // Is any client-side filter active?
+  const anyFilterActive =
+    filtOpponent.length > 0 ||
+    filtTournament.length > 0 ||
+    filtCountry.length > 0 ||
+    filtCity.length > 0 ||
+    filtDateFrom !== "" ||
+    filtDateTo !== "";
 
   return (
     <div className="p-8">
@@ -177,6 +252,80 @@ export function YearMatchesClient({ teamName, year }: Props) {
         <p className="text-sm text-red-500 mt-4">Error: {error}</p>
       ) : data ? (
         <>
+          {/* --- Client-side filters --- */}
+          <div className="flex flex-wrap items-end gap-3 mb-4">
+            <div className="flex flex-col gap-1 min-w-[170px] max-w-[260px] flex-1">
+              <label className="text-xs font-medium text-gray-500">Opponent</label>
+              <AutocompleteInput
+                options={filterOptions.opponents}
+                selected={filtOpponent}
+                onChange={setFiltOpponent}
+                placeholder="Any opponent"
+              />
+            </div>
+            <div className="flex flex-col gap-1 min-w-[170px] max-w-[260px] flex-1">
+              <label className="text-xs font-medium text-gray-500">Tournament</label>
+              <AutocompleteInput
+                options={filterOptions.tournaments}
+                selected={filtTournament}
+                onChange={setFiltTournament}
+                placeholder="Any tournament"
+              />
+            </div>
+            <div className="flex flex-col gap-1 min-w-[170px] max-w-[260px] flex-1">
+              <label className="text-xs font-medium text-gray-500">Country</label>
+              <AutocompleteInput
+                options={filterOptions.countries}
+                selected={filtCountry}
+                onChange={setFiltCountry}
+                placeholder="Any country"
+              />
+            </div>
+            <div className="flex flex-col gap-1 min-w-[170px] max-w-[260px] flex-1">
+              <label className="text-xs font-medium text-gray-500">City</label>
+              <AutocompleteInput
+                options={filterOptions.cities}
+                selected={filtCity}
+                onChange={setFiltCity}
+                placeholder="Any city"
+              />
+            </div>
+            <div className="flex flex-col gap-1 w-[140px]">
+              <label className="text-xs font-medium text-gray-500">From</label>
+              <input
+                type="date"
+                value={filtDateFrom}
+                onChange={(e) => setFiltDateFrom(e.target.value)}
+                className="border border-gray-300 rounded-lg px-2 py-1.5 text-sm bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-200 outline-none"
+              />
+            </div>
+            <div className="flex flex-col gap-1 w-[140px]">
+              <label className="text-xs font-medium text-gray-500">To</label>
+              <input
+                type="date"
+                value={filtDateTo}
+                onChange={(e) => setFiltDateTo(e.target.value)}
+                className="border border-gray-300 rounded-lg px-2 py-1.5 text-sm bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-200 outline-none"
+              />
+            </div>
+            {anyFilterActive && (
+              <button
+                type="button"
+                onClick={() => {
+                  setFiltOpponent([]);
+                  setFiltTournament([]);
+                  setFiltCountry([]);
+                  setFiltCity([]);
+                  setFiltDateFrom("");
+                  setFiltDateTo("");
+                }}
+                className="px-3 py-1.5 text-xs text-blue-600 hover:text-blue-800 hover:underline"
+              >
+                Clear filters
+              </button>
+            )}
+          </div>
+
           {/* Summary cards */}
           {summary && (
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
@@ -187,12 +336,16 @@ export function YearMatchesClient({ teamName, year }: Props) {
             </div>
           )}
 
-          {data.matches_list.length === 0 ? (
-            <p className="text-sm text-gray-400">No matches found for this year.</p>
+          {filtered.length === 0 ? (
+            <p className="text-sm text-gray-400">
+              {anyFilterActive
+                ? "No matches match the current filters."
+                : "No matches found for this year."}
+            </p>
           ) : (
             <DataTable
               columns={matchColumns}
-              data={data.matches_list}
+              data={filtered}
               keyField="date"
               defaultSort={{ key: "date", dir: "desc" }}
             />

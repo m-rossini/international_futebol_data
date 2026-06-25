@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { YearMatchesClient } from "@/app/teams/[name]/[year]/year-matches-client";
 
 const mockMatches = {
@@ -8,7 +9,7 @@ const mockMatches = {
   matches: 3,
   matches_list: [
     {
-      date: "2022-11-24",
+      date: "2022-11-24 00:00:00",
       home_team: "Brazil",
       away_team: "Serbia",
       home_score: 2,
@@ -19,7 +20,7 @@ const mockMatches = {
       neutral: true,
     },
     {
-      date: "2022-11-28",
+      date: "2022-11-28 00:00:00",
       home_team: "Brazil",
       away_team: "Switzerland",
       home_score: 1,
@@ -30,7 +31,7 @@ const mockMatches = {
       neutral: true,
     },
     {
-      date: "2022-12-02",
+      date: "2022-12-02 00:00:00",
       home_team: "Cameroon",
       away_team: "Brazil",
       home_score: 1,
@@ -139,5 +140,87 @@ describe("YearMatchesClient", () => {
         "/api/proxy/team/Brazil/matches/2022?tournaments=World+Cup",
       ),
     );
+  });
+
+  it("renders client-side filter controls", async () => {
+    render(<YearMatchesClient teamName="Brazil" year={2022} />);
+    await waitFor(() => {
+      expect(screen.getByText("Brazil — 2022 Matches")).toBeInTheDocument();
+    });
+    expect(screen.getByPlaceholderText("Any opponent")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("Any tournament")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("Any country")).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("Any city")).toBeInTheDocument();
+  });
+
+  it("filters by opponent when selected", async () => {
+    const user = userEvent.setup();
+    render(<YearMatchesClient teamName="Brazil" year={2022} />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Brazil — 2022 Matches")).toBeInTheDocument();
+    });
+
+    // Pick "Serbia" from the opponent dropdown
+    const opponentInput = screen.getByPlaceholderText("Any opponent");
+    await user.click(opponentInput);
+    const serbiaOption = await screen.findByText("Serbia");
+    await user.click(serbiaOption);
+
+    // Should now show only 1 match (Brazil-Serbia)
+    await waitFor(() => {
+      expect(screen.getByText("1")).toBeInTheDocument(); // 1 total match
+    });
+    expect(screen.getByText("Serbia")).toBeInTheDocument();
+    expect(screen.queryByText("Switzerland")).not.toBeInTheDocument();
+    expect(screen.queryByText("Cameroon")).not.toBeInTheDocument();
+  });
+
+  it("filters by tournament", async () => {
+    const user = userEvent.setup();
+    render(<YearMatchesClient teamName="Brazil" year={2022} />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Brazil — 2022 Matches")).toBeInTheDocument();
+    });
+
+    // Open tournament dropdown
+    const tournamentInput = screen.getByPlaceholderText("Any tournament");
+    await user.click(tournamentInput);
+
+    // The dropdown list should appear with "FIFA World Cup"
+    await waitFor(() => {
+      // The <li> inside the open dropdown contains "FIFA World Cup"
+      const dropdownItems = document.querySelectorAll("ul li");
+      const found = Array.from(dropdownItems).some(
+        (li) => li.textContent === "FIFA World Cup",
+      );
+      expect(found).toBe(true);
+    });
+  });
+
+  it("shows 'Clear filters' button when opponent filter is active", async () => {
+    const user = userEvent.setup();
+    render(<YearMatchesClient teamName="Brazil" year={2022} />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Brazil — 2022 Matches")).toBeInTheDocument();
+    });
+
+    // No clear button initially
+    expect(screen.queryByText("Clear filters")).not.toBeInTheDocument();
+
+    // Select an opponent — "Serbia" appears in both dropdown and table,
+    // so pick the first <li> (dropdown) element
+    const opponentInput = screen.getByPlaceholderText("Any opponent");
+    await user.click(opponentInput);
+    const allSerbia = await screen.findAllByText("Serbia");
+    // The dropdown <li> is the first one in DOM order
+    await user.click(allSerbia[0]);
+
+    // Clear button should now appear
+    await waitFor(() => {
+      expect(screen.getByText("Clear filters")).toBeInTheDocument();
+    });
   });
 });
