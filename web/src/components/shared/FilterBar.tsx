@@ -1,135 +1,130 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from "react";
-import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import { X } from "lucide-react";
-import { FilterDropdown } from "./FilterDropdown";
-import { getFilterOptions } from "@/lib/api";
-import type { FilterOptions } from "@/lib/types";
+import { useEffect, useState, useCallback } from "react";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
+import { AutocompleteInput } from "./AutocompleteInput";
 
-interface FilterBarProps {
-  showTournaments?: boolean;
-  showCountries?: boolean;
-  showDateRange?: boolean;
+interface FilterOptions {
+  teams: string[];
+  tournaments: string[];
+  countries: string[];
 }
 
-export function FilterBar({
-  showTournaments = true,
-  showCountries = true,
-  showDateRange = true,
-}: FilterBarProps) {
+interface Props {
+  fields?: { teams?: boolean; tournaments?: boolean; countries?: boolean; dates?: boolean };
+}
+
+const ALL_FIELDS: Required<Props["fields"]> = {
+  teams: true,
+  tournaments: true,
+  countries: true,
+  dates: true,
+};
+
+const FETCHED = new Map<string, FilterOptions>();
+
+export function FilterBar({ fields }: Props) {
+  const cfg = { ...ALL_FIELDS, ...fields };
   const router = useRouter();
   const pathname = usePathname();
-  const searchParams = useSearchParams();
+  const sp = useSearchParams();
 
-  // Parse comma-separated URL params into arrays
-  const parseParam = (key: string): string[] => {
-    const val = searchParams.get(key) || "";
-    return val ? val.split(",").map((s) => s.trim()).filter(Boolean) : [];
-  };
+  const [options, setOptions] = useState<FilterOptions>(FETCHED.get("filters") || { teams: [], tournaments: [], countries: [] });
 
-  const [tournaments, setTournaments] = useState<string[]>(() => parseParam("tournaments"));
-  const [countries, setCountries] = useState<string[]>(() => parseParam("countries"));
-  const [dateFrom, setDateFrom] = useState(searchParams.get("date_from") || "");
-  const [dateTo, setDateTo] = useState(searchParams.get("date_to") || "");
-  const [options, setOptions] = useState<FilterOptions | null>(null);
-  const [optionsLoading, setOptionsLoading] = useState(true);
-  const optionsLoaded = useRef(false);
-
-  // Load filter options once
   useEffect(() => {
-    if (optionsLoaded.current) return;
-    optionsLoaded.current = true;
-    getFilterOptions()
-      .then((o) => { setOptions(o); setOptionsLoading(false); })
-      .catch(() => { setOptionsLoading(false); });
+    if (FETCHED.has("filters")) return;
+    let cancelled = false;
+    fetch("/api/proxy/filters")
+      .then((r) => r.json())
+      .then((data: FilterOptions) => {
+        if (!cancelled) {
+          FETCHED.set("filters", data);
+          setOptions(data);
+        }
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
   }, []);
 
-  const activeCount =
-    (tournaments.length > 0 ? 1 : 0) +
-    (countries.length > 0 ? 1 : 0) +
-    (dateFrom ? 1 : 0) +
-    (dateTo ? 1 : 0);
+  const teams = sp.get("teams")?.split(",").filter(Boolean) || [];
+  const tournaments = sp.get("tournaments")?.split(",").filter(Boolean) || [];
+  const countries = sp.get("countries")?.split(",").filter(Boolean) || [];
+  const dateFrom = sp.get("date_from") || "";
+  const dateTo = sp.get("date_to") || "";
 
-  const apply = useCallback(() => {
-    const params = new URLSearchParams();
-    if (tournaments.length > 0) params.set("tournaments", tournaments.join(","));
-    if (countries.length > 0) params.set("countries", countries.join(","));
-    if (dateFrom) params.set("date_from", dateFrom);
-    if (dateTo) params.set("date_to", dateTo);
-    const qs = params.toString();
-    router.replace(qs ? `${pathname}?${qs}` : pathname);
-  }, [router, pathname, tournaments, countries, dateFrom, dateTo]);
+  const push = useCallback(
+    (key: string, value: string) => {
+      const params = new URLSearchParams(sp.toString());
+      if (value) {
+        params.set(key, value);
+      } else {
+        params.delete(key);
+      }
+      router.replace(`${pathname}?${params.toString()}`);
+    },
+    [router, pathname, sp]
+  );
 
-  const clear = useCallback(() => {
-    setTournaments([]);
-    setCountries([]);
-    setDateFrom("");
-    setDateTo("");
-    router.replace(pathname);
-  }, [router, pathname]);
+  const visible = Boolean(cfg.teams || cfg.tournaments || cfg.countries || cfg.dates);
+  if (!visible) return null;
 
   return (
-    <div className="card p-4 mb-6">
-      <div className="flex items-center gap-3 flex-wrap">
-        <span className="text-[13px] font-semibold text-[#6C757D]">Filters:</span>
-        {showTournaments && (
-          <FilterDropdown
-            id="filter-tournaments"
-            label="Tournaments"
-            options={options?.tournaments || []}
+    <div className="flex flex-wrap items-end gap-3 mb-4">
+      {cfg.teams && (
+        <div className="flex flex-col gap-1 min-w-[200px] max-w-[300px] flex-1">
+          <label className="text-xs font-medium text-gray-500">Teams</label>
+          <AutocompleteInput
+            options={options.teams}
+            selected={teams}
+            onChange={(sel) => push("teams", sel.join(","))}
+            placeholder="All teams"
+          />
+        </div>
+      )}
+      {cfg.tournaments && (
+        <div className="flex flex-col gap-1 min-w-[200px] max-w-[300px] flex-1">
+          <label className="text-xs font-medium text-gray-500">Tournaments</label>
+          <AutocompleteInput
+            options={options.tournaments}
             selected={tournaments}
-            onChange={setTournaments}
-            loading={optionsLoading}
+            onChange={(sel) => push("tournaments", sel.join(","))}
+            placeholder="All tournaments"
           />
-        )}
-        {showCountries && (
-          <FilterDropdown
-            id="filter-countries"
-            label="Countries"
-            options={options?.countries || []}
+        </div>
+      )}
+      {cfg.countries && (
+        <div className="flex flex-col gap-1 min-w-[200px] max-w-[300px] flex-1">
+          <label className="text-xs font-medium text-gray-500">Countries</label>
+          <AutocompleteInput
+            options={options.countries}
             selected={countries}
-            onChange={setCountries}
-            loading={optionsLoading}
+            onChange={(sel) => push("countries", sel.join(","))}
+            placeholder="All countries"
           />
-        )}
-        {showDateRange && (
-          <>
-            <span className="text-[12px] font-semibold text-[#6C757D]">From</span>
+        </div>
+      )}
+      {cfg.dates && (
+        <>
+          <div className="flex flex-col gap-1 w-[140px]">
+            <label className="text-xs font-medium text-gray-500">From</label>
             <input
               type="date"
-              className="border border-[#E9ECEF] rounded-lg px-3 py-2 text-[14px] w-[150px] focus:outline-none focus:border-[#1A56DB] focus:shadow-[0_0_0_3px_#E8F0FE]"
               value={dateFrom}
-              onChange={(e) => setDateFrom(e.target.value)}
+              onChange={(e) => push("date_from", e.target.value)}
+              className="border border-gray-300 rounded-lg px-2 py-1.5 text-sm bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-200 outline-none"
             />
-            <span className="text-[12px] font-semibold text-[#6C757D]">To</span>
+          </div>
+          <div className="flex flex-col gap-1 w-[140px]">
+            <label className="text-xs font-medium text-gray-500">To</label>
             <input
               type="date"
-              className="border border-[#E9ECEF] rounded-lg px-3 py-2 text-[14px] w-[150px] focus:outline-none focus:border-[#1A56DB] focus:shadow-[0_0_0_3px_#E8F0FE]"
               value={dateTo}
-              onChange={(e) => setDateTo(e.target.value)}
+              onChange={(e) => push("date_to", e.target.value)}
+              className="border border-gray-300 rounded-lg px-2 py-1.5 text-sm bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-200 outline-none"
             />
-          </>
-        )}
-        <button
-          onClick={apply}
-          className="bg-[#1A56DB] text-white rounded-lg px-4 py-2 text-[13px] font-semibold hover:bg-[#0D3B9E]"
-        >
-          Apply
-        </button>
-        <button
-          onClick={clear}
-          className="border border-[#1A56DB] text-[#1A56DB] rounded-lg px-4 py-2 text-[13px] font-semibold hover:bg-[#E8F0FE]"
-        >
-          Clear
-        </button>
-        {activeCount > 0 && (
-          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[12px] font-medium bg-[#E8F0FE] text-[#1A56DB] border border-[#1A56DB]">
-            {activeCount} active
-            <X size={12} className="cursor-pointer" onClick={clear} />
-          </span>
-        )}
-      </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

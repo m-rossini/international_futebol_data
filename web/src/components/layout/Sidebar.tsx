@@ -2,56 +2,32 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  Home,
-  Users,
-  Trophy,
-  Globe,
-  Building2,
-  BarChart3,
-  Goal,
-  Target,
-  TrendingUp,
-  Swords,
-} from "lucide-react";
+import { Users } from "lucide-react";
 
-const navItems = [
-  { href: "/", label: "Dashboard", icon: Home },
-  { href: "/teams", label: "Teams", icon: Users },
-  { href: "/tournaments", label: "Tournaments", icon: Trophy },
-  { href: "/countries", label: "Countries", icon: Globe },
-  { href: "/cities", label: "Cities", icon: Building2 },
-  { href: "/rankings", label: "Rankings", icon: BarChart3 },
-  { href: "/top-scorers", label: "Top Scorers", icon: Goal },
-  { href: "/biggest-wins", label: "Biggest Wins", icon: Target },
-  { href: "/goals-per-year", label: "Goals / Year", icon: TrendingUp },
-  { href: "/head-to-head", label: "Head-to-Head", icon: Swords },
-];
+const navItems = [{ href: "/teams", label: "Teams", icon: Users }];
 
 export function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="w-[240px] min-w-[240px] bg-white border-r border-[#E9ECEF] flex flex-col h-screen sticky top-0">
-      <div className="px-5 py-4 border-b border-[#E9ECEF]">
+    <aside className="w-[220px] min-w-[220px] bg-white border-r border-gray-200 flex flex-col h-screen sticky top-0">
+      <div className="px-4 py-4 border-b border-gray-200">
         <Link href="/" className="flex items-center gap-2">
-          <span className="text-xl">⚽</span>
-          <span className="font-bold text-[15px] text-[#212529] leading-tight">
-            Football<br />Stats
-          </span>
+          <span className="text-lg">⚽</span>
+          <span className="font-semibold text-sm text-gray-800">Football Stats</span>
         </Link>
       </div>
-      <nav className="flex-1 px-3 py-3 space-y-1 overflow-y-auto">
+      <nav className="flex-1 px-3 py-3 space-y-1">
         {navItems.map((item) => {
-          const isActive = pathname === item.href;
+          const isActive = pathname.startsWith(item.href);
           return (
             <Link
               key={item.href}
               href={item.href}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-[14px] transition-colors ${
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
                 isActive
-                  ? "bg-[#E8F0FE] text-[#1A56DB] font-semibold"
-                  : "text-[#6C757D] hover:bg-[#F8F9FA]"
+                  ? "bg-blue-50 text-blue-700 font-semibold"
+                  : "text-gray-500 hover:bg-gray-50"
               }`}
             >
               <item.icon size={18} />

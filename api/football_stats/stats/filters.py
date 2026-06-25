@@ -26,6 +26,7 @@ class FilterParams:
                 AND (date <= date_to)
     """
 
+    teams: Optional[list[str]] = field(default=None)
     tournaments: Optional[list[str]] = field(default=None)
     countries: Optional[list[str]] = field(default=None)
     date_from: Optional[str] = field(default=None)
@@ -42,6 +43,11 @@ def apply_filters(df: pd.DataFrame, filters: Optional[FilterParams]) -> pd.DataF
         return df
 
     result = df.copy()
+
+    if filters.teams:
+        result = result[
+            result["home_team"].isin(filters.teams) | result["away_team"].isin(filters.teams)
+        ]
 
     if filters.tournaments:
         result = result[result["tournament"].isin(filters.tournaments)]

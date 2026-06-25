@@ -12,6 +12,14 @@ logger = logging.getLogger("stats.server.teams")
 router = APIRouter(tags=["Teams"])
 
 
+@router.get("/teams")
+async def teams_list_endpoint(filters: FilterParamsDep = Depends()):
+    """List all teams with full aggregate stats (wins, losses, draws, win_rate, unique_countries, etc.)."""
+    require_data()
+    logger.debug("GET /teams")
+    return engine.teams(filters.inner)
+
+
 @router.get("/team/{team_name}")
 async def team_stats(team_name: str, filters: FilterParamsDep = Depends()):
     """Stats for a specific national team. Optional filters: ``?tournaments=FIFA+World+cup``"""

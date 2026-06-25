@@ -18,6 +18,7 @@ from .analysis import (
     shootouts_metadata,
     former_names_metadata,
     team_vs_team,
+    teams_list,
     most_teams,
     most_countries,
     most_cities,
@@ -77,6 +78,11 @@ class QueryEngine:
             "shootouts": shootouts_metadata(self._state.shootouts),
             "former_names": former_names_metadata(self._state.former_names),
         }
+
+    def teams(self, filters: Optional[FilterParams] = None) -> list:
+        """Return all teams with full aggregate stats."""
+        logger.debug("Teams list requested")
+        return teams_list(self._filtered_results(filters))
 
     def team(self, team_name: str, filters: Optional[FilterParams] = None) -> dict:
         logger.debug("Team stats requested: %s", team_name)

@@ -59,6 +59,7 @@ class FilterParamsDep:
 
     def __init__(
         self,
+        teams: Optional[list[str]] = Query(None, description="Filter by team name (can repeat or be comma-separated)"),
         tournaments: Optional[list[str]] = Query(None, description="Filter by tournament name (can repeat or be comma-separated)"),
         countries: Optional[list[str]] = Query(None, description="Filter by host country (can repeat or be comma-separated)"),
         date_from: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
@@ -76,6 +77,7 @@ class FilterParamsDep:
             return result or None
 
         self._inner = FilterParams(
+            teams=_split(teams),
             tournaments=_split(tournaments),
             countries=_split(countries),
             date_from=date_from,

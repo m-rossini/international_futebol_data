@@ -143,12 +143,14 @@ web-logs:
 web-test: web-build
 	$(DOCKER) run --rm -t \
 		-v $(CURDIR)/web:/app \
+		-v /app/node_modules \
 		$(IMG_WEB):dev \
-		sh -c "pnpm vitest run && pnpm lint"
+		sh -c "pnpm test && pnpm lint"
 
 web-test-cov: web-build
 	$(DOCKER) run --rm -t \
 		-v $(CURDIR)/web:/app \
+		-v /app/node_modules \
 		$(IMG_WEB):dev \
 		sh -c "pnpm vitest run --coverage"
 

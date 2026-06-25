@@ -54,7 +54,7 @@ class TestCity:
         resp = client.get(f"/city/{_KNOWN_CITY}")
         teams = resp.json()["summary"]["top_teams_by_wins"]
         assert len(teams) > 0
-        _assert_keys(teams[0], {"team", "wins"}, "city.top_teams")
+        _assert_keys(teams[0], {"team", "value"}, "city.top_teams")
 
     def test_city_unknown(self, client: TestClient):
         resp = client.get("/city/NonExistentCityXXX")

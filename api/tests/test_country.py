@@ -53,7 +53,7 @@ class TestCountry:
         resp = client.get(f"/country/{_KNOWN_COUNTRY}")
         teams = resp.json()["summary"]["top_teams_by_wins"]
         assert len(teams) > 0
-        _assert_keys(teams[0], {"team", "wins"}, "country.top_teams")
+        _assert_keys(teams[0], {"team", "value"}, "country.top_teams")
 
     def test_country_unknown(self, client: TestClient):
         resp = client.get("/country/NonExistentCountryXXX")

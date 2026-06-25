@@ -229,7 +229,34 @@ def _team_aggregate(results: pd.DataFrame) -> pd.DataFrame:
     agg["win_rate"] = round(agg["wins"] / agg["matches_played"] * 100, 2)
     agg["loss_rate"] = round(agg["losses"] / agg["matches_played"] * 100, 2)
 
+    # Count distinct countries each team has played in
+    if "country" in results.columns:
+        home_countries = results[["home_team", "country"]].copy()
+        home_countries.columns = ["team", "country"]
+        away_countries = results[["away_team", "country"]].copy()
+        away_countries.columns = ["team", "country"]
+        all_countries = pd.concat([home_countries, away_countries], ignore_index=True)
+        unique_countries = all_countries.groupby("team")["country"].nunique()
+        agg = agg.merge(unique_countries.rename("unique_countries"), left_on="team", right_index=True, how="left")
+        agg["unique_countries"] = agg["unique_countries"].fillna(0).astype(int)
+
     return agg
+
+
+def teams_list(results: pd.DataFrame) -> list:
+    """Return all teams with full aggregate stats."""
+    if results.empty:
+        return []
+    agg = _team_aggregate(results)
+    if agg.empty:
+        return []
+    result = agg.sort_values("matches_played", ascending=False)
+    for int_col in ["wins", "losses", "draws", "goals_for", "goals_against", "matches_played"]:
+        if int_col in result.columns:
+            result[int_col] = result[int_col].astype(int)
+    if "unique_countries" in result.columns:
+        result["unique_countries"] = result["unique_countries"].astype(int)
+    return result.to_dict(orient="records")
 
 
 def most_teams(results: pd.DataFrame, stat: str, top_n: int = 20) -> list:
