@@ -132,6 +132,17 @@ export function TeamDetailClient({ teamName }: Props) {
     router.push(`/teams${q ? `?${q}` : ""}`);
   }, [router, sp]);
 
+  const handleYearClick = useCallback(
+    (row: YearlyRow) => {
+      const params = new URLSearchParams(sp.toString());
+      const q = params.toString();
+      router.push(
+        `/teams/${encodeURIComponent(teamName)}/${row.year}${q ? `?${q}` : ""}`,
+      );
+    },
+    [router, sp, teamName],
+  );
+
   return (
     <div className="p-8">
       <div className="flex items-center gap-3 mb-4">
@@ -210,6 +221,7 @@ export function TeamDetailClient({ teamName }: Props) {
                 data={detail.yearly}
                 keyField="year"
                 defaultSort={{ key: "year", dir: "desc" }}
+                onRowClick={handleYearClick}
               />
             ) : (
               <p className="text-sm text-gray-400">No yearly data available</p>

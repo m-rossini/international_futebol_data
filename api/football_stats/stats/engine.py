@@ -12,6 +12,7 @@ from .analysis import (
     top_scorers,
     team_win_rate,
     team_yearly,
+    team_matches_by_year,
     goals_per_year,
     results_metadata,
     goalscorers_metadata,
@@ -94,6 +95,23 @@ class QueryEngine:
         result = team_win_rate(r, canonical)
         result["yearly"] = team_yearly(r, canonical)
         return result
+
+    def team_matches(self, team_name: str, year: int, filters: Optional[FilterParams] = None) -> dict:
+        """Return all matches for a given team in a given year."""
+        logger.debug("Team matches requested: %s in %d", team_name, year)
+        try:
+            canonical = self._resolve_team_name(team_name)
+        except ValueError:
+            return {"error": True, "message": f"Team '{team_name}' not found in the data."}
+        r = self._filtered_results(filters)
+        matches = team_matches_by_year(r, canonical, year)
+        return {
+            "team": canonical,
+            "year": year,
+            "matches": len(matches),
+            "matches_list": matches,
+        }
+
 
     def head_to_head(self, team1: str, team2: str, filters: Optional[FilterParams] = None) -> dict:
         logger.debug("Head-to-head: %s vs %s", team1, team2)

@@ -28,6 +28,18 @@ async def team_stats(team_name: str, filters: FilterParamsDep = Depends()):
     return engine.team(team_name, filters.inner)
 
 
+@router.get("/team/{team_name}/matches/{year}")
+async def team_matches_by_year_endpoint(
+    team_name: str,
+    year: int,
+    filters: FilterParamsDep = Depends(),
+):
+    """All matches for a specific team in a specific year. Accepts filter params."""
+    require_data()
+    logger.debug("GET /team/%s/matches/%d", team_name, year)
+    return engine.team_matches(team_name, year, filters.inner)
+
+
 @router.get("/head_to_head")
 async def head_to_head(
     team1: str = Query(...),

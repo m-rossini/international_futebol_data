@@ -64,6 +64,15 @@ export interface MatchItem {
   neutral?: boolean;
 }
 
+export interface TeamMatchesByYear {
+  team: string;
+  year: number;
+  matches: number;
+  matches_list: MatchItem[];
+  error?: boolean;
+  message?: string;
+}
+
 export interface HeadToHeadResult {
   team1: string;
   team2: string;

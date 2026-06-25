@@ -109,6 +109,34 @@ def team_win_rate(results: pd.DataFrame, team: str) -> dict:
     return result
 
 
+def team_matches_by_year(results: pd.DataFrame, team: str, year: int) -> list[dict]:
+    """Return all matches for a given team in a given year, sorted by date."""
+    if results.empty:
+        return []
+
+    mask = (
+        ((results["home_team"] == team) | (results["away_team"] == team))
+        & (pd.to_datetime(results["date"], utc=True).dt.year == year)
+    )
+    matches = results[mask].sort_values("date")
+
+    matches_list = []
+    for _, row in matches.iterrows():
+        matches_list.append({
+            "date": str(row["date"]),
+            "home_team": row["home_team"],
+            "away_team": row["away_team"],
+            "home_score": int(row["home_score"]),
+            "away_score": int(row["away_score"]),
+            "tournament": row.get("tournament"),
+            "city": row.get("city"),
+            "country": row.get("country"),
+            "neutral": bool(row.get("neutral", False)) if "neutral" in row.index else None,
+        })
+
+    return matches_list
+
+
 def team_vs_team(results: pd.DataFrame, team1: str, team2: str) -> dict:
     """Head-to-head stats between two teams, with advanced goal statistics."""
     mask = (
