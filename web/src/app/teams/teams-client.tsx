@@ -145,8 +145,7 @@ export function TeamsClient() {
   return (
     <div className="p-8">
       <h1 className="text-2xl font-bold text-gray-800 mb-4">Teams</h1>
-      <div className="flex flex-wrap items-end gap-3 mb-4">
-        <FilterBar />
+      <FilterBar>
         <div className="flex flex-col gap-1 w-[140px]">
           <label className="text-xs font-medium text-gray-500">Min. matches</label>
           <input
@@ -158,7 +157,7 @@ export function TeamsClient() {
             className="border border-gray-300 rounded-lg px-2 py-1.5 text-sm bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-200 outline-none"
           />
         </div>
-      </div>
+      </FilterBar>
       {loading ? (
         <p className="text-sm text-gray-400">Loading...</p>
       ) : error ? (

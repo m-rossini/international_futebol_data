@@ -12,6 +12,7 @@ interface FilterOptions {
 
 interface Props {
   fields?: { teams?: boolean; tournaments?: boolean; countries?: boolean; dates?: boolean };
+  children?: React.ReactNode;
 }
 
 const ALL_FIELDS: Required<Props["fields"]> = {
@@ -23,7 +24,7 @@ const ALL_FIELDS: Required<Props["fields"]> = {
 
 const FETCHED = new Map<string, FilterOptions>();
 
-export function FilterBar({ fields }: Props) {
+export function FilterBar({ fields, children }: Props) {
   const cfg = { ...ALL_FIELDS, ...fields };
   const router = useRouter();
   const pathname = usePathname();
@@ -65,7 +66,7 @@ export function FilterBar({ fields }: Props) {
     [router, pathname, sp]
   );
 
-  const visible = Boolean(cfg.teams || cfg.tournaments || cfg.countries || cfg.dates);
+  const visible = Boolean(cfg.teams || cfg.tournaments || cfg.countries || cfg.dates || children);
   if (!visible) return null;
 
   return (
@@ -125,6 +126,7 @@ export function FilterBar({ fields }: Props) {
           </div>
         </>
       )}
+      {children}
     </div>
   );
 }
