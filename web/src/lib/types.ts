@@ -1,6 +1,9 @@
 export interface TeamItem {
   team: string;
   matches_played: number;
+  goals_for: number;
+  goals_against: number;
+  gf_ga_ratio: number;
   wins: number;
   losses: number;
   draws: number;

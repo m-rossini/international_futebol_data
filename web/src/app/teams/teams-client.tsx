@@ -51,6 +51,27 @@ const columns: Column<TeamItem>[] = [
     ),
   },
   {
+    key: "goals_for",
+    header: "GF",
+    sortable: true,
+    render: (row) => row.goals_for.toLocaleString(),
+  },
+  {
+    key: "goals_against",
+    header: "GA",
+    sortable: true,
+    render: (row) => row.goals_against.toLocaleString(),
+  },
+  {
+    key: "gf_ga_ratio",
+    header: "GF/GA",
+    sortable: true,
+    render: (row) =>
+      row.goals_against > 0
+        ? row.gf_ga_ratio.toFixed(2)
+        : "—",
+  },
+  {
     key: "unique_countries",
     header: "Countries",
     sortable: true,
@@ -86,7 +107,10 @@ export function TeamsClient() {
         const url = `${API}/teams${qs ? "?" + qs : ""}`;
         const res = await fetch(url);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data: TeamItem[] = await res.json();
+        const data: TeamItem[] = (await res.json()).map((t: TeamItem) => ({
+          ...t,
+          gf_ga_ratio: t.goals_against > 0 ? t.goals_for / t.goals_against : 0,
+        }));
         if (!cancelled) {
           setTeams(data);
           setLoading(false);

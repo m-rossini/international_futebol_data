@@ -4,8 +4,8 @@ import userEvent from "@testing-library/user-event";
 import { TeamsClient } from "@/app/teams/teams-client";
 
 const mockTeams = [
-  { team: "Brazil", matches_played: 100, wins: 70, losses: 10, draws: 20, win_rate: 70.0, unique_countries: 15 },
-  { team: "Germany", matches_played: 90, wins: 60, losses: 15, draws: 15, win_rate: 66.67, unique_countries: 12 },
+  { team: "Brazil", matches_played: 100, goals_for: 250, goals_against: 80, wins: 70, losses: 10, draws: 20, win_rate: 70.0, unique_countries: 15 },
+  { team: "Germany", matches_played: 90, goals_for: 210, goals_against: 75, wins: 60, losses: 15, draws: 15, win_rate: 66.67, unique_countries: 12 },
 ];
 
 const mockFilters = { teams: ["Brazil", "Germany"], tournaments: [], countries: [] };
