@@ -65,6 +65,16 @@ describe("TeamsClient", () => {
     expect(screen.queryByText("Germany")).not.toBeInTheDocument();
   });
 
+  it("filters teams by minimum matches played", async () => {
+    mockSearchParams = new URLSearchParams("min_matches=95");
+
+    render(<TeamsClient />);
+    await waitFor(() => {
+      expect(screen.getByText("Brazil")).toBeInTheDocument();
+    });
+    expect(screen.queryByText("Germany")).not.toBeInTheDocument();
+  });
+
   it("shows error state on fetch failure", async () => {
     globalThis.fetch = vi.fn().mockRejectedValue(new Error("Network error"));
     render(<TeamsClient />);

@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
-import { useSearchParams } from "next/navigation";
+import { useEffect, useState, useMemo, useCallback } from "react";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { DataTable, type Column } from "@/components/shared/DataTable";
 import { FilterBar } from "@/components/shared/FilterBar";
 import type { TeamItem } from "@/lib/types";
@@ -69,6 +69,8 @@ function buildQs(params: URLSearchParams): string {
 
 export function TeamsClient() {
   const sp = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
   const [teams, setTeams] = useState<TeamItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -107,16 +109,56 @@ export function TeamsClient() {
     () => sp.get("teams")?.split(",").filter(Boolean) || [],
     [sp]
   );
+  const minMatches = useMemo(() => {
+    const v = sp.get("min_matches");
+    return v ? Math.max(0, parseInt(v, 10) || 0) : 0;
+  }, [sp]);
+
+  const setMinMatches = useCallback(
+    (value: number) => {
+      const params = new URLSearchParams(sp.toString());
+      if (value > 0) {
+        params.set("min_matches", String(value));
+      } else {
+        params.delete("min_matches");
+      }
+      router.replace(`${pathname}?${params.toString()}`);
+    },
+    [router, pathname, sp]
+  );
+
   const filteredTeams = useMemo(() => {
-    if (teamFilter.length === 0) return teams;
-    const set = new Set(teamFilter);
-    return teams.filter((t) => set.has(t.team));
-  }, [teams, teamFilter]);
+    let result = teams;
+
+    if (teamFilter.length > 0) {
+      const set = new Set(teamFilter);
+      result = result.filter((t) => set.has(t.team));
+    }
+
+    if (minMatches > 0) {
+      result = result.filter((t) => t.matches_played >= minMatches);
+    }
+
+    return result;
+  }, [teams, teamFilter, minMatches]);
 
   return (
     <div className="p-8">
       <h1 className="text-2xl font-bold text-gray-800 mb-4">Teams</h1>
-      <FilterBar />
+      <div className="flex flex-wrap items-end gap-3 mb-4">
+        <FilterBar />
+        <div className="flex flex-col gap-1 w-[140px]">
+          <label className="text-xs font-medium text-gray-500">Min. matches</label>
+          <input
+            type="number"
+            min={0}
+            value={minMatches || ""}
+            onChange={(e) => setMinMatches(Number(e.target.value))}
+            placeholder="0"
+            className="border border-gray-300 rounded-lg px-2 py-1.5 text-sm bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-200 outline-none"
+          />
+        </div>
+      </div>
       {loading ? (
         <p className="text-sm text-gray-400">Loading...</p>
       ) : error ? (
