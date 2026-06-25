@@ -3,11 +3,11 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { ArrowRightLeft } from "lucide-react";
-import { DataTable, type Column } from "@/components/shared/DataTable";
 import { FilterBar } from "@/components/shared/FilterBar";
 import { AutocompleteInput } from "@/components/shared/AutocompleteInput";
 import { StatsBar, buildH2HStats } from "@/components/shared/StatsBar";
-import type { HeadToHeadResult, MatchItem } from "@/lib/types";
+import { MatchTable } from "@/components/shared/MatchTable";
+import type { HeadToHeadResult } from "@/lib/types";
 
 const API = "/api/proxy";
 
@@ -29,10 +29,6 @@ function buildQs(params: URLSearchParams, team1: string, team2: string): string 
     if (v) q.set(key, v);
   }
   return q.toString();
-}
-
-interface IndexedMatch extends MatchItem {
-  _key: string;
 }
 
 export function HeadToHeadClient() {
@@ -138,56 +134,6 @@ export function HeadToHeadClient() {
   const team1Goals = result ? ((result[`${result.team1}_goals`] as number) ?? 0) : 0;
   const team2Goals = result ? ((result[`${result.team2}_goals`] as number) ?? 0) : 0;
 
-  // Add unique keys to match items
-  const indexedMatches: IndexedMatch[] = useMemo(() => {
-    if (!result) return [];
-    return result.matches_list.map((m, i) => ({ ...m, _key: `${m.date}-${m.home_team}-${m.away_team}-${i}` }));
-  }, [result]);
-
-  const matchColumns: Column<IndexedMatch>[] = useMemo(
-    () => [
-      {
-        key: "date",
-        header: "Date",
-        sortable: true,
-        render: (row) => new Date(row.date).toLocaleDateString(),
-      },
-      { key: "tournament", header: "Tournament", sortable: true },
-      { key: "city", header: "City", sortable: true },
-      { key: "country", header: "Country", sortable: true },
-      {
-        key: "home_team",
-        header: "Home",
-        sortable: true,
-        render: (row) => (
-          <span className={row.home_score > row.away_score ? "font-semibold" : ""}>
-            {row.home_team}
-          </span>
-        ),
-      },
-      {
-        key: "score",
-        header: "Score",
-        render: (row) => (
-          <span className="font-mono tabular-nums">
-            {row.home_score} - {row.away_score}
-          </span>
-        ),
-      },
-      {
-        key: "away_team",
-        header: "Away",
-        sortable: true,
-        render: (row) => (
-          <span className={row.away_score > row.home_score ? "font-semibold" : ""}>
-            {row.away_team}
-          </span>
-        ),
-      },
-    ],
-    []
-  );
-
   const sameTeam = team1 && team2 && team1 === team2;
 
   return (
@@ -261,17 +207,11 @@ export function HeadToHeadClient() {
 
           {/* Match history */}
           {result.matches > 0 ? (
-            <>
-              <h2 className="text-lg font-semibold text-gray-800 mb-3">
-                Match History ({result.matches} matches)
-              </h2>
-              <DataTable
-                columns={matchColumns}
-                data={indexedMatches}
-                keyField="_key"
-                defaultSort={{ key: "date", dir: "desc" }}
-              />
-            </>
+            <MatchTable
+              matches={result.matches_list}
+              heading={`Match History (${result.matches} matches)`}
+              showNeutral
+            />
           ) : (
             <p className="text-sm text-gray-400 mt-4">
               No matches found between {result.team1} and {result.team2} with the current filters.

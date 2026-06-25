@@ -3,13 +3,13 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
-import { DataTable, type Column } from "@/components/shared/DataTable";
 import { AutocompleteInput } from "@/components/shared/AutocompleteInput";
 import {
   StatsBar,
   buildMatchStats,
   buildGoalStats,
 } from "@/components/shared/StatsBar";
+import { MatchTable } from "@/components/shared/MatchTable";
 import type { MatchItem, TeamMatchesByYear } from "@/lib/types";
 
 const API = "/api/proxy";
@@ -21,16 +21,6 @@ function buildQs(params: URLSearchParams): string {
     if (v) q.set(key, v);
   }
   return q.toString();
-}
-
-function formatDate(raw: string): string {
-  // API returns "2022-11-24 00:00:00" — use just the date portion
-  const d = new Date(raw.slice(0, 10) + "T00:00:00");
-  return d.toLocaleDateString("en-GB", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
 }
 
 function isoInputDate(raw: string): string {
@@ -162,51 +152,6 @@ export function YearMatchesClient({ teamName, year }: Props) {
     const q = params.toString();
     router.push(`/teams/${encodeURIComponent(teamName)}${q ? `?${q}` : ""}`);
   }, [router, sp, teamName]);
-
-  // Column defs that close over teamName
-  const matchColumns: Column<MatchItem>[] = useMemo(
-    () => [
-      { key: "date", header: "Date", sortable: true, render: (m) => formatDate(m.date) },
-      { key: "tournament", header: "Tournament", sortable: true },
-      { key: "city", header: "City", sortable: true },
-      { key: "country", header: "Country", sortable: true },
-      {
-        key: "home_team",
-        header: "Home",
-        sortable: true,
-        render: (m) => (
-          <span className={m.home_team === teamName ? "font-semibold" : ""}>
-            {m.home_team}
-          </span>
-        ),
-      },
-      {
-        key: "score",
-        header: "Score",
-        render: (m) => (
-          <span className="tabular-nums font-mono">
-            {m.home_score} – {m.away_score}
-          </span>
-        ),
-      },
-      {
-        key: "away_team",
-        header: "Away",
-        sortable: true,
-        render: (m) => (
-          <span className={m.away_team === teamName ? "font-semibold" : ""}>
-            {m.away_team}
-          </span>
-        ),
-      },
-      {
-        key: "neutral",
-        header: "Neutral",
-        render: (m) => (m.neutral ? "Yes" : "No"),
-      },
-    ],
-    [teamName],
-  );
 
   // Summary counts (based on filtered data)
   const summary = useMemo(() => {
@@ -382,11 +327,10 @@ export function YearMatchesClient({ teamName, year }: Props) {
                 : "No matches found for this year."}
             </p>
           ) : (
-            <DataTable
-              columns={matchColumns}
-              data={filtered}
-              keyField="date"
-              defaultSort={{ key: "date", dir: "desc" }}
+            <MatchTable
+              matches={filtered}
+              highlightTeam={teamName}
+              showNeutral
             />
           )}
         </>
