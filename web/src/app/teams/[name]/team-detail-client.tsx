@@ -191,7 +191,12 @@ export function TeamDetailClient({ teamName }: Props) {
             <h2 className="text-lg font-semibold text-gray-800 mb-3">Matches per Year</h2>
             <div className="bg-white rounded-lg border border-gray-200 p-4">
               <YearlyChart
-                data={detail.yearly.map((r) => ({ year: r.year, value: r.matches_played }))}
+                data={detail.yearly.map((r) => ({
+                  year: r.year,
+                  wins: r.wins,
+                  losses: r.losses,
+                  draws: r.draws,
+                }))}
               />
             </div>
           </div>

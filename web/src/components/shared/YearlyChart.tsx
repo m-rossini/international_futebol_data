@@ -4,7 +4,9 @@ import { useMemo } from "react";
 
 interface BarDatum {
   year: number;
-  value: number;
+  wins: number;
+  losses: number;
+  draws: number;
 }
 
 interface Props {
@@ -18,9 +20,18 @@ const PAD_LEFT = 40;
 const PAD_BOTTOM = 24;
 const PAD_TOP = 10;
 
+const COLORS = {
+  wins: "#22c55e",
+  draws: "#f59e0b",
+  losses: "#ef4444",
+} as const;
+
 export function YearlyChart({ data, height = 180 }: Props) {
   const sorted = useMemo(() => [...data].sort((a, b) => a.year - b.year), [data]);
-  const maxVal = useMemo(() => Math.max(...data.map((d) => d.value), 1), [data]);
+  const maxVal = useMemo(
+    () => Math.max(...data.map((d) => d.wins + d.losses + d.draws), 1),
+    [data],
+  );
 
   const chartH = height - PAD_TOP - PAD_BOTTOM;
   const totalW = PAD_LEFT + sorted.length * (BAR_W + GAP) + GAP;
@@ -35,11 +46,24 @@ export function YearlyChart({ data, height = 180 }: Props) {
 
   return (
     <div className="w-full overflow-x-auto">
+      {/* Legend */}
+      <div className="flex items-center justify-center gap-4 mb-2">
+        {(["wins", "draws", "losses"] as const).map((key) => (
+          <div key={key} className="flex items-center gap-1.5 text-xs text-gray-500">
+            <span
+              className="inline-block w-3 h-3 rounded-sm"
+              style={{ backgroundColor: COLORS[key] }}
+            />
+            {key.charAt(0).toUpperCase() + key.slice(1)}
+          </div>
+        ))}
+      </div>
+
       <svg
         viewBox={`0 0 ${totalW} ${height}`}
         className="w-full min-w-[400px]"
         role="img"
-        aria-label="Matches per year"
+        aria-label="Wins / Losses / Draws per year"
       >
         {/* Y-axis grid lines */}
         {[0, 0.25, 0.5, 0.75, 1].map((frac) => {
@@ -68,31 +92,64 @@ export function YearlyChart({ data, height = 180 }: Props) {
           );
         })}
 
-        {/* Bars */}
+        {/* Stacked bars */}
         {sorted.map((d, i) => {
           const x = PAD_LEFT + i * (BAR_W + GAP) + GAP / 2;
-          const barH = (d.value / maxVal) * chartH;
-          const y = PAD_TOP + chartH - barH;
+          const total = d.wins + d.losses + d.draws;
+
+          const lossesH = (d.losses / maxVal) * chartH;
+          const drawsH = (d.draws / maxVal) * chartH;
+          const winsH = (d.wins / maxVal) * chartH;
+          const totalH = lossesH + drawsH + winsH;
+
+          const baseY = PAD_TOP + chartH;
+          const lossesY = baseY - lossesH;
+          const drawsY = lossesY - drawsH;
+          const winsY = drawsY - winsH;
 
           return (
             <g key={d.year}>
-              <rect
-                x={x}
-                y={y}
-                width={BAR_W}
-                height={barH}
-                fill="#3b82f6"
-                rx={3}
-              />
-              {/* Value label on top */}
+              {/* Losses (bottom) */}
+              {d.losses > 0 && (
+                <rect
+                  x={x}
+                  y={lossesY}
+                  width={BAR_W}
+                  height={lossesH}
+                  fill={COLORS.losses}
+                />
+              )}
+              {/* Draws (middle) */}
+              {d.draws > 0 && (
+                <rect
+                  x={x}
+                  y={drawsY}
+                  width={BAR_W}
+                  height={drawsH}
+                  fill={COLORS.draws}
+                />
+              )}
+              {/* Wins (top) */}
+              {d.wins > 0 && (
+                <rect
+                  x={x}
+                  y={winsY}
+                  width={BAR_W}
+                  height={winsH}
+                  fill={COLORS.wins}
+                  rx={3}
+                />
+              )}
+
+              {/* Total value label on top */}
               <text
                 x={x + BAR_W / 2}
-                y={y - 4}
+                y={baseY - totalH - 4}
                 textAnchor="middle"
                 fontSize={10}
                 fill="#6b7280"
               >
-                {d.value}
+                {total}
               </text>
               {/* Year label below */}
               <text

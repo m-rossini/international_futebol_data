@@ -3,15 +3,17 @@ import { render, screen } from "@testing-library/react";
 import { YearlyChart } from "@/components/shared/YearlyChart";
 
 const data = [
-  { year: 2020, value: 5 },
-  { year: 2021, value: 12 },
-  { year: 2022, value: 8 },
+  { year: 2020, wins: 3, losses: 1, draws: 1 },
+  { year: 2021, wins: 7, losses: 3, draws: 2 },
+  { year: 2022, wins: 4, losses: 2, draws: 2 },
 ];
 
 describe("YearlyChart", () => {
   it("renders an svg with the chart aria label", () => {
     render(<YearlyChart data={data} />);
-    expect(screen.getByRole("img", { name: "Matches per year" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("img", { name: "Wins / Losses / Draws per year" }),
+    ).toBeInTheDocument();
   });
 
   it("shows year labels on the x-axis", () => {
@@ -21,12 +23,20 @@ describe("YearlyChart", () => {
     expect(screen.getByText("2022")).toBeInTheDocument();
   });
 
-  it("shows value labels above bars", () => {
+  it("shows total value labels above bars", () => {
     render(<YearlyChart data={data} />);
-    // "5" and "8" are unique; "12" appears as both bar label and Y-axis tick
+    // Totals: 5, 12, 8
     expect(screen.getByText("5")).toBeInTheDocument();
     expect(screen.getByText("8")).toBeInTheDocument();
+    // "12" may appear as both total label and Y-axis tick
     expect(screen.getAllByText("12").length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("renders the legend with Wins, Draws, Losses", () => {
+    render(<YearlyChart data={data} />);
+    expect(screen.getByText("Wins")).toBeInTheDocument();
+    expect(screen.getByText("Draws")).toBeInTheDocument();
+    expect(screen.getByText("Losses")).toBeInTheDocument();
   });
 
   it("shows empty state when no data", () => {
@@ -36,9 +46,9 @@ describe("YearlyChart", () => {
 
   it("sorts bars by year ascending regardless of input order", () => {
     const unsorted = [
-      { year: 2022, value: 3 },
-      { year: 2020, value: 1 },
-      { year: 2021, value: 2 },
+      { year: 2022, wins: 1, losses: 0, draws: 0 },
+      { year: 2020, wins: 1, losses: 0, draws: 0 },
+      { year: 2021, wins: 1, losses: 0, draws: 0 },
     ];
     render(<YearlyChart data={unsorted} />);
     const texts = screen.getAllByText(/^20\d{2}$/);
