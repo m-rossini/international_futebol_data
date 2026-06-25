@@ -5,6 +5,11 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { DataTable, type Column } from "@/components/shared/DataTable";
 import { AutocompleteInput } from "@/components/shared/AutocompleteInput";
+import {
+  StatsBar,
+  buildMatchStats,
+  buildGoalStats,
+} from "@/components/shared/StatsBar";
 import type { MatchItem, TeamMatchesByYear } from "@/lib/types";
 
 const API = "/api/proxy";
@@ -209,13 +214,25 @@ export function YearMatchesClient({ teamName, year }: Props) {
     let wins = 0;
     let losses = 0;
     let draws = 0;
+    let goalsFor = 0;
+    let goalsAgainst = 0;
     for (const m of filtered) {
+      const isHome = m.home_team === teamName;
       const r = resultLabel(m, teamName);
       if (r.label === "W") wins++;
       else if (r.label === "L") losses++;
       else draws++;
+      goalsFor += isHome ? m.home_score : m.away_score;
+      goalsAgainst += isHome ? m.away_score : m.home_score;
     }
-    return { wins, losses, draws, total: filtered.length };
+    return {
+      wins,
+      losses,
+      draws,
+      total: filtered.length,
+      goalsFor,
+      goalsAgainst,
+    };
   }, [filtered, teamName]);
 
   // Is any client-side filter active?
@@ -328,12 +345,34 @@ export function YearMatchesClient({ teamName, year }: Props) {
 
           {/* Summary cards */}
           {summary && (
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-              <StatCard label="Matches" value={summary.total.toLocaleString()} />
-              <StatCard label="Wins" value={summary.wins.toLocaleString()} />
-              <StatCard label="Losses" value={summary.losses.toLocaleString()} />
-              <StatCard label="Draws" value={summary.draws.toLocaleString()} />
-            </div>
+            <>
+              <div className="mb-4">
+                <StatsBar
+                  items={buildMatchStats(
+                    summary.total,
+                    summary.wins,
+                    summary.losses,
+                    summary.draws,
+                    summary.total > 0
+                      ? (summary.wins / summary.total) * 100
+                      : undefined,
+                  )}
+                />
+              </div>
+              <div className="mb-6">
+                <StatsBar
+                  items={buildGoalStats(
+                    summary.goalsFor,
+                    summary.goalsAgainst,
+                    summary.total > 0 ? summary.goalsFor / summary.total : undefined,
+                    summary.total > 0 ? summary.goalsAgainst / summary.total : undefined,
+                    summary.total > 0
+                      ? (summary.goalsFor - summary.goalsAgainst) / summary.total
+                      : undefined,
+                  )}
+                />
+              </div>
+            </>
           )}
 
           {filtered.length === 0 ? (
@@ -352,15 +391,6 @@ export function YearMatchesClient({ teamName, year }: Props) {
           )}
         </>
       ) : null}
-    </div>
-  );
-}
-
-function StatCard({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="bg-white rounded-lg border border-gray-200 px-4 py-3 flex flex-col gap-0.5">
-      <span className="text-xs font-medium text-gray-500">{label}</span>
-      <span className="text-xl font-bold text-gray-800">{value}</span>
     </div>
   );
 }

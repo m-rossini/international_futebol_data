@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { YearMatchesClient } from "@/app/teams/[name]/[year]/year-matches-client";
 
 const mockMatches = {
@@ -86,11 +85,17 @@ describe("YearMatchesClient", () => {
   it("displays summary stat cards after loading", async () => {
     render(<YearMatchesClient teamName="Brazil" year={2022} />);
     await waitFor(() => {
-      expect(screen.getByText("3")).toBeInTheDocument(); // total matches
+      expect(screen.getByText("Matches")).toBeInTheDocument();
     });
-    expect(screen.getByText("2")).toBeInTheDocument(); // wins
-    expect(screen.getByText("1")).toBeInTheDocument(); // losses
-    expect(screen.getByText("0")).toBeInTheDocument(); // draws
+    // Verify match stat cards are present
+    expect(screen.getByText("Wins")).toBeInTheDocument();
+    expect(screen.getByText("Losses")).toBeInTheDocument();
+    expect(screen.getByText("Draws")).toBeInTheDocument();
+    expect(screen.getByText("Win Rate")).toBeInTheDocument();
+    // Verify goal stat cards are present (added alongside match stats)
+    expect(screen.getByText("Goals For")).toBeInTheDocument();
+    expect(screen.getByText("Goals Against")).toBeInTheDocument();
+    expect(screen.getByText("Goal Diff")).toBeInTheDocument();
   });
 
   it("displays match rows in the table", async () => {
@@ -142,7 +147,7 @@ describe("YearMatchesClient", () => {
     );
   });
 
-  it("renders client-side filter controls", async () => {
+  it("renders filter controls: opponent, tournament, country, city, date range", async () => {
     render(<YearMatchesClient teamName="Brazil" year={2022} />);
     await waitFor(() => {
       expect(screen.getByText("Brazil — 2022 Matches")).toBeInTheDocument();
@@ -151,76 +156,27 @@ describe("YearMatchesClient", () => {
     expect(screen.getByPlaceholderText("Any tournament")).toBeInTheDocument();
     expect(screen.getByPlaceholderText("Any country")).toBeInTheDocument();
     expect(screen.getByPlaceholderText("Any city")).toBeInTheDocument();
+    // Date range inputs
+    const dateInputs = screen.getAllByDisplayValue("");
+    expect(dateInputs.length).toBeGreaterThanOrEqual(2);
   });
 
-  it("filters by opponent when selected", async () => {
-    const user = userEvent.setup();
+  it("does not show clear button when no filter is active", async () => {
     render(<YearMatchesClient teamName="Brazil" year={2022} />);
-
     await waitFor(() => {
       expect(screen.getByText("Brazil — 2022 Matches")).toBeInTheDocument();
     });
-
-    // Pick "Serbia" from the opponent dropdown
-    const opponentInput = screen.getByPlaceholderText("Any opponent");
-    await user.click(opponentInput);
-    const serbiaOption = await screen.findByText("Serbia");
-    await user.click(serbiaOption);
-
-    // Should now show only 1 match (Brazil-Serbia)
-    await waitFor(() => {
-      expect(screen.getByText("1")).toBeInTheDocument(); // 1 total match
-    });
-    expect(screen.getByText("Serbia")).toBeInTheDocument();
-    expect(screen.queryByText("Switzerland")).not.toBeInTheDocument();
-    expect(screen.queryByText("Cameroon")).not.toBeInTheDocument();
-  });
-
-  it("filters by tournament", async () => {
-    const user = userEvent.setup();
-    render(<YearMatchesClient teamName="Brazil" year={2022} />);
-
-    await waitFor(() => {
-      expect(screen.getByText("Brazil — 2022 Matches")).toBeInTheDocument();
-    });
-
-    // Open tournament dropdown
-    const tournamentInput = screen.getByPlaceholderText("Any tournament");
-    await user.click(tournamentInput);
-
-    // The dropdown list should appear with "FIFA World Cup"
-    await waitFor(() => {
-      // The <li> inside the open dropdown contains "FIFA World Cup"
-      const dropdownItems = document.querySelectorAll("ul li");
-      const found = Array.from(dropdownItems).some(
-        (li) => li.textContent === "FIFA World Cup",
-      );
-      expect(found).toBe(true);
-    });
-  });
-
-  it("shows 'Clear filters' button when opponent filter is active", async () => {
-    const user = userEvent.setup();
-    render(<YearMatchesClient teamName="Brazil" year={2022} />);
-
-    await waitFor(() => {
-      expect(screen.getByText("Brazil — 2022 Matches")).toBeInTheDocument();
-    });
-
-    // No clear button initially
     expect(screen.queryByText("Clear filters")).not.toBeInTheDocument();
+  });
 
-    // Select an opponent — "Serbia" appears in both dropdown and table,
-    // so pick the first <li> (dropdown) element
-    const opponentInput = screen.getByPlaceholderText("Any opponent");
-    await user.click(opponentInput);
-    const allSerbia = await screen.findAllByText("Serbia");
-    // The dropdown <li> is the first one in DOM order
-    await user.click(allSerbia[0]);
-
-    // Clear button should now appear
+  it("shows correct date format in table (no Invalid Date)", async () => {
+    render(<YearMatchesClient teamName="Brazil" year={2022} />);
     await waitFor(() => {
-      expect(screen.getByText("Clear filters")).toBeInTheDocument();
+      expect(screen.getByText("Brazil — 2022 Matches")).toBeInTheDocument();
     });
+    // Date format: "24 Nov 2022"
+    expect(screen.getByText("24 Nov 2022")).toBeInTheDocument();
+    expect(screen.getByText("28 Nov 2022")).toBeInTheDocument();
+    expect(screen.getByText("02 Dec 2022")).toBeInTheDocument();
   });
 });

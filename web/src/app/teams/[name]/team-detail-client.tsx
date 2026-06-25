@@ -6,6 +6,11 @@ import { ArrowLeft } from "lucide-react";
 import { DataTable, type Column } from "@/components/shared/DataTable";
 import { FilterBar } from "@/components/shared/FilterBar";
 import { YearlyChart } from "@/components/shared/YearlyChart";
+import {
+  StatsBar,
+  buildMatchStats,
+  buildGoalStats,
+} from "@/components/shared/StatsBar";
 import type { TeamDetail, YearlyRow } from "@/lib/types";
 
 const API = "/api/proxy";
@@ -17,12 +22,6 @@ function buildQs(params: URLSearchParams): string {
     if (v) q.set(key, v);
   }
   return q.toString();
-}
-
-function winRateColor(rate: number): string {
-  if (rate >= 60) return "text-green-600 font-semibold";
-  if (rate >= 45) return "text-amber-600 font-semibold";
-  return "text-red-500 font-semibold";
 }
 
 const yearlyColumns: Column<YearlyRow>[] = [
@@ -64,21 +63,6 @@ const yearlyColumns: Column<YearlyRow>[] = [
     render: (r) => r.goals_against.toLocaleString(),
   },
 ];
-
-function StatCard({
-  label,
-  value,
-}: {
-  label: string;
-  value: React.ReactNode;
-}) {
-  return (
-    <div className="bg-white rounded-lg border border-gray-200 px-4 py-3 flex flex-col gap-0.5">
-      <span className="text-xs font-medium text-gray-500">{label}</span>
-      <span className="text-xl font-bold text-gray-800">{value}</span>
-    </div>
-  );
-}
 
 interface Props {
   teamName: string;
@@ -165,41 +149,42 @@ export function TeamDetailClient({ teamName }: Props) {
         <p className="text-sm text-red-500 mt-4">Error: {error}</p>
       ) : detail ? (
         <>
-          {/* Summary cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mt-4 mb-6">
-            <StatCard label="Matches" value={detail.matches_played.toLocaleString()} />
-            <StatCard label="Wins" value={detail.wins.toLocaleString()} />
-            <StatCard label="Losses" value={detail.losses.toLocaleString()} />
-            <StatCard label="Draws" value={detail.draws.toLocaleString()} />
-            <StatCard
-              label="Win Rate"
-              value={
-                <span className={winRateColor(detail.win_rate)}>
-                  {detail.win_rate.toFixed(1)}%
-                </span>
-              }
+          {/* Match stats */}
+          <div className="mt-4 mb-6">
+            <StatsBar
+              items={buildMatchStats(
+                detail.matches_played,
+                detail.wins,
+                detail.losses,
+                detail.draws,
+                detail.win_rate,
+              )}
             />
           </div>
 
           {/* Goal stats */}
           {detail.goals_for_stats && detail.goals_against_stats && (
             <div className="mb-6">
-              <h2 className="text-lg font-semibold text-gray-800 mb-3">Goal Statistics</h2>
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                <StatCard label="Goals For (avg)" value={detail.goals_for_stats.mean?.toFixed(2) ?? "—"} />
-                <StatCard label="Goals Against (avg)" value={detail.goals_against_stats.mean?.toFixed(2) ?? "—"} />
-                <StatCard label="Total Goals" value={(detail.goals_for_stats.sum + detail.goals_against_stats.sum).toLocaleString()} />
-                <StatCard
-                  label="Avg Goal Diff"
-                  value={detail.goal_diff_stats?.mean?.toFixed(2) ?? "—"}
-                />
-              </div>
+              <h2 className="text-lg font-semibold text-gray-800 mb-3">
+                Goal Statistics
+              </h2>
+              <StatsBar
+                items={buildGoalStats(
+                  detail.goals_for_stats.sum,
+                  detail.goals_against_stats.sum,
+                  detail.goals_for_stats.mean ?? undefined,
+                  detail.goals_against_stats.mean ?? undefined,
+                  detail.goal_diff_stats?.mean ?? undefined,
+                )}
+              />
             </div>
           )}
 
           {/* Yearly chart */}
           <div className="mb-6">
-            <h2 className="text-lg font-semibold text-gray-800 mb-3">Matches per Year</h2>
+            <h2 className="text-lg font-semibold text-gray-800 mb-3">
+              Matches per Year
+            </h2>
             <div className="bg-white rounded-lg border border-gray-200 p-4">
               <YearlyChart
                 data={detail.yearly.map((r) => ({
@@ -214,7 +199,9 @@ export function TeamDetailClient({ teamName }: Props) {
 
           {/* Yearly breakdown */}
           <div className="mb-6">
-            <h2 className="text-lg font-semibold text-gray-800 mb-3">Yearly Breakdown</h2>
+            <h2 className="text-lg font-semibold text-gray-800 mb-3">
+              Yearly Breakdown
+            </h2>
             {detail.yearly.length > 0 ? (
               <DataTable
                 columns={yearlyColumns}
@@ -224,7 +211,9 @@ export function TeamDetailClient({ teamName }: Props) {
                 onRowClick={handleYearClick}
               />
             ) : (
-              <p className="text-sm text-gray-400">No yearly data available</p>
+              <p className="text-sm text-gray-400">
+                No yearly data available
+              </p>
             )}
           </div>
         </>

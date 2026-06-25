@@ -6,6 +6,7 @@ import { ArrowRightLeft } from "lucide-react";
 import { DataTable, type Column } from "@/components/shared/DataTable";
 import { FilterBar } from "@/components/shared/FilterBar";
 import { AutocompleteInput } from "@/components/shared/AutocompleteInput";
+import { StatsBar, buildH2HStats } from "@/components/shared/StatsBar";
 import type { HeadToHeadResult, MatchItem } from "@/lib/types";
 
 const API = "/api/proxy";
@@ -244,12 +245,18 @@ export function HeadToHeadClient() {
       ) : result ? (
         <>
           {/* Summary cards */}
-          <div className="grid grid-cols-3 sm:grid-cols-5 gap-3 mb-6 mt-2">
-            <StatCard label={result.team1} value={team1Wins} sub="wins" color="blue" />
-            <StatCard label="Draws" value={result.draws} sub="" color="gray" />
-            <StatCard label={result.team2} value={team2Wins} sub="wins" color="red" />
-            <StatCard label={result.team1} value={team1Goals} sub="goals" color="blue" />
-            <StatCard label={result.team2} value={team2Goals} sub="goals" color="red" />
+          <div className="mb-6 mt-2">
+            <StatsBar
+              items={buildH2HStats(
+                result.team1,
+                team1Wins,
+                result.draws,
+                team1Goals,
+                result.team2,
+                team2Wins,
+                team2Goals,
+              )}
+            />
           </div>
 
           {/* Match history */}
@@ -278,30 +285,3 @@ export function HeadToHeadClient() {
   );
 }
 
-function StatCard({
-  label,
-  value,
-  sub,
-  color,
-}: {
-  label: string;
-  value: number;
-  sub: string;
-  color: "blue" | "red" | "gray";
-}) {
-  const colors: Record<string, string> = {
-    blue: "bg-blue-50 border-blue-200 text-blue-800",
-    red: "bg-red-50 border-red-200 text-red-800",
-    gray: "bg-gray-50 border-gray-200 text-gray-800",
-  };
-
-  return (
-    <div className={`rounded-lg border px-4 py-3 text-center ${colors[color]}`}>
-      <div className="text-2xl font-bold">{value.toLocaleString()}</div>
-      <div className="text-xs mt-0.5 truncate" title={label}>
-        {label}
-      </div>
-      {sub && <div className="text-[10px] opacity-70">{sub}</div>}
-    </div>
-  );
-}
