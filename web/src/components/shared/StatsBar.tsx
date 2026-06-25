@@ -73,13 +73,40 @@ export function buildH2HStats(
   team2: string,
   team2Wins: number,
   team2Goals: number,
+  totalMatches: number,
+  avgGoalsPerMatch?: number, // avg total goals per match (rivalry intensity)
 ): StatItem[] {
+  const t1WinRate = totalMatches > 0 ? (team1Wins / totalMatches) * 100 : 0;
+  const t2WinRate = totalMatches > 0 ? (team2Wins / totalMatches) * 100 : 0;
+
+  const winRateAccent = (r: number) =>
+    r >= 60 ? "green" : r >= 45 ? "amber" : "red";
+
   return [
+    { label: "Matches", value: totalMatches.toLocaleString() },
     { label: `${team1} Wins`, value: team1Wins.toLocaleString() },
     { label: "Draws", value: draws.toLocaleString() },
     { label: `${team2} Wins`, value: team2Wins.toLocaleString() },
     { label: `${team1} Goals`, value: team1Goals.toLocaleString(), accent: "blue" },
     { label: `${team2} Goals`, value: team2Goals.toLocaleString(), accent: "red" },
+    {
+      label: `${team1} Win%`,
+      value: `${t1WinRate.toFixed(1)}%`,
+      accent: winRateAccent(t1WinRate),
+    },
+    {
+      label: `${team2} Win%`,
+      value: `${t2WinRate.toFixed(1)}%`,
+      accent: winRateAccent(t2WinRate),
+    },
+    ...(avgGoalsPerMatch !== undefined && avgGoalsPerMatch > 0
+      ? [
+          {
+            label: "Avg Goals/Match",
+            value: avgGoalsPerMatch.toFixed(1),
+          } as StatItem,
+        ]
+      : []),
   ];
 }
 

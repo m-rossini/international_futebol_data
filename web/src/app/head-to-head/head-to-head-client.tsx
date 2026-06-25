@@ -133,6 +133,7 @@ export function HeadToHeadClient() {
   const team2Wins = result ? ((result[`${result.team2}_wins`] as number) ?? 0) : 0;
   const team1Goals = result ? ((result[`${result.team1}_goals`] as number) ?? 0) : 0;
   const team2Goals = result ? ((result[`${result.team2}_goals`] as number) ?? 0) : 0;
+  const avgGoalsPerMatch = result?.total_goals_per_match_stats?.mean ?? undefined;
 
   const sameTeam = team1 && team2 && team1 === team2;
 
@@ -201,6 +202,8 @@ export function HeadToHeadClient() {
                 result.team2,
                 team2Wins,
                 team2Goals,
+                result.matches,
+                avgGoalsPerMatch,
               )}
             />
           </div>

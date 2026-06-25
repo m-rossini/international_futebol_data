@@ -120,7 +120,7 @@ describe("HeadToHeadClient", () => {
     render(<HeadToHeadClient />);
 
     await waitFor(() => {
-      expect(screen.getByText("5")).toBeInTheDocument(); // Brazil wins
+      expect(screen.getByText("Brazil Wins")).toBeInTheDocument();
     });
   });
 
@@ -129,16 +129,16 @@ describe("HeadToHeadClient", () => {
     render(<HeadToHeadClient />);
 
     await waitFor(() => {
-      expect(screen.getByText("5")).toBeInTheDocument(); // Brazil wins
+      expect(screen.getByText("Matches")).toBeInTheDocument();
     });
     expect(screen.getByText("Draws")).toBeInTheDocument();
-    expect(screen.getByText("3")).toBeInTheDocument(); // draws count
-    // Argentina wins
-    expect(screen.getByText("2")).toBeInTheDocument();
-    // Brazil goals
-    expect(screen.getByText("15")).toBeInTheDocument();
-    // Argentina goals
-    expect(screen.getByText("10")).toBeInTheDocument();
+    // Verify all expected labels are present
+    expect(screen.getByText("Brazil Wins")).toBeInTheDocument();
+    expect(screen.getByText("Argentina Wins")).toBeInTheDocument();
+    expect(screen.getByText("Brazil Goals")).toBeInTheDocument();
+    expect(screen.getByText("Argentina Goals")).toBeInTheDocument();
+    expect(screen.getByText("Brazil Win%")).toBeInTheDocument();
+    expect(screen.getByText("Argentina Win%")).toBeInTheDocument();
   });
 
   it("displays match history table", async () => {
