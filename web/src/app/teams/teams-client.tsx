@@ -142,6 +142,15 @@ export function TeamsClient() {
     return result;
   }, [teams, teamFilter, minMatches]);
 
+  const handleRowClick = useCallback(
+    (row: TeamItem) => {
+      const params = new URLSearchParams(sp.toString());
+      const qs = params.toString();
+      router.push(`/teams/${encodeURIComponent(row.team)}${qs ? `?${qs}` : ""}`);
+    },
+    [router, sp]
+  );
+
   return (
     <div className="p-8">
       <h1 className="text-2xl font-bold text-gray-800 mb-4">Teams</h1>
@@ -163,7 +172,7 @@ export function TeamsClient() {
       ) : error ? (
         <p className="text-sm text-red-500">Error: {error}</p>
       ) : (
-        <DataTable columns={columns} data={filteredTeams} keyField="team" defaultSort={{ key: "matches_played", dir: "desc" }} />
+        <DataTable columns={columns} data={filteredTeams} keyField="team" defaultSort={{ key: "matches_played", dir: "desc" }} onRowClick={handleRowClick} />
       )}
     </div>
   );

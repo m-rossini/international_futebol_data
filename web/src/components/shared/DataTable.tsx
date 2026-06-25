@@ -15,6 +15,7 @@ interface Props<T> {
   data: T[];
   keyField: keyof T;
   defaultSort?: { key: string; dir: "asc" | "desc" };
+  onRowClick?: (row: T) => void;
 }
 
 type SortDir = "asc" | "desc" | null;
@@ -24,6 +25,7 @@ export function DataTable<T extends Record<string, unknown>>({
   data,
   keyField,
   defaultSort,
+  onRowClick,
 }: Props<T>) {
   const [sortKey, setSortKey] = useState<string | null>(defaultSort?.key ?? null);
   const [sortDir, setSortDir] = useState<SortDir>(defaultSort?.dir ?? null);
@@ -101,7 +103,11 @@ export function DataTable<T extends Record<string, unknown>>({
         </thead>
         <tbody>
           {sorted.map((row) => (
-            <tr key={String(row[keyField])} className="border-t border-gray-100 hover:bg-gray-50">
+            <tr
+              key={String(row[keyField])}
+              onClick={() => onRowClick?.(row)}
+              className={`border-t border-gray-100 hover:bg-gray-50 ${onRowClick ? "cursor-pointer" : ""}`}
+            >
               {columns.map((col) => (
                 <td key={col.key} className="px-4 py-3 text-sm text-gray-700">
                   {col.render ? col.render(row) : String(row[col.key] ?? "")}

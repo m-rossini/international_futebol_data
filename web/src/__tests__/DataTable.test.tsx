@@ -93,4 +93,20 @@ describe("DataTable", () => {
     render(<DataTable columns={cols} data={data} keyField="id" />);
     expect(screen.getByText("⭐ Alpha")).toBeInTheDocument();
   });
+
+  it("calls onRowClick when a row is clicked", async () => {
+    const user = userEvent.setup();
+    const clicked: TestRow[] = [];
+    render(
+      <DataTable
+        columns={columns}
+        data={data}
+        keyField="id"
+        onRowClick={(row) => clicked.push(row)}
+      />
+    );
+
+    await user.click(screen.getByText("Alpha"));
+    expect(clicked).toEqual([{ id: 1, name: "Alpha", score: 100 }]);
+  });
 });
