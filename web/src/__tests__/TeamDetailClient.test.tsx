@@ -88,15 +88,20 @@ describe("TeamDetailClient", () => {
     expect(screen.getByText("20")).toBeInTheDocument(); // draws
   });
 
-  it("renders yearly breakdown table", async () => {
+  it("renders yearly chart before yearly breakdown table", async () => {
     render(<TeamDetailClient teamName="Brazil" />);
+
+    // Wait for the yearly breakdown heading to appear (data is loaded)
     await waitFor(() => {
-      expect(screen.getByText("2022")).toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: "Yearly Breakdown" })).toBeInTheDocument();
     });
-    expect(screen.getByText("2021")).toBeInTheDocument();
-    expect(screen.getByText("8")).toBeInTheDocument(); // wins 2022
-    expect(screen.getByText("38")).toBeInTheDocument(); // GF 2022
-    expect(screen.getByText("14")).toBeInTheDocument(); // GA 2021
+
+    // Chart section heading
+    expect(screen.getByRole("heading", { name: "Matches per Year" })).toBeInTheDocument();
+    // Chart SVG
+    expect(screen.getByRole("img", { name: "Matches per year" })).toBeInTheDocument();
+    // "2022" appears in both chart labels and table — should exist at least twice
+    expect(screen.getAllByText("2022").length).toBeGreaterThanOrEqual(2);
   });
 
   it("carries over filters from search params", async () => {

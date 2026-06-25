@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { DataTable, type Column } from "@/components/shared/DataTable";
 import { FilterBar } from "@/components/shared/FilterBar";
+import { YearlyChart } from "@/components/shared/YearlyChart";
 import type { TeamDetail, YearlyRow } from "@/lib/types";
 
 const API = "/api/proxy";
@@ -184,6 +185,16 @@ export function TeamDetailClient({ teamName }: Props) {
               </div>
             </div>
           )}
+
+          {/* Yearly chart */}
+          <div className="mb-6">
+            <h2 className="text-lg font-semibold text-gray-800 mb-3">Matches per Year</h2>
+            <div className="bg-white rounded-lg border border-gray-200 p-4">
+              <YearlyChart
+                data={detail.yearly.map((r) => ({ year: r.year, value: r.matches_played }))}
+              />
+            </div>
+          </div>
 
           {/* Yearly breakdown */}
           <div className="mb-6">

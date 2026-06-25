@@ -51,3 +51,27 @@ export interface TeamDetail {
   error?: boolean;
   message?: string;
 }
+
+export interface MatchItem {
+  date: string;
+  home_team: string;
+  away_team: string;
+  home_score: number;
+  away_score: number;
+  tournament?: string;
+  city?: string;
+  country?: string;
+  neutral?: boolean;
+}
+
+export interface HeadToHeadResult {
+  team1: string;
+  team2: string;
+  matches: number;
+  draws: number;
+  matches_list: MatchItem[];
+  total_goals_per_match_stats?: SeriesStats;
+  error?: boolean;
+  message?: string;
+  [key: string]: unknown;
+}
