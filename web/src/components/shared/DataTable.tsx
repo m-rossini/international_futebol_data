@@ -15,6 +15,9 @@ interface Props<T> {
   data: T[];
   keyField: keyof T;
   defaultSort?: { key: string; dir: "asc" | "desc" };
+  sortKey?: string | null;
+  sortDir?: SortDir;
+  onSortChange?: (key: string | null, dir: SortDir) => void;
   onRowClick?: (row: T) => void;
 }
 
@@ -25,10 +28,17 @@ export function DataTable<T extends Record<string, unknown>>({
   data,
   keyField,
   defaultSort,
+  sortKey: controlledSortKey,
+  sortDir: controlledSortDir,
+  onSortChange,
   onRowClick,
 }: Props<T>) {
-  const [sortKey, setSortKey] = useState<string | null>(defaultSort?.key ?? null);
-  const [sortDir, setSortDir] = useState<SortDir>(defaultSort?.dir ?? null);
+  const [internalSortKey, setInternalSortKey] = useState<string | null>(defaultSort?.key ?? null);
+  const [internalSortDir, setInternalSortDir] = useState<SortDir>(defaultSort?.dir ?? null);
+
+  const isControlled = controlledSortKey !== undefined;
+  const sortKey = isControlled ? controlledSortKey : internalSortKey;
+  const sortDir = isControlled ? controlledSortDir : internalSortDir;
 
   const sorted = useMemo(() => {
     if (!sortKey || !sortDir) return data;
@@ -45,16 +55,23 @@ export function DataTable<T extends Record<string, unknown>>({
   }, [data, sortKey, sortDir]);
 
   function handleSort(key: string) {
+    let nextKey: string | null = key;
+    let nextDir: SortDir = "asc";
+
     if (sortKey === key) {
       if (sortDir === "asc") {
-        setSortDir("desc");
+        nextDir = "desc";
       } else if (sortDir === "desc") {
-        setSortKey(null);
-        setSortDir(null);
+        nextKey = null;
+        nextDir = null;
       }
+    }
+
+    if (isControlled) {
+      onSortChange?.(nextKey, nextDir);
     } else {
-      setSortKey(key);
-      setSortDir("asc");
+      setInternalSortKey(nextKey);
+      setInternalSortDir(nextDir);
     }
   }
 

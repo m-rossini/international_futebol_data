@@ -166,6 +166,27 @@ export function TeamsClient() {
     return result;
   }, [teams, teamFilter, minMatches]);
 
+  const sortKey = useMemo(() => sp.get("sort") || null, [sp]);
+  const sortDir = useMemo(() => {
+    const d = sp.get("dir");
+    return d === "asc" || d === "desc" ? d : null;
+  }, [sp]);
+
+  const handleSortChange = useCallback(
+    (key: string | null, dir: "asc" | "desc" | null) => {
+      const params = new URLSearchParams(sp.toString());
+      if (key && dir) {
+        params.set("sort", key);
+        params.set("dir", dir);
+      } else {
+        params.delete("sort");
+        params.delete("dir");
+      }
+      router.replace(`${pathname}?${params.toString()}`);
+    },
+    [router, pathname, sp]
+  );
+
   const handleRowClick = useCallback(
     (row: TeamItem) => {
       const params = new URLSearchParams(sp.toString());
@@ -196,7 +217,16 @@ export function TeamsClient() {
       ) : error ? (
         <p className="text-sm text-red-500">Error: {error}</p>
       ) : (
-        <DataTable columns={columns} data={filteredTeams} keyField="team" defaultSort={{ key: "matches_played", dir: "desc" }} onRowClick={handleRowClick} />
+        <DataTable
+          columns={columns}
+          data={filteredTeams}
+          keyField="team"
+          defaultSort={{ key: "matches_played", dir: "desc" }}
+          sortKey={sortKey}
+          sortDir={sortDir}
+          onSortChange={handleSortChange}
+          onRowClick={handleRowClick}
+        />
       )}
     </div>
   );
