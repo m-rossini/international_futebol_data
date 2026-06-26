@@ -7,6 +7,7 @@ import { FilterBar } from "@/components/shared/FilterBar";
 import { AutocompleteInput } from "@/components/shared/AutocompleteInput";
 import { StatsBar, buildH2HStats } from "@/components/shared/StatsBar";
 import { MatchTable } from "@/components/shared/MatchTable";
+import { CumulativeWinsChart } from "@/components/shared/CumulativeWinsChart";
 import type { HeadToHeadResult } from "@/lib/types";
 
 const API = "/api/proxy";
@@ -207,6 +208,20 @@ export function HeadToHeadClient() {
               )}
             />
           </div>
+
+          {/* Cumulative wins chart */}
+          {result.matches > 0 && (
+            <div className="mb-6 bg-white rounded-lg border border-gray-200 p-4">
+              <h3 className="text-sm font-semibold text-gray-700 mb-2">
+                Cumulative Wins Over Time
+              </h3>
+              <CumulativeWinsChart
+                matches={result.matches_list}
+                team1={result.team1}
+                team2={result.team2}
+              />
+            </div>
+          )}
 
           {/* Match history */}
           {result.matches > 0 ? (
