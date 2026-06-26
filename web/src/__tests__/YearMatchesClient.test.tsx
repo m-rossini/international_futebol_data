@@ -92,9 +92,9 @@ describe("YearMatchesClient", () => {
     expect(screen.getByText("Losses")).toBeInTheDocument();
     expect(screen.getByText("Draws")).toBeInTheDocument();
     expect(screen.getByText("Win Rate")).toBeInTheDocument();
-    // Verify goal stat cards are present (added alongside match stats)
-    expect(screen.getByText("Goals For")).toBeInTheDocument();
-    expect(screen.getByText("Goals Against")).toBeInTheDocument();
+    // Verify goal stat cards are present (also appear in chart legend)
+    expect(screen.getAllByText("Goals For").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("Goals Against").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("Goal Diff")).toBeInTheDocument();
   });
 

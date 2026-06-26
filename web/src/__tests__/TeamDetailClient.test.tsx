@@ -145,6 +145,16 @@ describe("TeamDetailClient", () => {
     });
   });
 
+  it("renders goals trend chart when enough matches exist", async () => {
+    render(<TeamDetailClient teamName="Brazil" />);
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { name: "Goals Trend" })).toBeInTheDocument();
+    });
+    expect(
+      screen.getByRole("img", { name: "Rolling average goals per match over time" }),
+    ).toBeInTheDocument();
+  });
+
   it("back button navigates to teams list with filters", async () => {
     const user = userEvent.setup();
     mockSearchParams = new URLSearchParams("tournaments=World+Cup");

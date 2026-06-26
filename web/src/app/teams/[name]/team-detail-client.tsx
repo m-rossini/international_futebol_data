@@ -7,6 +7,7 @@ import { DataTable, type Column } from "@/components/shared/DataTable";
 import { FilterBar } from "@/components/shared/FilterBar";
 import { YearlyChart } from "@/components/shared/YearlyChart";
 import { CumulativeGoalsChart } from "@/components/shared/CumulativeGoalsChart";
+import { GoalsTrendChart } from "@/components/shared/charts/GoalsTrendChart";
 import {
   StatsBar,
   buildMatchStats,
@@ -217,6 +218,22 @@ export function TeamDetailClient({ teamName }: Props) {
               </div>
             </div>
           </div>
+
+          {/* Goals trend (rolling average) */}
+          {detail.matches_list.length >= 5 && (
+            <div className="mb-6">
+              <h2 className="text-lg font-semibold text-gray-800 mb-3">
+                Goals Trend
+              </h2>
+              <div className="bg-white rounded-lg border border-gray-200 p-4">
+                <GoalsTrendChart
+                  matches={detail.matches_list}
+                  windowSize={5}
+                  height={160}
+                />
+              </div>
+            </div>
+          )}
 
           {/* Yearly breakdown */}
           <div className="mb-6">

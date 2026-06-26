@@ -14,11 +14,11 @@ interface Props {
   height?: number;
 }
 
-const BAR_W = 36;
-const GAP = 12;
-const PAD_LEFT = 40;
-const PAD_BOTTOM = 24;
-const PAD_TOP = 10;
+const BAR_W = 40;
+const GAP = 10;
+const PAD_LEFT = 32;
+const PAD_BOTTOM = 16;
+const PAD_TOP = 6;
 
 const COLORS = {
   wins: "#22c55e",
@@ -34,7 +34,10 @@ export function YearlyChart({ data, height = 180 }: Props) {
   );
 
   const chartH = height - PAD_TOP - PAD_BOTTOM;
-  const totalW = PAD_LEFT + sorted.length * (BAR_W + GAP) + GAP;
+  const totalW = Math.max(
+    PAD_LEFT + sorted.length * (BAR_W + GAP) + GAP,
+    200, // minimum width so single-bar charts don't look pencil-thin
+  );
 
   if (data.length === 0) {
     return (
@@ -61,7 +64,7 @@ export function YearlyChart({ data, height = 180 }: Props) {
 
       <svg
         viewBox={`0 0 ${totalW} ${height}`}
-        className="w-full min-w-[400px]"
+        className="w-full"
         role="img"
         aria-label="Wins / Losses / Draws per year"
       >

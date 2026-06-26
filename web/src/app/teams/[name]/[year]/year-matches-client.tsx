@@ -10,6 +10,8 @@ import {
   buildGoalStats,
 } from "@/components/shared/StatsBar";
 import { MatchTable } from "@/components/shared/MatchTable";
+import { MatchLadderChart } from "@/components/shared/charts/MatchLadderChart";
+import { CumulativeGoalsChart } from "@/components/shared/CumulativeGoalsChart";
 import type { MatchItem, TeamMatchesByYear } from "@/lib/types";
 
 const API = "/api/proxy";
@@ -318,6 +320,43 @@ export function YearMatchesClient({ teamName, year }: Props) {
                 />
               </div>
             </>
+          )}
+
+          {/* Charts: W/L/D + Cumulative Goals side-by-side */}
+          {data.matches_list.length > 0 && (
+            <div className="mb-6">
+              <h2 className="text-sm font-semibold text-gray-700 mb-3">
+                Charts — {year}
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* W/D/L match-by-match ladder */}
+                <div className="bg-white rounded-lg border border-gray-200 p-4">
+                  <h3 className="text-sm font-semibold text-gray-700 mb-2">
+                    W/D/L Ladder
+                  </h3>
+                  <MatchLadderChart
+                    matches={data.matches_list}
+                    team={teamName}
+                    height={120}
+                  />
+                </div>
+
+                {/* Cumulative goals trend */}
+                <div className="bg-white rounded-lg border border-gray-200 p-4">
+                  <h3 className="text-sm font-semibold text-gray-700 mb-2">
+                    Cumulative Goals
+                  </h3>
+                  <CumulativeGoalsChart
+                    matches={data.matches_list}
+                    track={[
+                      { team: teamName, color: "#22c55e", label: "Goals For" },
+                      { team: teamName, color: "#ef4444", label: "Goals Against", against: true },
+                    ]}
+                    height={120}
+                  />
+                </div>
+              </div>
+            </div>
           )}
 
           {filtered.length === 0 ? (
