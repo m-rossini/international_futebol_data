@@ -14,159 +14,167 @@ interface Props {
   height?: number;
 }
 
-const BAR_W = 40;
-const GAP = 10;
-const PAD_LEFT = 32;
+const CHART_W = 400;
+const PAD_LEFT = 28;
+const PAD_RIGHT = 32;
 const PAD_BOTTOM = 16;
-const PAD_TOP = 6;
+const PAD_TOP = 8;
+const TOTAL_W = PAD_LEFT + CHART_W + PAD_RIGHT;
 
-const COLORS = {
-  wins: "#22c55e",
-  draws: "#f59e0b",
-  losses: "#ef4444",
-} as const;
+const SERIES = [
+  { key: "wins" as const, color: "#22c55e", label: "Wins" },
+  { key: "draws" as const, color: "#f59e0b", label: "Draws" },
+  { key: "losses" as const, color: "#ef4444", label: "Losses" },
+] as const;
 
-export function YearlyChart({ data, height = 180 }: Props) {
+export function YearlyChart({ data, height = 120 }: Props) {
   const sorted = useMemo(() => [...data].sort((a, b) => a.year - b.year), [data]);
+
   const maxVal = useMemo(
-    () => Math.max(...data.map((d) => d.wins + d.losses + d.draws), 1),
+    () => Math.max(...data.map((d) => Math.max(d.wins, d.draws, d.losses)), 1),
     [data],
   );
 
   const chartH = height - PAD_TOP - PAD_BOTTOM;
-  const totalW = Math.max(
-    PAD_LEFT + sorted.length * (BAR_W + GAP) + GAP,
-    200, // minimum width so single-bar charts don't look pencil-thin
+  const lastIdx = Math.max(sorted.length - 1, 1);
+
+  // X / Y scale (memoized)
+  const xScale = useMemo(
+    () => (i: number) => PAD_LEFT + (i / lastIdx) * CHART_W,
+    [lastIdx],
   );
+  const yScale = useMemo(
+    () => (v: number) => PAD_TOP + chartH - (v / maxVal) * chartH,
+    [chartH, maxVal],
+  );
+
+  // Build SVG paths per series
+  const lines = useMemo(() => {
+    return SERIES.map((s) =>
+      sorted
+        .map((d, i) => `${i === 0 ? "M" : "L"}${xScale(i)},${yScale(d[s.key])}`)
+        .join(" "),
+    );
+  }, [sorted, maxVal, chartH, xScale, yScale]);
+
+  // Y-axis ticks
+  const yTicks = useMemo(() => {
+    const step = Math.max(1, Math.ceil(maxVal / 4));
+    const ticks: number[] = [];
+    for (let i = 0; i <= maxVal; i += step) ticks.push(i);
+    if (ticks[ticks.length - 1] !== maxVal) ticks.push(maxVal);
+    return ticks;
+  }, [maxVal]);
+
+  // X-axis year labels
+  const xLabels = useMemo(() => {
+    const labels: { idx: number; year: number }[] = [];
+    if (sorted.length <= 1) return labels;
+    const step = Math.max(1, Math.floor(sorted.length / 5));
+    for (let i = 0; i < sorted.length; i += step) {
+      labels.push({ idx: i, year: sorted[i].year });
+    }
+    const last = labels[labels.length - 1];
+    if (!last || last.idx !== sorted.length - 1) {
+      labels.push({ idx: sorted.length - 1, year: sorted[sorted.length - 1].year });
+    }
+    return labels;
+  }, [sorted]);
 
   if (data.length === 0) {
     return (
-      <div className="text-center text-xs text-gray-400 py-4">
+      <div className="text-center text-xs text-gray-400 py-2">
         No yearly data available
       </div>
     );
   }
 
+  const dotR = sorted.length <= 20 ? 3 : sorted.length <= 60 ? 1.5 : 0;
+
   return (
     <div className="w-full overflow-x-auto">
       {/* Legend */}
-      <div className="flex items-center justify-center gap-4 mb-2">
-        {(["wins", "draws", "losses"] as const).map((key) => (
-          <div key={key} className="flex items-center gap-1.5 text-xs text-gray-500">
+      <div className="flex items-center justify-center gap-4 mb-1">
+        {SERIES.map((s) => (
+          <div key={s.key} className="flex items-center gap-1.5 text-xs text-gray-500">
             <span
-              className="inline-block w-3 h-3 rounded-sm"
-              style={{ backgroundColor: COLORS[key] }}
+              className="inline-block w-3 h-0.5"
+              style={{ backgroundColor: s.color }}
             />
-            {key.charAt(0).toUpperCase() + key.slice(1)}
+            {s.label}
           </div>
         ))}
       </div>
 
       <svg
-        viewBox={`0 0 ${totalW} ${height}`}
+        viewBox={`0 0 ${TOTAL_W} ${height}`}
         className="w-full"
         role="img"
-        aria-label="Wins / Losses / Draws per year"
+        aria-label="Wins / Draws / Losses per year"
       >
-        {/* Y-axis grid lines */}
-        {[0, 0.25, 0.5, 0.75, 1].map((frac) => {
-          const y = PAD_TOP + chartH - chartH * frac;
-          const val = Math.round(maxVal * frac);
-          return (
-            <g key={frac}>
-              <line
-                x1={PAD_LEFT}
-                x2={totalW}
-                y1={y}
-                y2={y}
-                stroke="#e5e7eb"
-                strokeWidth={1}
+        {/* Y-axis grid + labels */}
+        {yTicks.map((tick) => (
+          <g key={tick}>
+            <line
+              x1={PAD_LEFT}
+              x2={PAD_LEFT + CHART_W}
+              y1={yScale(tick)}
+              y2={yScale(tick)}
+              stroke="#e5e7eb"
+              strokeWidth={0.5}
+            />
+            <text
+              x={PAD_LEFT - 4}
+              y={yScale(tick) + 3}
+              textAnchor="end"
+              fontSize={8}
+              fill="#9ca3af"
+            >
+              {tick}
+            </text>
+          </g>
+        ))}
+
+        {/* Lines */}
+        {lines.map((d, i) => (
+          <path
+            key={SERIES[i].key}
+            d={d}
+            fill="none"
+            stroke={SERIES[i].color}
+            strokeWidth={1.5}
+            strokeLinejoin="round"
+            strokeLinecap="round"
+          />
+        ))}
+
+        {/* Dots */}
+        {dotR > 0 &&
+          sorted.map((d, i) =>
+            SERIES.map((s) => (
+              <circle
+                key={`${s.key}-${i}`}
+                cx={xScale(i)}
+                cy={yScale(d[s.key])}
+                r={dotR}
+                fill={s.color}
               />
-              <text
-                x={PAD_LEFT - 6}
-                y={y + 4}
-                textAnchor="end"
-                fontSize={11}
-                fill="#9ca3af"
-              >
-                {val}
-              </text>
-            </g>
-          );
-        })}
+            )),
+          )}
 
-        {/* Stacked bars */}
-        {sorted.map((d, i) => {
-          const x = PAD_LEFT + i * (BAR_W + GAP) + GAP / 2;
-          const total = d.wins + d.losses + d.draws;
-
-          const lossesH = (d.losses / maxVal) * chartH;
-          const drawsH = (d.draws / maxVal) * chartH;
-          const winsH = (d.wins / maxVal) * chartH;
-          const totalH = lossesH + drawsH + winsH;
-
-          const baseY = PAD_TOP + chartH;
-          const lossesY = baseY - lossesH;
-          const drawsY = lossesY - drawsH;
-          const winsY = drawsY - winsH;
-
-          return (
-            <g key={d.year}>
-              {/* Losses (bottom) */}
-              {d.losses > 0 && (
-                <rect
-                  x={x}
-                  y={lossesY}
-                  width={BAR_W}
-                  height={lossesH}
-                  fill={COLORS.losses}
-                />
-              )}
-              {/* Draws (middle) */}
-              {d.draws > 0 && (
-                <rect
-                  x={x}
-                  y={drawsY}
-                  width={BAR_W}
-                  height={drawsH}
-                  fill={COLORS.draws}
-                />
-              )}
-              {/* Wins (top) */}
-              {d.wins > 0 && (
-                <rect
-                  x={x}
-                  y={winsY}
-                  width={BAR_W}
-                  height={winsH}
-                  fill={COLORS.wins}
-                  rx={3}
-                />
-              )}
-
-              {/* Total value label on top */}
-              <text
-                x={x + BAR_W / 2}
-                y={baseY - totalH - 4}
-                textAnchor="middle"
-                fontSize={10}
-                fill="#6b7280"
-              >
-                {total}
-              </text>
-              {/* Year label below */}
-              <text
-                x={x + BAR_W / 2}
-                y={height - 4}
-                textAnchor="middle"
-                fontSize={10}
-                fill="#6b7280"
-              >
-                {d.year}
-              </text>
-            </g>
-          );
-        })}
+        {/* X-axis year labels */}
+        {xLabels.map(({ idx, year }) => (
+          <text
+            key={idx}
+            x={xScale(idx)}
+            y={height - 2}
+            textAnchor="middle"
+            fontSize={8}
+            fill="#9ca3af"
+          >
+            {year}
+          </text>
+        ))}
       </svg>
     </div>
   );

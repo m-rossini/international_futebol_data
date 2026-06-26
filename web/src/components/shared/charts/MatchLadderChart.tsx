@@ -46,15 +46,39 @@ function matchResult(m: MatchItem, team: string): 1 | 0 | -1 {
 // Component
 // ---------------------------------------------------------------------------
 
+const MAX_BUCKETS = 40;
+
 export function MatchLadderChart({ matches, team, height = 120 }: Props) {
+  // --- derived data (all hooks at top level, before any early return) ---
+
   const { points, yRange, years } = useMemo(() => {
     if (matches.length === 0) {
-      return { points: [] as [number, number][], yRange: [-1, 1] as [number, number], years: [] as number[] };
+      return {
+        points: [] as [number, number][],
+        yRange: [-1, 1] as [number, number],
+        years: [] as number[],
+      };
     }
 
     const sorted = [...matches].sort(
       (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
     );
+
+    // Aggregate by year: sum W/D/L net per year
+    const yearMap = new Map<number, number>();
+    for (const m of sorted) {
+      const y = yearFromDate(m.date);
+      yearMap.set(y, (yearMap.get(y) ?? 0) + matchResult(m, team));
+    }
+
+    // Sort years and compute cumulative net, building one point per year
+    const allYears = [...yearMap.keys()].sort((a, b) => a - b);
+
+    // If too many years, merge into ~MAX_BUCKETS groups
+    let groupSize = 1;
+    if (allYears.length > MAX_BUCKETS) {
+      groupSize = Math.ceil(allYears.length / MAX_BUCKETS);
+    }
 
     let net = 0;
     let min = 0;
@@ -62,21 +86,78 @@ export function MatchLadderChart({ matches, team, height = 120 }: Props) {
     const pts: [number, number][] = [];
     const yrs: number[] = [];
 
-    for (let i = 0; i < sorted.length; i++) {
-      const r = matchResult(sorted[i], team);
-      net += r;
-      pts.push([i, net]);
-      yrs.push(yearFromDate(sorted[i].date));
+    for (let g = 0; g < allYears.length; g += groupSize) {
+      const groupEnd = Math.min(g + groupSize, allYears.length);
+      let groupNet = 0;
+      for (let j = g; j < groupEnd; j++) {
+        groupNet += yearMap.get(allYears[j]) ?? 0;
+      }
+      net += groupNet;
+      pts.push([g, net]); // x = group index (spans full width)
+      yrs.push(allYears[groupEnd - 1]); // label = last year in group
       if (net < min) min = net;
       if (net > max) max = net;
     }
 
-    // Ensure y-range includes 0 and is symmetric enough
     const absMax = Math.max(Math.abs(min), Math.abs(max), 1);
-    return { points: pts, yRange: [-absMax, absMax] as [number, number], years: yrs };
+    return {
+      points: pts,
+      yRange: [-absMax, absMax] as [number, number],
+      years: yrs,
+    };
   }, [matches, team]);
 
-  // X-axis labels (years)
+  const totalW = PAD_LEFT + CHART_W + PAD_RIGHT;
+  const chartH = height - PAD_TOP - PAD_BOTTOM;
+  const lastIdx = Math.max(points.length - 1, 1);
+  const [yMin, yMax] = yRange;
+  const ySpan = yMax - yMin || 1;
+
+  // Scale functions (memoized for stable dependencies)
+  const xScale = useMemo(
+    () => (i: number) => PAD_LEFT + (i / lastIdx) * CHART_W,
+    [lastIdx],
+  );
+  const yScale = useMemo(
+    () => (v: number) => PAD_TOP + chartH - ((v - yMin) / ySpan) * chartH,
+    [chartH, yMin, ySpan],
+  );
+  const zeroY = yScale(0);
+
+  // Step path: horizontal to next x, then vertical to new y
+  const stepPath = useMemo(() => {
+    if (points.length === 0) return "";
+    let d = `M${xScale(0)},${yScale(points[0][1])}`;
+    for (let i = 1; i < points.length; i++) {
+      const currX = xScale(i);
+      const prevY = yScale(points[i - 1][1]);
+      const currY = yScale(points[i][1]);
+      d += ` L${currX},${prevY} L${currX},${currY}`;
+    }
+    return d;
+  }, [points, xScale, yScale]);
+
+  // Area fill (to baseline)
+  const areaPath = useMemo(() => {
+    if (points.length === 0) return "";
+    let d = stepPath;
+    const lastX = xScale(points.length - 1);
+    d += ` L${lastX},${zeroY} L${xScale(0)},${zeroY} Z`;
+    return d;
+  }, [stepPath, xScale, zeroY, points.length]);
+
+  // Y-axis ticks
+  const yTicks = useMemo(() => {
+    const ticks: number[] = [];
+    for (let v = yMin; v <= yMax; v++) ticks.push(v);
+    if (ticks.length > 9) {
+      const step = Math.ceil(ticks.length / 6);
+      return ticks.filter((_, i) => i % step === 0 || ticks[i] === 0);
+    }
+    return ticks;
+  }, [yMin, yMax]);
+
+  // X-axis year labels
   const xLabels = useMemo(() => {
     const labels: { idx: number; year: number }[] = [];
     const n = years.length;
@@ -92,6 +173,8 @@ export function MatchLadderChart({ matches, team, height = 120 }: Props) {
     return labels;
   }, [years]);
 
+  // --- early return (after ALL hooks) ---
+
   if (matches.length < 2) {
     return (
       <div className="text-center text-xs text-gray-400 py-2">
@@ -100,52 +183,7 @@ export function MatchLadderChart({ matches, team, height = 120 }: Props) {
     );
   }
 
-  const totalW = PAD_LEFT + CHART_W + PAD_RIGHT;
-  const chartH = height - PAD_TOP - PAD_BOTTOM;
-  const lastIdx = Math.max(points.length - 1, 1);
-  const [yMin, yMax] = yRange;
-  const ySpan = yMax - yMin || 1;
-
-  const xScale = (i: number) => PAD_LEFT + (i / lastIdx) * CHART_W;
-  const yScale = (v: number) => PAD_TOP + chartH - ((v - yMin) / ySpan) * chartH;
-  const zeroY = yScale(0);
-
-  // Build step path: horizontal to next x, then vertical to new y
-  const stepPath = useMemo(() => {
-    if (points.length === 0) return "";
-    let d = `M${xScale(0)},${yScale(points[0][1])}`;
-    for (let i = 1; i < points.length; i++) {
-      const prevX = xScale(i - 1);
-      const currX = xScale(i);
-      const prevY = yScale(points[i - 1][1]);
-      const currY = yScale(points[i][1]);
-      d += ` L${currX},${prevY} L${currX},${currY}`;
-    }
-    return d;
-  }, [points, yScale]);
-
-  // Area under the line (above baseline for positive, below for negative)
-  const areaPath = useMemo(() => {
-    if (points.length === 0) return "";
-    let d = stepPath;
-    const lastX = xScale(points[points.length - 1]);
-    d += ` L${lastX},${zeroY} L${PAD_LEFT},${zeroY} Z`;
-    return d;
-  }, [stepPath, xScale, zeroY]);
-
-  // Y-axis ticks (every 1 unit)
-  const yTicks = useMemo(() => {
-    const ticks: number[] = [];
-    for (let v = yMin; v <= yMax; v++) {
-      ticks.push(v);
-    }
-    if (ticks.length > 9) {
-      // Too many ticks, thin out
-      const step = Math.ceil(ticks.length / 6);
-      return ticks.filter((_, i) => i % step === 0 || ticks[i] === 0);
-    }
-    return ticks;
-  }, [yMin, yMax]);
+  // --- render ---
 
   const lastP = points[points.length - 1];
   const lastY = lastP ? yScale(lastP[1]) : 0;
@@ -201,7 +239,7 @@ export function MatchLadderChart({ matches, team, height = 120 }: Props) {
         </g>
       ))}
 
-      {/* Area */}
+      {/* Area fill */}
       <path d={areaPath} fill="url(#ladderGrad)" opacity={0.15} />
 
       {/* Step line */}

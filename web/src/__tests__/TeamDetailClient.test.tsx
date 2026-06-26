@@ -145,13 +145,13 @@ describe("TeamDetailClient", () => {
     });
   });
 
-  it("renders goals trend chart when enough matches exist", async () => {
+  it("renders W/D/L ladder chart when enough matches exist", async () => {
     render(<TeamDetailClient teamName="Brazil" />);
     await waitFor(() => {
-      expect(screen.getByRole("heading", { name: "Goals Trend" })).toBeInTheDocument();
+      expect(screen.getByRole("heading", { name: "W/D/L Ladder" })).toBeInTheDocument();
     });
     expect(
-      screen.getByRole("img", { name: "Rolling average goals per match over time" }),
+      screen.getByRole("img", { name: "Match-by-match W/D/L ladder for Brazil" }),
     ).toBeInTheDocument();
   });
 

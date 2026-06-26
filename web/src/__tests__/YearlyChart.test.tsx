@@ -12,7 +12,7 @@ describe("YearlyChart", () => {
   it("renders an svg with the chart aria label", () => {
     render(<YearlyChart data={data} />);
     expect(
-      screen.getByRole("img", { name: "Wins / Losses / Draws per year" }),
+      screen.getByRole("img", { name: "Wins / Draws / Losses per year" }),
     ).toBeInTheDocument();
   });
 
