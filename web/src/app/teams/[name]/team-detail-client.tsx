@@ -6,6 +6,7 @@ import { ArrowLeft } from "lucide-react";
 import { DataTable, type Column } from "@/components/shared/DataTable";
 import { FilterBar } from "@/components/shared/FilterBar";
 import { YearlyChart } from "@/components/shared/YearlyChart";
+import { CumulativeGoalsChart } from "@/components/shared/CumulativeGoalsChart";
 import {
   StatsBar,
   buildMatchStats,
@@ -180,20 +181,40 @@ export function TeamDetailClient({ teamName }: Props) {
             </div>
           )}
 
-          {/* Yearly chart */}
+          {/* Yearly chart + Cumulative goals side-by-side */}
           <div className="mb-6">
             <h2 className="text-lg font-semibold text-gray-800 mb-3">
-              Matches per Year
+              Charts
             </h2>
-            <div className="bg-white rounded-lg border border-gray-200 p-4">
-              <YearlyChart
-                data={detail.yearly.map((r) => ({
-                  year: r.year,
-                  wins: r.wins,
-                  losses: r.losses,
-                  draws: r.draws,
-                }))}
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Yearly W/L/D chart */}
+              <div className="bg-white rounded-lg border border-gray-200 p-4">
+                <h3 className="text-sm font-semibold text-gray-700 mb-2">
+                  Matches per Year
+                </h3>
+                <YearlyChart
+                  data={detail.yearly.map((r) => ({
+                    year: r.year,
+                    wins: r.wins,
+                    losses: r.losses,
+                    draws: r.draws,
+                  }))}
+                />
+              </div>
+
+              {/* Cumulative goals trend */}
+              <div className="bg-white rounded-lg border border-gray-200 p-4">
+                <h3 className="text-sm font-semibold text-gray-700 mb-2">
+                  Cumulative Goals
+                </h3>
+                <CumulativeGoalsChart
+                  matches={detail.matches_list}
+                  track={[
+                    { team: teamName, color: "#22c55e", label: "Goals For" },
+                    { team: teamName, color: "#ef4444", label: "Goals Against", against: true },
+                  ]}
+                />
+              </div>
             </div>
           </div>
 

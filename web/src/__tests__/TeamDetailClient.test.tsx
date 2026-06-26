@@ -32,6 +32,13 @@ const mockTeamDetail = {
     { year: 2022, matches_played: 15, wins: 8, losses: 2, draws: 5, goals_for: 38, goals_against: 10 },
     { year: 2021, matches_played: 12, wins: 6, losses: 4, draws: 2, goals_for: 22, goals_against: 14 },
   ],
+  matches_list: [
+    { date: "2022-11-24", home_team: "Brazil", away_team: "Serbia", home_score: 2, away_score: 0 },
+    { date: "2022-11-28", home_team: "Brazil", away_team: "Switzerland", home_score: 1, away_score: 0 },
+    { date: "2022-12-02", home_team: "Cameroon", away_team: "Brazil", home_score: 1, away_score: 0 },
+    { date: "2022-12-05", home_team: "Brazil", away_team: "South Korea", home_score: 4, away_score: 1 },
+    { date: "2022-12-09", home_team: "Croatia", away_team: "Brazil", home_score: 1, away_score: 1 },
+  ],
 };
 
 const mockFilters = { teams: ["Argentina"], tournaments: [], countries: [] };
@@ -96,7 +103,9 @@ describe("TeamDetailClient", () => {
       expect(screen.getByRole("heading", { name: "Yearly Breakdown" })).toBeInTheDocument();
     });
 
-    // Chart section heading
+    // Charts section heading
+    expect(screen.getByRole("heading", { name: "Charts" })).toBeInTheDocument();
+    // Chart sub-heading
     expect(screen.getByRole("heading", { name: "Matches per Year" })).toBeInTheDocument();
     // Chart SVG
     expect(screen.getByRole("img", { name: "Wins / Losses / Draws per year" })).toBeInTheDocument();

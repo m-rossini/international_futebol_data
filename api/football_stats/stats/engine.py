@@ -12,6 +12,7 @@ from .analysis import (
     top_scorers,
     team_win_rate,
     team_yearly,
+    team_matches_all,
     team_matches_by_year,
     goals_per_year,
     results_metadata,
@@ -94,6 +95,7 @@ class QueryEngine:
         r = self._filtered_results(filters)
         result = team_win_rate(r, canonical)
         result["yearly"] = team_yearly(r, canonical)
+        result["matches_list"] = team_matches_all(r, canonical)
         return result
 
     def team_matches(self, team_name: str, year: int, filters: Optional[FilterParams] = None) -> dict:

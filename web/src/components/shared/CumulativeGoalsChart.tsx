@@ -7,12 +7,14 @@ import { useMemo } from "react";
 // ---------------------------------------------------------------------------
 
 interface GoalTracker {
-  /** Team name to track cumulative goals for */
+  /** Team name to track goals for */
   team: string;
   /** Display color for the line / fill */
   color: string;
   /** Optional override label (defaults to team name) */
   label?: string;
+  /** Track goals conceded (opponent's goals) instead of goals scored (default false). */
+  against?: boolean;
 }
 
 interface Match {
@@ -77,12 +79,11 @@ export function CumulativeGoalsChart({
 
       for (let s = 0; s < track.length; s++) {
         const t = track[s];
-        const goals =
-          m.home_team === t.team
-            ? m.home_score
-            : m.away_team === t.team
-              ? m.away_score
-              : 0;
+        const isHome = m.home_team === t.team;
+        const isAway = m.away_team === t.team;
+        const goals = t.against
+          ? (isHome ? m.away_score : isAway ? m.home_score : 0)
+          : (isHome ? m.home_score : isAway ? m.away_score : 0);
 
         const prev = cum[s].length > 0 ? cum[s][cum[s].length - 1] : 0;
         const next = prev + goals;
