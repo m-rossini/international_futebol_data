@@ -25,10 +25,10 @@ interface Props {
 // ---------------------------------------------------------------------------
 
 const CHART_W = 400;
-const PAD_LEFT = 44;
-const PAD_RIGHT = 20;
-const PAD_BOTTOM = 30;
-const PAD_TOP = 14;
+const PAD_LEFT = 32;
+const PAD_RIGHT = 12;
+const PAD_BOTTOM = 20;
+const PAD_TOP = 8;
 
 const LINE_COLOR = "#8b5cf6";
 
@@ -123,7 +123,7 @@ export function GoalsTrendChart({
     <div className="w-full overflow-x-auto">
       <svg
         viewBox={`0 0 ${totalW} ${height}`}
-        className="w-full max-w-[500px]"
+        className="w-full"
         role="img"
         aria-label="Rolling average goals per match over time"
       >

@@ -22,10 +22,10 @@ function yearFromDate(raw: string): number {
 }
 
 const CHART_W = 400;
-const PAD_LEFT = 36;
-const PAD_RIGHT = 8;
-const PAD_BOTTOM = 18;
-const PAD_TOP = 8;
+const PAD_LEFT = 28;
+const PAD_RIGHT = 32;
+const PAD_BOTTOM = 16;
+const PAD_TOP = 6;
 
 export function CumulativeWinsChart({
   matches,
@@ -118,7 +118,7 @@ export function CumulativeWinsChart({
   return (
     <svg
       viewBox={`0 0 ${totalW} ${height}`}
-      className="w-full max-w-[500px]"
+      className="w-full"
       role="img"
       aria-label={`Cumulative wins: ${team1} vs ${team2}`}
     >
@@ -183,8 +183,9 @@ export function CumulativeWinsChart({
           <circle cx={xScale(t1.length - 1)} cy={yScale(t1[t1.length - 1][1])} r={2.5} fill="#3b82f6" />
           <circle cx={xScale(t2.length - 1)} cy={yScale(t2[t2.length - 1][1])} r={2.5} fill="#ef4444" />
           <text
-            x={xScale(t1.length - 1) + 4}
-            y={yScale(t1[t1.length - 1][1]) + 3}
+            x={xScale(t1.length - 1) + 5}
+            y={yScale(t1[t1.length - 1][1]) - 2}
+            textAnchor="start"
             fontSize={8}
             fill="#3b82f6"
             fontWeight={600}
@@ -192,8 +193,9 @@ export function CumulativeWinsChart({
             {t1[t1.length - 1][1]}
           </text>
           <text
-            x={xScale(t2.length - 1) + 4}
-            y={yScale(t2[t2.length - 1][1]) + 3}
+            x={xScale(t2.length - 1) + 5}
+            y={yScale(t2[t2.length - 1][1]) + 9}
+            textAnchor="start"
             fontSize={8}
             fill="#ef4444"
             fontWeight={600}

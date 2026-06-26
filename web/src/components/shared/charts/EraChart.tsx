@@ -30,9 +30,9 @@ interface Props {
 
 const BAR_W = 32;
 const GAP = 10;
-const PAD_LEFT = 40;
-const PAD_BOTTOM = 24;
-const PAD_TOP = 10;
+const PAD_LEFT = 32;
+const PAD_BOTTOM = 16;
+const PAD_TOP = 6;
 
 const COLORS = {
   team1: "#22c55e",
@@ -117,7 +117,7 @@ export function EraChart({
 
       <svg
         viewBox={`0 0 ${totalW} ${height}`}
-        className="w-full max-w-[600px]"
+        className="w-full"
         role="img"
         aria-label={`Head-to-head era breakdown: ${team1} vs ${team2}`}
       >

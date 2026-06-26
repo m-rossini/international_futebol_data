@@ -8,6 +8,7 @@ import { AutocompleteInput } from "@/components/shared/AutocompleteInput";
 import { StatsBar, buildH2HStats } from "@/components/shared/StatsBar";
 import { MatchTable } from "@/components/shared/MatchTable";
 import { CumulativeWinsChart } from "@/components/shared/CumulativeWinsChart";
+import { CumulativeGoalsChart } from "@/components/shared/CumulativeGoalsChart";
 import type { HeadToHeadResult } from "@/lib/types";
 
 const API = "/api/proxy";
@@ -209,17 +210,34 @@ export function HeadToHeadClient() {
             />
           </div>
 
-          {/* Cumulative wins chart */}
+          {/* Cumulative charts: wins + goals side-by-side */}
           {result.matches > 0 && (
-            <div className="mb-6 bg-white rounded-lg border border-gray-200 p-4">
-              <h3 className="text-sm font-semibold text-gray-700 mb-2">
-                Cumulative Wins Over Time
-              </h3>
-              <CumulativeWinsChart
-                matches={result.matches_list}
-                team1={result.team1}
-                team2={result.team2}
-              />
+            <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Cumulative wins */}
+              <div className="bg-white rounded-lg border border-gray-200 p-4">
+                <h3 className="text-sm font-semibold text-gray-700 mb-2">
+                  Cumulative Wins
+                </h3>
+                <CumulativeWinsChart
+                  matches={result.matches_list}
+                  team1={result.team1}
+                  team2={result.team2}
+                />
+              </div>
+
+              {/* Cumulative goals */}
+              <div className="bg-white rounded-lg border border-gray-200 p-4">
+                <h3 className="text-sm font-semibold text-gray-700 mb-2">
+                  Cumulative Goals
+                </h3>
+                <CumulativeGoalsChart
+                  matches={result.matches_list}
+                  track={[
+                    { team: result.team1, color: "#3b82f6", label: result.team1 },
+                    { team: result.team2, color: "#ef4444", label: result.team2 },
+                  ]}
+                />
+              </div>
             </div>
           )}
 
