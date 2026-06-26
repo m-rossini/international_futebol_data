@@ -23,12 +23,16 @@ describe("YearlyChart", () => {
     expect(screen.getByText("2022")).toBeInTheDocument();
   });
 
-  it("renders three SVG paths for wins/draws/losses", () => {
+  it("renders colored dots for wins/draws/losses", () => {
     const { container } = render(<YearlyChart data={data} />);
-    const paths = container.querySelectorAll("path");
-    expect(paths.length).toBe(3); // 3 lines (wins, draws, losses)
-    const stroked = Array.from(paths).filter((p) => p.getAttribute("stroke"));
-    expect(stroked.length).toBe(3);
+    // Three dots per year (wins, draws, losses) × 3 years = 9 circles
+    const circles = container.querySelectorAll("circle");
+    expect(circles.length).toBe(9);
+    // Verify colors
+    const fills = new Set(Array.from(circles).map((c) => c.getAttribute("fill")));
+    expect(fills.has("#22c55e")).toBe(true); // wins green
+    expect(fills.has("#f59e0b")).toBe(true); // draws amber
+    expect(fills.has("#ef4444")).toBe(true); // losses red
   });
 
   it("renders the legend with Wins, Draws, Losses", () => {

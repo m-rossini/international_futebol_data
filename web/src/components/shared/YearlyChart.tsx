@@ -48,15 +48,6 @@ export function YearlyChart({ data, height = 120 }: Props) {
     [chartH, maxVal],
   );
 
-  // Build SVG paths per series
-  const lines = useMemo(() => {
-    return SERIES.map((s) =>
-      sorted
-        .map((d, i) => `${i === 0 ? "M" : "L"}${xScale(i)},${yScale(d[s.key])}`)
-        .join(" "),
-    );
-  }, [sorted, xScale, yScale]);
-
   // Y-axis ticks
   const yTicks = useMemo(() => {
     const step = Math.max(1, Math.ceil(maxVal / 4));
@@ -89,7 +80,8 @@ export function YearlyChart({ data, height = 120 }: Props) {
     );
   }
 
-  const dotR = sorted.length <= 20 ? 3 : sorted.length <= 60 ? 1.5 : 0;
+  // Dot radius: larger for small datasets, smaller for dense ones
+  const dotR = sorted.length <= 20 ? 3.5 : sorted.length <= 60 ? 2.5 : sorted.length <= 100 ? 1.5 : 1.0;
 
   return (
     <div className="w-full overflow-x-auto">
@@ -98,7 +90,7 @@ export function YearlyChart({ data, height = 120 }: Props) {
         {SERIES.map((s) => (
           <div key={s.key} className="flex items-center gap-1.5 text-xs text-gray-500">
             <span
-              className="inline-block w-3 h-0.5"
+              className="inline-block w-2 h-2 rounded-full"
               style={{ backgroundColor: s.color }}
             />
             {s.label}
@@ -135,20 +127,7 @@ export function YearlyChart({ data, height = 120 }: Props) {
           </g>
         ))}
 
-        {/* Lines */}
-        {lines.map((d, i) => (
-          <path
-            key={SERIES[i].key}
-            d={d}
-            fill="none"
-            stroke={SERIES[i].color}
-            strokeWidth={1.5}
-            strokeLinejoin="round"
-            strokeLinecap="round"
-          />
-        ))}
-
-        {/* Dots */}
+        {/* Dots (no connecting lines) */}
         {dotR > 0 &&
           sorted.map((d, i) =>
             SERIES.map((s) => (
@@ -158,6 +137,7 @@ export function YearlyChart({ data, height = 120 }: Props) {
                 cy={yScale(d[s.key])}
                 r={dotR}
                 fill={s.color}
+                opacity={0.85}
               />
             )),
           )}
