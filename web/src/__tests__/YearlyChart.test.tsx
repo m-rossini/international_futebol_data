@@ -23,13 +23,12 @@ describe("YearlyChart", () => {
     expect(screen.getByText("2022")).toBeInTheDocument();
   });
 
-  it("shows total value labels above bars", () => {
-    render(<YearlyChart data={data} />);
-    // Totals: 5, 12, 8
-    expect(screen.getByText("5")).toBeInTheDocument();
-    expect(screen.getByText("8")).toBeInTheDocument();
-    // "12" may appear as both total label and Y-axis tick
-    expect(screen.getAllByText("12").length).toBeGreaterThanOrEqual(2);
+  it("renders three SVG paths for wins/draws/losses", () => {
+    const { container } = render(<YearlyChart data={data} />);
+    const paths = container.querySelectorAll("path");
+    expect(paths.length).toBe(3); // 3 lines (wins, draws, losses)
+    const stroked = Array.from(paths).filter((p) => p.getAttribute("stroke"));
+    expect(stroked.length).toBe(3);
   });
 
   it("renders the legend with Wins, Draws, Losses", () => {

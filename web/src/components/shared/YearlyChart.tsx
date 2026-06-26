@@ -55,7 +55,7 @@ export function YearlyChart({ data, height = 120 }: Props) {
         .map((d, i) => `${i === 0 ? "M" : "L"}${xScale(i)},${yScale(d[s.key])}`)
         .join(" "),
     );
-  }, [sorted, maxVal, chartH, xScale, yScale]);
+  }, [sorted, xScale, yScale]);
 
   // Y-axis ticks
   const yTicks = useMemo(() => {
