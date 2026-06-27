@@ -203,7 +203,6 @@ const COUNTRY_TO_CODE: Record<string, string> = {
   UK: "gb",
   Britain: "gb",
   Zanzibar: "tz",
-  Czechoslovakia: "cz",
 };
 
 export function getCountryCode(countryName: string): string | null {

@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { DataTable, type Column } from "@/components/shared/DataTable";
 import { FilterBar } from "@/components/shared/FilterBar";
+import { CountryFlag } from "@/components/shared/CountryFlag";
 import { YearlyChart } from "@/components/shared/chart/YearlyChart";
 import { CumulativeGoalsChart } from "@/components/shared/chart/CumulativeGoalsChart";
 import { MatchLadderChart } from "@/components/shared/chart/MatchLadderChart";
@@ -141,7 +142,10 @@ export function TeamDetailClient({ teamName }: Props) {
         </button>
       </div>
 
-      <h1 className="text-2xl font-bold text-gray-800 mb-4">{teamName}</h1>
+      <h1 className="text-2xl font-bold text-gray-800 mb-4 inline-flex items-center gap-2">
+        <CountryFlag countryName={teamName} size={22} />
+        {teamName}
+      </h1>
 
       <FilterBar fields={{ teams: false }} />
 

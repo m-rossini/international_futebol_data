@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo, useCallback } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { DataTable, type Column } from "@/components/shared/DataTable";
 import { FilterBar } from "@/components/shared/FilterBar";
+import { CountryFlag } from "@/components/shared/CountryFlag";
 import type { TeamItem } from "@/lib/types";
 
 const API = "/api/proxy";
@@ -15,7 +16,17 @@ function winRateColor(rate: number): string {
 }
 
 const columns: Column<TeamItem>[] = [
-  { key: "team", header: "Team", sortable: true },
+  {
+    key: "team",
+    header: "Team",
+    sortable: true,
+    render: (row) => (
+      <span className="inline-flex items-center gap-1.5">
+        <CountryFlag countryName={row.team} size={14} />
+        {row.team}
+      </span>
+    ),
+  },
   {
     key: "matches_played",
     header: "Matches",

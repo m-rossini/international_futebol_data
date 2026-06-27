@@ -82,7 +82,7 @@ describe("TeamDetailClient", () => {
 
   it("renders the team name heading", async () => {
     render(<TeamDetailClient teamName="Brazil" />);
-    expect(screen.getByRole("heading", { name: "Brazil" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Brazil/ })).toBeInTheDocument();
   });
 
   it("renders summary stat cards after loading", async () => {

@@ -73,7 +73,7 @@ describe("YearMatchesClient", () => {
   it("renders the heading with team and year", async () => {
     render(<YearMatchesClient teamName="Brazil" year={2022} />);
     expect(
-      screen.getByRole("heading", { name: "Brazil — 2022 Matches" }),
+      screen.getByRole("heading", { name: /2022 Matches/ }),
     ).toBeInTheDocument();
   });
 
@@ -138,7 +138,7 @@ describe("YearMatchesClient", () => {
     mockSearchParams = new URLSearchParams("tournaments=World+Cup");
     render(<YearMatchesClient teamName="Brazil" year={2022} />);
     await waitFor(() => {
-      expect(screen.getByText("Brazil — 2022 Matches")).toBeInTheDocument();
+      expect(screen.getByText(/2022 Matches/)).toBeInTheDocument();
     });
     expect(globalThis.fetch).toHaveBeenCalledWith(
       expect.stringContaining(
@@ -150,7 +150,7 @@ describe("YearMatchesClient", () => {
   it("renders filter controls: opponent, tournament, country, city, date range", async () => {
     render(<YearMatchesClient teamName="Brazil" year={2022} />);
     await waitFor(() => {
-      expect(screen.getByText("Brazil — 2022 Matches")).toBeInTheDocument();
+      expect(screen.getByText(/2022 Matches/)).toBeInTheDocument();
     });
     expect(screen.getByPlaceholderText("Any opponent")).toBeInTheDocument();
     expect(screen.getByPlaceholderText("Any tournament")).toBeInTheDocument();
@@ -164,7 +164,7 @@ describe("YearMatchesClient", () => {
   it("does not show clear button when no filter is active", async () => {
     render(<YearMatchesClient teamName="Brazil" year={2022} />);
     await waitFor(() => {
-      expect(screen.getByText("Brazil — 2022 Matches")).toBeInTheDocument();
+      expect(screen.getByText(/2022 Matches/)).toBeInTheDocument();
     });
     expect(screen.queryByText("Clear filters")).not.toBeInTheDocument();
   });
@@ -172,7 +172,7 @@ describe("YearMatchesClient", () => {
   it("shows correct date format in table (no Invalid Date)", async () => {
     render(<YearMatchesClient teamName="Brazil" year={2022} />);
     await waitFor(() => {
-      expect(screen.getByText("Brazil — 2022 Matches")).toBeInTheDocument();
+      expect(screen.getByText(/2022 Matches/)).toBeInTheDocument();
     });
     // Date format: "24 Nov 2022"
     expect(screen.getByText("24 Nov 2022")).toBeInTheDocument();

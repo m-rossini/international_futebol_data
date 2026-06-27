@@ -5,6 +5,7 @@ import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { ArrowRightLeft } from "lucide-react";
 import { FilterBar } from "@/components/shared/FilterBar";
 import { AutocompleteInput } from "@/components/shared/AutocompleteInput";
+import { CountryFlag } from "@/components/shared/CountryFlag";
 import { StatsBar, buildH2HStats } from "@/components/shared/StatsBar";
 import { MatchTable } from "@/components/shared/MatchTable";
 import { CumulativeWinsChart } from "@/components/shared/chart/CumulativeWinsChart";
@@ -187,6 +188,12 @@ export function HeadToHeadClient() {
             onChange={handleTeam1}
             multi={false}
             placeholder="Select team..."
+            renderItem={(item) => (
+              <span className="inline-flex items-center gap-1.5">
+                <CountryFlag countryName={item} size={14} />
+                {item}
+              </span>
+            )}
           />
         </div>
 
@@ -208,6 +215,12 @@ export function HeadToHeadClient() {
             onChange={handleTeam2}
             multi={false}
             placeholder="Select team..."
+            renderItem={(item) => (
+              <span className="inline-flex items-center gap-1.5">
+                <CountryFlag countryName={item} size={14} />
+                {item}
+              </span>
+            )}
           />
         </div>
       </div>

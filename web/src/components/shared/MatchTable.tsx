@@ -85,7 +85,12 @@ export function MatchTable({ matches, highlightTeam, showNeutral = false, headin
         key: "home_team",
         header: "Home",
         sortable: true,
-        render: (r) => <span className={homeCls(r, hTeam)}>{r.home_team}</span>,
+        render: (r) => (
+          <span className={`inline-flex items-center gap-1.5 ${homeCls(r, hTeam)}`}>
+            <CountryFlag countryName={r.home_team} size={14} />
+            {r.home_team}
+          </span>
+        ),
       },
       {
         key: "score",
@@ -100,7 +105,12 @@ export function MatchTable({ matches, highlightTeam, showNeutral = false, headin
         key: "away_team",
         header: "Away",
         sortable: true,
-        render: (r) => <span className={awayCls(r, hTeam)}>{r.away_team}</span>,
+        render: (r) => (
+          <span className={`inline-flex items-center gap-1.5 ${awayCls(r, hTeam)}`}>
+            <CountryFlag countryName={r.away_team} size={14} />
+            {r.away_team}
+          </span>
+        ),
       },
     ];
 
