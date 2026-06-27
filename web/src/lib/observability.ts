@@ -199,3 +199,186 @@ export function logFormSubmit(
     ...context,
   });
 }
+
+// ---------------------------------------------------------------------------
+//  Tracing — W3C Trace Context
+// ---------------------------------------------------------------------------
+
+/**
+ * Generate a 32-char hex trace ID (128-bit).
+ */
+function generateTraceId(): string {
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes)
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+/**
+ * Generate a 16-char hex span ID (64-bit).
+ */
+function generateSpanId(): string {
+  const bytes = new Uint8Array(8);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes)
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+interface TraceContext {
+  traceId: string;
+  spanId: string;
+}
+
+let currentTrace: TraceContext | null = null;
+
+/**
+ * Start a new root trace. Returns the trace context.
+ * Call this when a new page view or top-level action begins.
+ */
+export function startTrace(context?: Record<string, unknown>): TraceContext {
+  const traceId = generateTraceId();
+  const spanId = generateSpanId();
+  currentTrace = { traceId, spanId };
+
+  sendLog("info", "trace:start", {
+    event_type: "trace",
+    trace_id: traceId,
+    span_id: spanId,
+    parent_span_id: null,
+    span_name: "root",
+    span_kind: "SERVER",
+    trace_action: "start",
+    ...context,
+  });
+
+  return currentTrace;
+}
+
+/**
+ * End the current root trace.
+ */
+export function endTrace(context?: Record<string, unknown>) {
+  if (!currentTrace) return;
+
+  sendLog("info", "trace:end", {
+    event_type: "trace",
+    trace_id: currentTrace.traceId,
+    span_id: currentTrace.spanId,
+    parent_span_id: null,
+    span_name: "root",
+    span_kind: "SERVER",
+    trace_action: "end",
+    ...context,
+  });
+
+  currentTrace = null;
+}
+
+/**
+ * Create a child span within the current trace.
+ * Returns the new span ID so the caller can end it later.
+ */
+export function startSpan(
+  name: string,
+  kind: string = "INTERNAL",
+  context?: Record<string, unknown>,
+): string {
+  const traceId = currentTrace?.traceId ?? generateTraceId();
+  const spanId = generateSpanId();
+  const parentSpanId = currentTrace?.spanId ?? null;
+
+  // If there's no active trace, this span becomes the root
+  if (!currentTrace) {
+    currentTrace = { traceId, spanId };
+  }
+
+  sendLog("info", `span:start:${name}`, {
+    event_type: "span",
+    trace_id: traceId,
+    span_id: spanId,
+    parent_span_id: parentSpanId,
+    span_name: name,
+    span_kind: kind,
+    span_action: "start",
+    ...context,
+  });
+
+  return spanId;
+}
+
+/**
+ * End a span.
+ */
+export function endSpan(
+  spanId: string,
+  name: string,
+  context?: Record<string, unknown>,
+) {
+  if (!currentTrace) return;
+
+  sendLog("info", `span:end:${name}`, {
+    event_type: "span",
+    trace_id: currentTrace.traceId,
+    span_id: spanId,
+    parent_span_id: currentTrace.spanId,
+    span_name: name,
+    span_action: "end",
+    ...context,
+  });
+}
+
+/**
+ * Get the current trace ID (for attaching to log events).
+ */
+export function getTraceId(): string | null {
+  return currentTrace?.traceId ?? null;
+}
+
+/**
+ * Get the current span ID.
+ */
+export function getSpanId(): string | null {
+  return currentTrace?.spanId ?? null;
+}
+
+/**
+ * Run a callback wrapped in a child span.
+ * Automatically creates and ends the span with timing.
+ */
+export function withSpan<T>(
+  name: string,
+  fn: () => T,
+  kind: string = "INTERNAL",
+  context?: Record<string, unknown>,
+): T {
+  const spanId = startSpan(name, kind, context);
+  const t0 = performance.now();
+  try {
+    return fn();
+  } finally {
+    const durationMs = performance.now() - t0;
+    endSpan(spanId, name, { duration_ms: durationMs, ...context });
+  }
+}
+
+/**
+ * Run an async callback wrapped in a child span.
+ * Automatically creates and ends the span with timing.
+ */
+export async function withAsyncSpan<T>(
+  name: string,
+  fn: () => Promise<T>,
+  kind: string = "INTERNAL",
+  context?: Record<string, unknown>,
+): Promise<T> {
+  const spanId = startSpan(name, kind, context);
+  const t0 = performance.now();
+  try {
+    return await fn();
+  } finally {
+    const durationMs = performance.now() - t0;
+    endSpan(spanId, name, { duration_ms: durationMs, ...context });
+  }
+}

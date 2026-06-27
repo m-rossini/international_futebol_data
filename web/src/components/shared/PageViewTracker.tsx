@@ -2,23 +2,33 @@
 
 import { useEffect, useRef } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
-import { logPageView } from "@/lib/observability";
+import { startTrace, endTrace } from "@/lib/observability";
 
 /**
  * Tracks page views via OpenObserve.
- * Embed this once in the root layout — it subscribes to route changes automatically.
+ * Starts a new trace for each page view and ends the previous one.
+ * Embed this once in the root layout.
  */
 export function PageViewTracker() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const prevPath = useRef<string | null>(null);
+  const hasStarted = useRef(false);
 
   useEffect(() => {
     const path = pathname + (searchParams.toString() ? `?${searchParams.toString()}` : "");
     if (path === prevPath.current) return;
-    prevPath.current = path;
 
-    logPageView(pathname, {
+    // End previous trace if one exists
+    if (hasStarted.current) {
+      endTrace({ previous_page: prevPath.current ?? undefined });
+    }
+
+    prevPath.current = path;
+    hasStarted.current = true;
+
+    startTrace({
+      page: pathname,
       url: path,
       search: searchParams.toString() || undefined,
     });
