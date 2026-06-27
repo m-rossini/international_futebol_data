@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { AutocompleteInput } from "./AutocompleteInput";
+import type { Defaults } from "@/lib/useDefaults";
 
 interface FilterOptions {
   teams: string[];
@@ -12,6 +13,7 @@ interface FilterOptions {
 
 interface Props {
   fields?: { teams?: boolean; tournaments?: boolean; countries?: boolean; dates?: boolean };
+  injectDefaults?: boolean;
   children?: React.ReactNode;
 }
 
@@ -24,7 +26,7 @@ const ALL_FIELDS: Required<Props["fields"]> = {
 
 const FETCHED = new Map<string, FilterOptions>();
 
-export function FilterBar({ fields, children }: Props) {
+export function FilterBar({ fields, injectDefaults = true, children }: Props) {
   const cfg = { ...ALL_FIELDS, ...fields };
   const router = useRouter();
   const pathname = usePathname();
@@ -52,6 +54,36 @@ export function FilterBar({ fields, children }: Props) {
   const countries = sp.get("countries")?.split(",").filter(Boolean) || [];
   const dateFrom = sp.get("date_from") || "";
   const dateTo = sp.get("date_to") || "";
+
+  // Inject saved defaults into URL params on first render (when param is empty)
+  const injectedRef = useRef(false);
+  useEffect(() => {
+    if (!injectDefaults) return;
+    if (injectedRef.current) return;
+    let defaults: Defaults | null = null;
+    try {
+      const raw = localStorage.getItem("football-defaults");
+      if (raw) defaults = JSON.parse(raw);
+    } catch { /* ignore */ }
+    if (!defaults) return;
+
+    const params = new URLSearchParams(sp.toString());
+    let changed = false;
+
+    if (defaults.defaultTeam && !params.has("teams") && cfg.teams) {
+      params.set("teams", defaults.defaultTeam);
+      changed = true;
+    }
+    if (defaults.defaultTournament && !params.has("tournaments") && cfg.tournaments) {
+      params.set("tournaments", defaults.defaultTournament);
+      changed = true;
+    }
+
+    if (changed) {
+      injectedRef.current = true;
+      router.replace(`${pathname}?${params.toString()}`);
+    }
+  }, [cfg.teams, cfg.tournaments, sp, router, pathname]);
 
   const push = useCallback(
     (key: string, value: string) => {

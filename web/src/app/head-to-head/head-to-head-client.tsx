@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { ArrowRightLeft } from "lucide-react";
 import { FilterBar } from "@/components/shared/FilterBar";
@@ -38,9 +38,43 @@ export function HeadToHeadClient() {
   const router = useRouter();
   const pathname = usePathname();
 
+  // Inject defaults (team + tournament) on first mount in a single URL replace
+  const defaultsInjectedRef = useRef(false);
   const [teamNames, setTeamNames] = useState<string[]>([]);
-  const [team1, setTeam1] = useState(sp.get("team1") || "");
+  const initialTeam1 = sp.get("team1");
+  const [team1, setTeam1] = useState(initialTeam1 || "");
   const [team2, setTeam2] = useState(sp.get("team2") || "");
+
+  useEffect(() => {
+    if (defaultsInjectedRef.current) return;
+    if (initialTeam1) return; // already has team1 — user navigated with params, don't inject
+
+    let defaults: { defaultTeam?: string | null; defaultTournament?: string | null } | null = null;
+    try {
+      const raw = localStorage.getItem("football-defaults");
+      if (raw) defaults = JSON.parse(raw);
+    } catch { /* ignore */ }
+    if (!defaults?.defaultTeam && !defaults?.defaultTournament) return;
+
+    const params = new URLSearchParams(sp.toString());
+    let changed = false;
+
+    if (defaults.defaultTeam && !params.has("team1")) {
+      setTeam1(defaults.defaultTeam);
+      params.set("team1", defaults.defaultTeam);
+      changed = true;
+    }
+    if (defaults.defaultTournament && !params.has("tournaments")) {
+      params.set("tournaments", defaults.defaultTournament);
+      changed = true;
+    }
+
+    if (changed) {
+      defaultsInjectedRef.current = true;
+      router.replace(`${pathname}?${params.toString()}`);
+    }
+  }, [initialTeam1, sp, router, pathname]);
+
   const [result, setResult] = useState<HeadToHeadResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -178,7 +212,7 @@ export function HeadToHeadClient() {
         </div>
       </div>
 
-      <FilterBar fields={{ teams: false }} />
+      <FilterBar fields={{ teams: false }} injectDefaults={false} />
 
       {/* Content area */}
       {sameTeam ? (
