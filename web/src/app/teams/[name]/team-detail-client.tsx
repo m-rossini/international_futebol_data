@@ -29,6 +29,12 @@ function buildQs(params: URLSearchParams): string {
   return q.toString();
 }
 
+function winRateColor(rate: number): string {
+  if (rate >= 60) return "text-green-600 font-semibold";
+  if (rate >= 45) return "text-amber-600 font-semibold";
+  return "text-red-500 font-semibold";
+}
+
 const yearlyColumns: Column<YearlyRow>[] = [
   { key: "year", header: "Year", sortable: true },
   {
@@ -56,6 +62,30 @@ const yearlyColumns: Column<YearlyRow>[] = [
     render: (r) => r.draws.toLocaleString(),
   },
   {
+    key: "points",
+    header: "Pts",
+    sortable: true,
+    render: (r) => (
+      <span className="font-bold text-gray-900">
+        {(r.wins * 3 + r.draws).toLocaleString()}
+      </span>
+    ),
+  },
+  {
+    key: "win_rate",
+    header: "Win Rate",
+    sortable: true,
+    render: (r) => {
+      const rate = r.matches_played > 0 ? (r.wins / r.matches_played) * 100 : 0;
+      return <span className={winRateColor(rate)}>{rate.toFixed(1)}%</span>;
+    },
+    compare: (a, b) => {
+      const ra = a.matches_played > 0 ? (a.wins / a.matches_played) * 100 : 0;
+      const rb = b.matches_played > 0 ? (b.wins / b.matches_played) * 100 : 0;
+      return ra - rb;
+    },
+  },
+  {
     key: "goals_for",
     header: "GF",
     sortable: true,
@@ -66,6 +96,20 @@ const yearlyColumns: Column<YearlyRow>[] = [
     header: "GA",
     sortable: true,
     render: (r) => r.goals_against.toLocaleString(),
+  },
+  {
+    key: "gf_ga_ratio",
+    header: "GF/GA",
+    sortable: true,
+    render: (r) =>
+      r.goals_against > 0
+        ? (r.goals_for / r.goals_against).toFixed(2)
+        : "—",
+    compare: (a, b) => {
+      const ra = a.goals_against > 0 ? a.goals_for / a.goals_against : 0;
+      const rb = b.goals_against > 0 ? b.goals_for / b.goals_against : 0;
+      return ra - rb;
+    },
   },
 ];
 
