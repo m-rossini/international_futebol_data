@@ -18,24 +18,26 @@ interface OOConfig {
 
 function getConfig(): OOConfig | null {
   try {
+    // NEXT_PUBLIC_* variables are inlined by Next.js at build time.
+    // We access them carefully to avoid errors in environments
+    // where process.env may not be fully available.
+    //
+    // When endpoint is empty, we use a same-origin relative path
+    // (proxied by Next.js rewrites) to avoid CORS preflight issues.
     const endpoint =
-      typeof process !== "undefined"
-        ? process.env.NEXT_PUBLIC_OO_ENDPOINT
-        : undefined;
+      (typeof process !== "undefined" && process.env?.NEXT_PUBLIC_OO_ENDPOINT) ??
+      "";
     const org =
-      typeof process !== "undefined"
-        ? process.env.NEXT_PUBLIC_OO_ORG
-        : undefined;
+      (typeof process !== "undefined" && process.env?.NEXT_PUBLIC_OO_ORG) ??
+      "";
     const stream =
-      typeof process !== "undefined"
-        ? process.env.NEXT_PUBLIC_OO_STREAM
-        : undefined;
+      (typeof process !== "undefined" && process.env?.NEXT_PUBLIC_OO_STREAM) ??
+      "";
     const basicAuth =
-      typeof process !== "undefined"
-        ? process.env.NEXT_PUBLIC_OO_BASIC_AUTH
-        : undefined;
+      (typeof process !== "undefined" && process.env?.NEXT_PUBLIC_OO_BASIC_AUTH) ??
+      "";
 
-    if (!endpoint || !org || !stream || !basicAuth) return null;
+    if (!org || !stream || !basicAuth) return null;
 
     return {
       endpoint,
@@ -76,13 +78,17 @@ function scheduleFlush() {
   timer = setTimeout(flush, FLUSH_INTERVAL_MS);
 }
 
+function ooUrl(config: OOConfig, path: string): string {
+  return config.endpoint
+    ? `${config.endpoint}/api/${config.org}/${path}`
+    : `/api/oo/${config.org}/${path}`;
+}
+
 function sendBatch(batch: LogEntry[]) {
   const config = getConfig();
   if (!config) return;
 
-  const url = `${config.endpoint}/api/${config.org}/${config.stream}/_json`;
-
-  fetch(url, {
+  fetch(ooUrl(config, `${config.stream}/_json`), {
     method: "POST",
     headers: {
       Authorization: config.authHeader,
@@ -91,6 +97,53 @@ function sendBatch(batch: LogEntry[]) {
     body: JSON.stringify(batch),
   }).catch(() => {
     // Silently ignore — observability must never break the app
+  });
+}
+
+// ---------------------------------------------------------------------------
+//  Metrics queue — separate from logs, uses the metrics ingestion endpoint
+// ---------------------------------------------------------------------------
+
+interface MetricPoint {
+  __name__: string;
+  value: number;
+  _timestamp: number;
+  _type: string;
+  [tag: string]: unknown;
+}
+
+let metricsQueue: MetricPoint[] = [];
+let metricsTimer: ReturnType<typeof setTimeout> | null = null;
+
+function flushMetrics() {
+  if (metricsTimer) {
+    clearTimeout(metricsTimer);
+    metricsTimer = null;
+  }
+  if (metricsQueue.length === 0) return;
+
+  const batch = metricsQueue.splice(0, MAX_BATCH);
+  sendMetricsBatch(batch);
+}
+
+function scheduleMetricsFlush() {
+  if (metricsTimer) return;
+  metricsTimer = setTimeout(flushMetrics, FLUSH_INTERVAL_MS);
+}
+
+function sendMetricsBatch(batch: MetricPoint[]) {
+  const config = getConfig();
+  if (!config) return;
+
+  fetch(ooUrl(config, `ingest/metrics/_json`), {
+    method: "POST",
+    headers: {
+      Authorization: config.authHeader,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(batch),
+  }).catch(() => {
+    // Silently ignore
   });
 }
 
@@ -212,8 +265,8 @@ export function logFormSubmit(
 /**
  * Send a metric data point to OpenObserve.
  *
- * Metrics are structured as gauge/counter data points and can
- * be queried and charted in OpenObserve.
+ * Logs an event to the web_events stream AND pushes a proper metric
+ * data point to the metrics stream (visible in the Metrics tab).
  */
 export function sendMetric(
   metricName: string,
@@ -221,6 +274,7 @@ export function sendMetric(
   unit: string = "count",
   tags?: Record<string, string | number | boolean>,
 ) {
+  // Log entry (visible in Logs tab)
   sendLog("info", `metric:${metricName}`, {
     event_type: "metric",
     metric_name: metricName,
@@ -229,6 +283,41 @@ export function sendMetric(
     metric_tags: tags ? JSON.stringify(tags) : undefined,
     ...tags,
   });
+
+  // Proper metric point (visible in Metrics tab)
+  enqueueMetric(metricName, value, toMetricType(unit), tags);
+}
+
+function toMetricType(unit: string): string {
+  if (unit === "ms" || unit === "histogram") return "histogram";
+  if (unit === "count") return "counter";
+  return "gauge";
+}
+
+function enqueueMetric(
+  name: string,
+  value: number,
+  type: string,
+  tags?: Record<string, string | number | boolean>,
+) {
+  try {
+    const point: MetricPoint = {
+      __name__: name,
+      value,
+      _timestamp: Date.now() * 1000, // microseconds
+      _type: type,
+      ...tags,
+    };
+    metricsQueue.push(point);
+
+    if (metricsQueue.length >= MAX_BATCH) {
+      flushMetrics();
+    } else {
+      scheduleMetricsFlush();
+    }
+  } catch {
+    // Never throw
+  }
 }
 
 /**
@@ -255,11 +344,11 @@ export function recordTiming(
 }
 
 // ---------------------------------------------------------------------------
-//  Tracing — W3C Trace Context
+//  Traces queue — sends OTLP JSON spans to OpenObserve traces endpoint
 // ---------------------------------------------------------------------------
 
 /**
- * Generate a 32-char hex trace ID (128-bit).
+ * Generates a 32-char hex trace ID (128-bit).
  */
 function generateTraceId(): string {
   const bytes = new Uint8Array(16);
@@ -270,7 +359,7 @@ function generateTraceId(): string {
 }
 
 /**
- * Generate a 16-char hex span ID (64-bit).
+ * Generates a 16-char hex span ID (64-bit).
  */
 function generateSpanId(): string {
   const bytes = new Uint8Array(8);
@@ -287,6 +376,92 @@ interface TraceContext {
 
 let currentTrace: TraceContext | null = null;
 
+/** Converts a kind string ("SERVER", "CLIENT", "INTERNAL") to OTLP kind int. */
+function otelSpanKind(kind: string): number {
+  switch (kind) {
+    case "SERVER": return 2;
+    case "CLIENT": return 3;
+    case "PRODUCER": return 4;
+    case "CONSUMER": return 5;
+    default: return 1; // INTERNAL
+  }
+}
+
+/** Converts context tags to OTLP attributes array. */
+function toOtelAttrs(context?: Record<string, unknown>): Array<{ key: string; value: { stringValue: string } }> {
+  if (!context) return [];
+  return Object.entries(context).map(([key, val]) => ({
+    key,
+    value: { stringValue: String(val ?? "") },
+  }));
+}
+
+// --- OTLP span queue ---
+let spanQueue: any[] = [];
+let spanTimer: ReturnType<typeof setTimeout> | null = null;
+
+function flushSpans() {
+  if (spanTimer) {
+    clearTimeout(spanTimer);
+    spanTimer = null;
+  }
+  if (spanQueue.length === 0) return;
+
+  const batch = spanQueue.splice(0, MAX_BATCH);
+  sendSpanBatch(batch);
+}
+
+function scheduleSpanFlush() {
+  if (spanTimer) return;
+  spanTimer = setTimeout(flushSpans, FLUSH_INTERVAL_MS);
+}
+
+function sendSpanBatch(spans: any[]) {
+  const config = getConfig();
+  if (!config) return;
+
+  const body = {
+    resourceSpans: [{
+      resource: {},
+      scopeSpans: [{
+        scope: {},
+        spans,
+      }],
+    }],
+  };
+
+  fetch(ooUrl(config, `v1/traces`), {
+    method: "POST",
+    headers: {
+      Authorization: config.authHeader,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  }).catch(() => {
+    // Silently ignore
+  });
+}
+
+function enqueueOtelSpan(span: any) {
+  try {
+    spanQueue.push(span);
+    if (spanQueue.length >= MAX_BATCH) {
+      flushSpans();
+    } else {
+      scheduleSpanFlush();
+    }
+  } catch {
+    // Never throw
+  }
+}
+
+// --- Pending span start times ---
+const pendingSpanStarts = new Map<string, number>();
+
+// ---------------------------------------------------------------------------
+//  Tracing — W3C Trace Context
+// ---------------------------------------------------------------------------
+
 /**
  * Start a new root trace. Returns the trace context.
  * Call this when a new page view or top-level action begins.
@@ -295,6 +470,8 @@ export function startTrace(context?: Record<string, unknown>): TraceContext {
   const traceId = generateTraceId();
   const spanId = generateSpanId();
   currentTrace = { traceId, spanId };
+
+  pendingSpanStarts.set(spanId, performance.now());
 
   sendLog("info", "trace:start", {
     event_type: "trace",
@@ -315,6 +492,10 @@ export function startTrace(context?: Record<string, unknown>): TraceContext {
  */
 export function endTrace(context?: Record<string, unknown>) {
   if (!currentTrace) return;
+  const now = performance.now();
+  const t0 = pendingSpanStarts.get(currentTrace.spanId) ?? now;
+  const durationMs = now - t0;
+  pendingSpanStarts.delete(currentTrace.spanId);
 
   sendLog("info", "trace:end", {
     event_type: "trace",
@@ -325,6 +506,19 @@ export function endTrace(context?: Record<string, unknown>) {
     span_kind: "SERVER",
     trace_action: "end",
     ...context,
+  });
+
+  // Push OTLP span
+  const endNs = nowInNano();
+  enqueueOtelSpan({
+    traceId: currentTrace.traceId,
+    spanId: currentTrace.spanId,
+    parentSpanId: "",
+    name: "root",
+    kind: 2, // SERVER
+    startTimeUnixNano: String(Math.round(endNs - durationMs * 1e6)),
+    endTimeUnixNano: String(endNs),
+    attributes: toOtelAttrs(context),
   });
 
   currentTrace = null;
@@ -341,12 +535,14 @@ export function startSpan(
 ): string {
   const traceId = currentTrace?.traceId ?? generateTraceId();
   const spanId = generateSpanId();
-  const parentSpanId = currentTrace?.spanId ?? null;
+  const parentSpanId = currentTrace?.spanId ?? "";
 
   // If there's no active trace, this span becomes the root
   if (!currentTrace) {
     currentTrace = { traceId, spanId };
   }
+
+  pendingSpanStarts.set(spanId, performance.now());
 
   sendLog("info", `span:start:${name}`, {
     event_type: "span",
@@ -371,6 +567,10 @@ export function endSpan(
   context?: Record<string, unknown>,
 ) {
   if (!currentTrace) return;
+  const now = performance.now();
+  const t0 = pendingSpanStarts.get(spanId) ?? now;
+  const durationMs = now - t0;
+  pendingSpanStarts.delete(spanId);
 
   sendLog("info", `span:end:${name}`, {
     event_type: "span",
@@ -380,6 +580,19 @@ export function endSpan(
     span_name: name,
     span_action: "end",
     ...context,
+  });
+
+  // Push OTLP span
+  const endNs = nowInNano();
+  enqueueOtelSpan({
+    traceId: currentTrace.traceId,
+    spanId,
+    parentSpanId: currentTrace.spanId,
+    name,
+    kind: otelSpanKind(context?.span_kind as string ?? "INTERNAL"),
+    startTimeUnixNano: String(Math.round(endNs - durationMs * 1e6)),
+    endTimeUnixNano: String(endNs),
+    attributes: toOtelAttrs(context),
   });
 }
 
@@ -395,6 +608,10 @@ export function getTraceId(): string | null {
  */
 export function getSpanId(): string | null {
   return currentTrace?.spanId ?? null;
+}
+
+function nowInNano(): number {
+  return Date.now() * 1_000_000;
 }
 
 /**
@@ -413,7 +630,7 @@ export function withSpan<T>(
     return fn();
   } finally {
     const durationMs = performance.now() - t0;
-    endSpan(spanId, name, { duration_ms: durationMs, ...context });
+    endSpan(spanId, name, { duration_ms: durationMs, span_kind: kind, ...context });
   }
 }
 
@@ -433,6 +650,6 @@ export async function withAsyncSpan<T>(
     return await fn();
   } finally {
     const durationMs = performance.now() - t0;
-    endSpan(spanId, name, { duration_ms: durationMs, ...context });
+    endSpan(spanId, name, { duration_ms: durationMs, span_kind: kind, ...context });
   }
 }

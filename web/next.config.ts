@@ -10,6 +10,10 @@ const nextConfig: NextConfig = {
         source: "/api/proxy/:path*",
         destination: `${API_URL}/:path*`,
       },
+      {
+        source: "/api/oo/:path*",
+        destination: "http://openobserve:5080/api/:path*",
+      },
     ];
   },
 };
