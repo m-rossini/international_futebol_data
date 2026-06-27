@@ -112,6 +112,9 @@ api-mcp: api-build
 # ═══════════════════════════════════════════════════════════
 #  Web
 # ═══════════════════════════════════════════════════════════
+web-flags:
+	cd web && pnpm exec node bin/download-flags.mjs
+
 web-build:
 	$(DOCKER) build --target development -t $(IMG_WEB):dev web/
 

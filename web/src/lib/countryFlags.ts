@@ -61,7 +61,7 @@ const COUNTRY_TO_CODE: Record<string, string> = {
   Azerbaijan: "az",
   Kazakhstan: "kz",
   Israel: "il",
-  "East Germany": "dd",
+  "East Germany": "de",
   Saar: "de",
   // CONMEBOL
   Brazil: "br",
@@ -210,4 +210,4 @@ export function getCountryCode(countryName: string): string | null {
   return COUNTRY_TO_CODE[countryName] ?? null;
 }
 
-export const FLAG_BASE_URL = "https://flagcdn.com";
+export const FLAG_BASE_URL = "/flags";

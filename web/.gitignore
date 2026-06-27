@@ -20,6 +20,9 @@
 # production
 /build
 
+# downloaded flag SVGs
+/public/flags/
+
 # misc
 .DS_Store
 *.pem
