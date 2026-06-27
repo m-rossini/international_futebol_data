@@ -9,6 +9,7 @@ import { CountryFlag } from "@/components/shared/CountryFlag";
 import { YearlyChart } from "@/components/shared/chart/YearlyChart";
 import { CumulativeGoalsChart } from "@/components/shared/chart/CumulativeGoalsChart";
 import { MatchLadderChart } from "@/components/shared/chart/MatchLadderChart";
+import { BiggestWinsCard } from "@/components/shared/BiggestWinsCard";
 import {
   StatsBar,
   buildMatchStats,
@@ -195,7 +196,7 @@ export function TeamDetailClient({ teamName }: Props) {
             </div>
           )}
 
-          {/* Yearly chart + Cumulative goals side-by-side */}
+          {/* Yearly chart + Cumulative goals + Biggest wins */}
           <div className="mb-6">
             <h2 className="text-lg font-semibold text-gray-800 mb-3">
               Charts
@@ -229,6 +230,12 @@ export function TeamDetailClient({ teamName }: Props) {
                   ]}
                 />
               </div>
+
+              {/* Biggest wins */}
+              <BiggestWinsCard
+                team={teamName}
+                wins={detail.biggest_wins}
+              />
             </div>
           </div>
 

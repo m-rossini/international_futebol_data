@@ -15,24 +15,22 @@ function fmtDate(raw: string): string {
 
 interface Props {
   team: string;
-  opponent: string;
+  opponent?: string;
   wins: BiggestWin[];
 }
 
-export function BiggestWinsCard({ team, opponent, wins }: Props) {
+export function BiggestWinsCard({ team, opponent, wins = [] }: Props) {
   if (wins.length === 0) return null;
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-4">
       <h3 className="text-sm font-semibold text-gray-700 mb-3 inline-flex items-center gap-1.5">
         <CountryFlag countryName={team} size={14} />
-        Top wins vs {opponent}
+        {opponent ? `Top wins vs ${opponent}` : "Biggest wins"}
       </h3>
       <div className="divide-y divide-gray-100">
         {wins.map((win, i) => {
           const isHome = win.home_team === team;
-          const teamScore = isHome ? win.home_score : win.away_score;
-          const oppScore = isHome ? win.away_score : win.home_score;
           const opponentName = isHome ? win.away_team : win.home_team;
           const teamBold = "font-semibold";
           const oppBold = "";
@@ -65,9 +63,9 @@ export function BiggestWinsCard({ team, opponent, wins }: Props) {
                 />
               </span>
 
-              {/* Score */}
+              {/* Score — show real home–away scoreline */}
               <span className="font-mono tabular-nums text-[13px] font-bold shrink-0 w-[44px] text-center">
-                {teamScore}&ndash;{oppScore}
+                {win.home_score}&ndash;{win.away_score}
               </span>
 
               {/* Away team */}

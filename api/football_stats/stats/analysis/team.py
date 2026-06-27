@@ -107,6 +107,29 @@ def team_win_rate(results: pd.DataFrame, team: str) -> dict:
         goal_diff_series = all_goals_for.reset_index(drop=True) - all_goals_against.reset_index(drop=True)
         result["goal_diff_stats"] = series_stats(goal_diff_series)
 
+    # -- Biggest wins (top 3 by goal margin) --
+    all_wins = pd.concat([home_wins, away_wins])
+    if not all_wins.empty:
+        all_wins = all_wins.copy()
+        all_wins["goal_margin"] = all_wins.apply(
+            lambda r: abs(r["home_score"] - r["away_score"]), axis=1
+        )
+        top = all_wins.nlargest(3, "goal_margin")
+        result["biggest_wins"] = [
+            {
+                "date": str(row["date"]),
+                "home_team": row["home_team"],
+                "away_team": row["away_team"],
+                "home_score": int(row["home_score"]),
+                "away_score": int(row["away_score"]),
+                "goal_margin": int(row["goal_margin"]),
+                "tournament": row.get("tournament"),
+            }
+            for _, row in top.iterrows()
+        ]
+    else:
+        result["biggest_wins"] = []
+
     return result
 
 

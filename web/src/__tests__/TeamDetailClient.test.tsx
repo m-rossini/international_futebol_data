@@ -29,6 +29,7 @@ const mockTeamDetail = {
     skewness: 0.7, kurtosis: 0.1, p25: 0, p50: 1, p75: 3,
     iqr: 3, range: 10,
   },
+  biggest_wins: [],
   yearly: [
     { year: 2022, matches_played: 15, wins: 8, losses: 2, draws: 5, goals_for: 38, goals_against: 10 },
     { year: 2021, matches_played: 12, wins: 6, losses: 4, draws: 2, goals_for: 22, goals_against: 14 },
