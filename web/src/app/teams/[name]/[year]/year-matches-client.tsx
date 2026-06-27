@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { AutocompleteInput } from "@/components/shared/AutocompleteInput";
+import { CountryFlag } from "@/components/shared/CountryFlag";
 import {
   StatsBar,
   buildMatchStats,
@@ -243,6 +244,12 @@ export function YearMatchesClient({ teamName, year }: Props) {
                 selected={filtCountry}
                 onChange={setFiltCountry}
                 placeholder="Any country"
+                renderItem={(c) => (
+                  <span className="inline-flex items-center gap-1.5">
+                    <CountryFlag countryName={c} size={14} />
+                    {c}
+                  </span>
+                )}
               />
             </div>
             <div className="flex flex-col gap-1 min-w-[170px] max-w-[260px] flex-1">

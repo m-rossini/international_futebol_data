@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { DataTable, type Column } from "@/components/shared/DataTable";
+import { CountryFlag } from "@/components/shared/CountryFlag";
 import type { MatchItem } from "@/lib/types";
 
 // ---------------------------------------------------------------------------
@@ -74,7 +75,12 @@ export function MatchTable({ matches, highlightTeam, showNeutral = false, headin
       { key: "date", header: "Date", sortable: true, render: (r) => fmtDate(r.date) },
       { key: "tournament", header: "Tournament", sortable: true },
       { key: "city", header: "City", sortable: true },
-      { key: "country", header: "Country", sortable: true },
+      { key: "country", header: "Country", sortable: true, render: (r) => (
+        <span className="inline-flex items-center gap-1.5">
+          <CountryFlag countryName={r.country} size={14} />
+          {r.country}
+        </span>
+      ) },
       {
         key: "home_team",
         header: "Home",

@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { AutocompleteInput } from "./AutocompleteInput";
+import { CountryFlag } from "./CountryFlag";
 import type { Defaults } from "@/lib/useDefaults";
 
 interface FilterOptions {
@@ -133,6 +134,12 @@ export function FilterBar({ fields, injectDefaults = true, children }: Props) {
             selected={countries}
             onChange={(sel) => push("countries", sel.join(","))}
             placeholder="All countries"
+            renderItem={(c) => (
+              <span className="inline-flex items-center gap-1.5">
+                <CountryFlag countryName={c} size={14} />
+                {c}
+              </span>
+            )}
           />
         </div>
       )}

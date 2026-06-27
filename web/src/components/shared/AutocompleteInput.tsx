@@ -9,6 +9,8 @@ interface Props {
   onChange: (selected: string[]) => void;
   placeholder?: string;
   multi?: boolean;
+  /** Optional render function for each item (both chip & dropdown). */
+  renderItem?: (item: string) => React.ReactNode;
 }
 
 export function AutocompleteInput({
@@ -17,6 +19,7 @@ export function AutocompleteInput({
   onChange,
   placeholder = "Select...",
   multi = true,
+  renderItem,
 }: Props) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -92,7 +95,7 @@ export function AutocompleteInput({
             key={item}
             className="inline-flex items-center gap-0.5 px-2 py-0.5 text-xs bg-blue-50 text-blue-700 rounded-full"
           >
-            {item}
+            {renderItem ? renderItem(item) : item}
             <button
               type="button"
               onClick={(e) => {
@@ -135,7 +138,7 @@ export function AutocompleteInput({
               onMouseEnter={() => setHighlight(i)}
               onClick={() => addItem(item)}
             >
-              {item}
+              {renderItem ? renderItem(item) : item}
             </li>
           ))}
         </ul>
