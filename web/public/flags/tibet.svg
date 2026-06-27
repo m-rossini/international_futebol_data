@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 400">
+  <rect width="600" height="400" fill="#dc143c"/>
+  <g transform="translate(300,180)" fill="#fff" stroke="#ffd700" stroke-width="1.5">
+    <!-- Simplified snow lion face -->
+    <circle cx="0" cy="0" r="35" fill="#fff"/>
+    <circle cx="-12" cy="-8" r="5" fill="#ffd700"/>
+    <circle cx="12" cy="-8" r="5" fill="#ffd700"/>
+    <path d="M-8,8 Q0,18 8,8" fill="none" stroke="#ffd700" stroke-width="2"/>
+    <circle cx="0" cy="0" r="3" fill="#ffd700"/>
+    <!-- Sun rays -->
+    <g stroke="#ffd700" stroke-width="2">
+      <line x1="0" y1="-50" x2="0" y2="-80"/>
+      <line x1="0" y1="50" x2="0" y2="80"/>
+      <line x1="-50" y1="0" x2="-80" y2="0"/>
+      <line x1="50" y1="0" x2="80" y2="0"/>
+      <line x1="-35" y1="-35" x2="-56" y2="-56"/>
+      <line x1="35" y1="-35" x2="56" y2="-56"/>
+      <line x1="-35" y1="35" x2="-56" y2="56"/>
+      <line x1="35" y1="35" x2="56" y2="56"/>
+    </g>
+  </g>
+</svg>

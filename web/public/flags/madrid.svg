@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 400">
+  <rect width="600" height="400" fill="#ce1126"/>
+  <g transform="translate(300,200)" fill="#ffd700">
+    <path d="M0,-40 L15,-10 L40,-10 L20,5 L25,35 L0,20 L-25,35 L-20,5 L-40,-10 L-15,-10 Z"/>
+    <text x="0" y="50" text-anchor="middle" font-size="16" font-family="serif">MADRID</text>
+  </g>
+</svg>

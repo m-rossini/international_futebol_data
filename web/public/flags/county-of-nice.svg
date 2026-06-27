@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 400">
+  <rect width="600" height="400" fill="#ce1126"/>
+  <g transform="translate(300,200)">
+    <text x="0" y="10" text-anchor="middle" font-size="40" fill="#fff" font-weight="bold">NICE</text>
+  </g>
+</svg>

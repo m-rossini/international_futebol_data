@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 400">
+  <rect width="600" height="400" fill="#fff"/>
+  <!-- 9 stripes -->
+  <rect y="0" width="600" height="22" fill="#000"/>
+  <rect y="44" width="600" height="22" fill="#000"/>
+  <rect y="88" width="600" height="22" fill="#000"/>
+  <rect y="132" width="600" height="22" fill="#000"/>
+  <rect y="176" width="600" height="22" fill="#000"/>
+  <rect y="220" width="600" height="22" fill="#000"/>
+  <rect y="264" width="600" height="22" fill="#000"/>
+  <rect y="308" width="600" height="22" fill="#000"/>
+  <rect y="352" width="600" height="22" fill="#000"/>
+  <rect x="0" y="0" width="200" height="400" fill="#fff"/>
+  <g transform="translate(100,200)" fill="#000">
+    <path d="M0,-40 Q40,-20 40,0 Q40,20 0,40 Q-40,20 -40,0 Q-40,-20 0,-40Z"/>
+  </g>
+</svg>
