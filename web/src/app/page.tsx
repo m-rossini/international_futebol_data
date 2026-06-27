@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Users, Swords, Trophy, Check, RotateCcw } from "lucide-react";
 import { AutocompleteInput } from "@/components/shared/AutocompleteInput";
 import { useDefaults } from "@/lib/useDefaults";
+import { logUserAction, logApiCall } from "@/lib/observability";
 
 const API = "/api/proxy";
 
@@ -37,25 +38,34 @@ export default function HomePage() {
 
   // Fetch filter options once
   useEffect(() => {
+    const t0 = performance.now();
     fetch(`${API}/filters`)
-      .then((r) => r.json())
+      .then((r) => {
+        const duration = performance.now() - t0;
+        logApiCall("/filters", duration, r.status, { page: "home" });
+        return r.json();
+      })
       .then((data) => {
         setTeamNames(data.teams || []);
         setTournamentNames(data.tournaments || []);
       })
-      .catch(() => {});
+      .catch((err) => {
+        const duration = performance.now() - t0;
+        logApiCall("/filters", duration, 0, { page: "home", error: String(err) });
+      });
   }, []);
 
   const handleSave = useCallback(() => {
-    setDefaults(
-      enableTeam ? (localTeam[0] ?? null) : null,
-      enableTournament ? (localTournament[0] ?? null) : null,
-    );
+    const team = enableTeam ? (localTeam[0] ?? null) : null;
+    const tournament = enableTournament ? (localTournament[0] ?? null) : null;
+    logUserAction("save_defaults", { default_team: team, default_tournament: tournament });
+    setDefaults(team, tournament);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   }, [enableTeam, enableTournament, localTeam, localTournament, setDefaults]);
 
   const handleClear = useCallback(() => {
+    logUserAction("clear_defaults", {});
     clearDefaults();
     setEnableTeam(false);
     setEnableTournament(false);

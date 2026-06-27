@@ -5,6 +5,7 @@ import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { DataTable, type Column } from "@/components/shared/DataTable";
 import { FilterBar } from "@/components/shared/FilterBar";
 import { CountryFlag } from "@/components/shared/CountryFlag";
+import { logApiCall, logUserAction } from "@/lib/observability";
 import type { TeamItem } from "@/lib/types";
 
 const API = "/api/proxy";
@@ -114,9 +115,12 @@ export function TeamsClient() {
 
     async function load() {
       setLoading(true);
+      const t0 = performance.now();
       try {
         const url = `${API}/teams${qs ? "?" + qs : ""}`;
         const res = await fetch(url);
+        const duration = performance.now() - t0;
+        logApiCall("/teams", duration, res.status, { query: qs || undefined });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data: TeamItem[] = (await res.json()).map((t: TeamItem) => ({
           ...t,
@@ -127,6 +131,8 @@ export function TeamsClient() {
           setLoading(false);
         }
       } catch (err) {
+        const duration = performance.now() - t0;
+        logApiCall("/teams", duration, 0, { query: qs || undefined, error: err instanceof Error ? err.message : String(err) });
         if (!cancelled) {
           setError(err instanceof Error ? err.message : "Failed to load teams");
           setLoading(false);
@@ -151,6 +157,7 @@ export function TeamsClient() {
 
   const setMinMatches = useCallback(
     (value: number) => {
+      logUserAction("set_min_matches", { page: "teams", min_matches: value });
       const params = new URLSearchParams(sp.toString());
       if (value > 0) {
         params.set("min_matches", String(value));
@@ -185,6 +192,7 @@ export function TeamsClient() {
 
   const handleSortChange = useCallback(
     (key: string | null, dir: "asc" | "desc" | null) => {
+      logUserAction("sort_teams", { page: "teams", sort_key: key, sort_dir: dir });
       const params = new URLSearchParams(sp.toString());
       if (key && dir) {
         params.set("sort", key);
@@ -200,6 +208,7 @@ export function TeamsClient() {
 
   const handleRowClick = useCallback(
     (row: TeamItem) => {
+      logUserAction("select_team", { page: "teams", team: row.team });
       const params = new URLSearchParams(sp.toString());
       const qs = params.toString();
       router.push(`/teams/${encodeURIComponent(row.team)}${qs ? `?${qs}` : ""}`);

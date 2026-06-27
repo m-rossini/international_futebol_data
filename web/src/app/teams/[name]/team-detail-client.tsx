@@ -14,6 +14,7 @@ import {
   buildMatchStats,
   buildGoalStats,
 } from "@/components/shared/StatsBar";
+import { logApiCall, logUserAction } from "@/lib/observability";
 import type { TeamDetail, YearlyRow } from "@/lib/types";
 
 const API = "/api/proxy";
@@ -86,9 +87,12 @@ export function TeamDetailClient({ teamName }: Props) {
 
     async function load() {
       setLoading(true);
+      const t0 = performance.now();
       try {
         const url = `${API}/team/${encodeURIComponent(teamName)}${qs ? "?" + qs : ""}`;
         const res = await fetch(url);
+        const duration = performance.now() - t0;
+        logApiCall("/team/:name", duration, res.status, { team: teamName, query: qs || undefined });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data: TeamDetail = await res.json();
         if (!cancelled) {
@@ -100,6 +104,8 @@ export function TeamDetailClient({ teamName }: Props) {
           setLoading(false);
         }
       } catch (err) {
+        const duration = performance.now() - t0;
+        logApiCall("/team/:name", duration, 0, { team: teamName, error: err instanceof Error ? err.message : String(err) });
         if (!cancelled) {
           setError(err instanceof Error ? err.message : "Failed to load team data");
           setLoading(false);
@@ -114,13 +120,15 @@ export function TeamDetailClient({ teamName }: Props) {
   }, [teamName, qs]);
 
   const handleBack = useCallback(() => {
+    logUserAction("back_to_teams", { from_team: teamName });
     const params = new URLSearchParams(sp.toString());
     const q = params.toString();
     router.push(`/teams${q ? `?${q}` : ""}`);
-  }, [router, sp]);
+  }, [router, sp, teamName]);
 
   const handleYearClick = useCallback(
     (row: YearlyRow) => {
+      logUserAction("select_year", { team: teamName, year: row.year });
       const params = new URLSearchParams(sp.toString());
       const q = params.toString();
       router.push(

@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { AutocompleteInput } from "./AutocompleteInput";
 import { CountryFlag } from "./CountryFlag";
+import { logApiCall, logUserAction } from "@/lib/observability";
 import type { Defaults } from "@/lib/useDefaults";
 
 interface FilterOptions {
@@ -38,15 +39,23 @@ export function FilterBar({ fields, injectDefaults = true, children }: Props) {
   useEffect(() => {
     if (FETCHED.has("filters")) return;
     let cancelled = false;
+    const t0 = performance.now();
     fetch("/api/proxy/filters")
-      .then((r) => r.json())
+      .then((r) => {
+        const duration = performance.now() - t0;
+        logApiCall("/filters", duration, r.status, { page: "filter_bar" });
+        return r.json();
+      })
       .then((data: FilterOptions) => {
         if (!cancelled) {
           FETCHED.set("filters", data);
           setOptions(data);
         }
       })
-      .catch(() => {});
+      .catch((err) => {
+        const duration = performance.now() - t0;
+        logApiCall("/filters", duration, 0, { page: "filter_bar", error: String(err) });
+      });
     return () => { cancelled = true; };
   }, []);
 
@@ -88,6 +97,9 @@ export function FilterBar({ fields, injectDefaults = true, children }: Props) {
 
   const push = useCallback(
     (key: string, value: string) => {
+      if (value) {
+        logUserAction("filter_change", { filter_key: key, filter_value: value });
+      }
       const params = new URLSearchParams(sp.toString());
       if (value) {
         params.set(key, value);

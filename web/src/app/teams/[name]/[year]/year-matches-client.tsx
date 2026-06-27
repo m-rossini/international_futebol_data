@@ -13,6 +13,7 @@ import {
 import { MatchTable } from "@/components/shared/MatchTable";
 import { MatchLadderChart } from "@/components/shared/chart/MatchLadderChart";
 import { CumulativeGoalsChart } from "@/components/shared/chart/CumulativeGoalsChart";
+import { logApiCall, logUserAction } from "@/lib/observability";
 import type { MatchItem, TeamMatchesByYear } from "@/lib/types";
 
 const API = "/api/proxy";
@@ -71,9 +72,12 @@ export function YearMatchesClient({ teamName, year }: Props) {
     async function load() {
       setLoading(true);
       setError(null);
+      const t0 = performance.now();
       try {
         const url = `${API}/team/${encodeURIComponent(teamName)}/matches/${year}${qs ? "?" + qs : ""}`;
         const res = await fetch(url);
+        const duration = performance.now() - t0;
+        logApiCall("/team/:name/matches/:year", duration, res.status, { team: teamName, year, query: qs || undefined });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const json: TeamMatchesByYear = await res.json();
         if (!cancelled) {
@@ -92,6 +96,8 @@ export function YearMatchesClient({ teamName, year }: Props) {
           setLoading(false);
         }
       } catch (err) {
+        const duration = performance.now() - t0;
+        logApiCall("/team/:name/matches/:year", duration, 0, { team: teamName, year, error: err instanceof Error ? err.message : String(err) });
         if (!cancelled) {
           setError(err instanceof Error ? err.message : "Failed to load matches");
           setLoading(false);
@@ -151,10 +157,11 @@ export function YearMatchesClient({ teamName, year }: Props) {
   }, [data, filtOpponent, filtTournament, filtCountry, filtCity, filtDateFrom, filtDateTo]);
 
   const handleBack = useCallback(() => {
+    logUserAction("back_to_team_year", { team: teamName, year });
     const params = new URLSearchParams(sp.toString());
     const q = params.toString();
     router.push(`/teams/${encodeURIComponent(teamName)}${q ? `?${q}` : ""}`);
-  }, [router, sp, teamName]);
+  }, [router, sp, teamName, year]);
 
   // Summary counts (based on filtered data)
   const summary = useMemo(() => {
@@ -284,6 +291,7 @@ export function YearMatchesClient({ teamName, year }: Props) {
               <button
                 type="button"
                 onClick={() => {
+                  logUserAction("clear_filters", { page: "year_matches", team: teamName, year });
                   setFiltOpponent([]);
                   setFiltTournament([]);
                   setFiltCountry([]);

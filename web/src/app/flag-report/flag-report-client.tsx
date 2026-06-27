@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { getAllMappedNames } from "@/lib/countryFlags";
 import { CountryFlag } from "@/components/shared/CountryFlag";
+import { logApiCall } from "@/lib/observability";
 
 const API = "/api/proxy";
 
@@ -16,8 +17,11 @@ export function FlagReportClient() {
     let cancelled = false;
 
     async function load() {
+      const t0 = performance.now();
       try {
         const res = await fetch(`${API}/filters`);
+        const duration = performance.now() - t0;
+        logApiCall("/filters", duration, res.status, { page: "flag_report" });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         if (!cancelled) {
@@ -26,6 +30,8 @@ export function FlagReportClient() {
           setLoading(false);
         }
       } catch (err) {
+        const duration = performance.now() - t0;
+        logApiCall("/filters", duration, 0, { page: "flag_report", error: err instanceof Error ? err.message : String(err) });
         if (!cancelled) {
           setError(err instanceof Error ? err.message : "Failed to load");
           setLoading(false);

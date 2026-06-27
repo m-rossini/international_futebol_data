@@ -10,6 +10,7 @@ import { StatsBar, buildH2HStats } from "@/components/shared/StatsBar";
 import { MatchTable } from "@/components/shared/MatchTable";
 import { CumulativeWinsChart } from "@/components/shared/chart/CumulativeWinsChart";
 import { CumulativeGoalsChart } from "@/components/shared/chart/CumulativeGoalsChart";
+import { logApiCall, logUserAction } from "@/lib/observability";
 import type { HeadToHeadResult } from "@/lib/types";
 
 const API = "/api/proxy";
@@ -102,6 +103,7 @@ export function HeadToHeadClient() {
   const handleTeam1 = useCallback(
     (sel: string[]) => {
       const val = sel[0] || "";
+      logUserAction("select_h2h_team1", { team: val });
       setTeam1(val);
       updateTeamParam("team1", val);
     },
@@ -111,6 +113,7 @@ export function HeadToHeadClient() {
   const handleTeam2 = useCallback(
     (sel: string[]) => {
       const val = sel[0] || "";
+      logUserAction("select_h2h_team2", { team: val });
       setTeam2(val);
       updateTeamParam("team2", val);
     },
@@ -118,6 +121,7 @@ export function HeadToHeadClient() {
   );
 
   const swapTeams = useCallback(() => {
+    logUserAction("swap_h2h_teams", { team1: team2, team2: team1 });
     const t1 = team2;
     const t2 = team1;
     setTeam1(t1);
@@ -137,9 +141,12 @@ export function HeadToHeadClient() {
     let cancelled = false;
     async function load() {
       setLoading(true);
+      const t0 = performance.now();
       try {
         const url = `${API}/head_to_head?${qs}`;
         const res = await fetch(url);
+        const duration = performance.now() - t0;
+        logApiCall("/head_to_head", duration, res.status, { team1, team2 });
         const data: HeadToHeadResult = await res.json();
         if (!cancelled) {
           if (data.error) {
@@ -151,6 +158,8 @@ export function HeadToHeadClient() {
           setLoading(false);
         }
       } catch (err) {
+        const duration = performance.now() - t0;
+        logApiCall("/head_to_head", duration, 0, { team1, team2, error: err instanceof Error ? err.message : String(err) });
         if (!cancelled) {
           setError(err instanceof Error ? err.message : "Failed to load");
           setLoading(false);
