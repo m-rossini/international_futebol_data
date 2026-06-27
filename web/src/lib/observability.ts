@@ -147,6 +147,7 @@ export function logPageView(
     page,
     ...context,
   });
+  incrementMetric("page_view", 1, { page });
 }
 
 /** Log a user interaction (click, selection, etc.). */
@@ -159,6 +160,7 @@ export function logUserAction(
     action,
     ...context,
   });
+  incrementMetric("user_action", 1, { action });
 }
 
 /** Log an API call. */
@@ -175,6 +177,8 @@ export function logApiCall(
     status,
     ...context,
   });
+  incrementMetric("api_call", 1, { endpoint, status_category: status >= 400 ? "error" : "success" });
+  recordTiming("api_call_duration", durationMs, { endpoint });
 }
 
 /** Log an error. */
@@ -186,6 +190,7 @@ export function logError(
     event_type: "error",
     ...context,
   });
+  incrementMetric("error", 1, { error_message: message });
 }
 
 /** Log a form submission. */
@@ -198,6 +203,55 @@ export function logFormSubmit(
     form_name: formName,
     ...context,
   });
+}
+
+// ---------------------------------------------------------------------------
+//  Metrics
+// ---------------------------------------------------------------------------
+
+/**
+ * Send a metric data point to OpenObserve.
+ *
+ * Metrics are structured as gauge/counter data points and can
+ * be queried and charted in OpenObserve.
+ */
+export function sendMetric(
+  metricName: string,
+  value: number,
+  unit: string = "count",
+  tags?: Record<string, string | number | boolean>,
+) {
+  sendLog("info", `metric:${metricName}`, {
+    event_type: "metric",
+    metric_name: metricName,
+    metric_value: value,
+    metric_unit: unit,
+    metric_tags: tags ? JSON.stringify(tags) : undefined,
+    ...tags,
+  });
+}
+
+/**
+ * Convenience: increment a counter metric.
+ * Sends value=1 by default; specify a different delta if needed.
+ */
+export function incrementMetric(
+  metricName: string,
+  delta: number = 1,
+  tags?: Record<string, string | number | boolean>,
+) {
+  sendMetric(metricName, delta, "count", tags);
+}
+
+/**
+ * Convenience: record a timing/histogram value (e.g. duration in ms).
+ */
+export function recordTiming(
+  metricName: string,
+  durationMs: number,
+  tags?: Record<string, string | number | boolean>,
+) {
+  sendMetric(metricName, durationMs, "ms", tags);
 }
 
 // ---------------------------------------------------------------------------
