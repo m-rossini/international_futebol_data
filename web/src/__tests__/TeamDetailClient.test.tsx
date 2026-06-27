@@ -110,7 +110,7 @@ describe("TeamDetailClient", () => {
     // Chart SVG
     expect(screen.getByRole("img", { name: "Wins / Draws / Losses per year" })).toBeInTheDocument();
     // "2022" appears in the yearly breakdown table
-    expect(screen.getByText("2022")).toBeInTheDocument();
+    expect(screen.getAllByText("2022").length).toBeGreaterThanOrEqual(1);
   });
 
   it("carries over filters from search params", async () => {

@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Users, Swords } from "lucide-react";
+import { Users, Swords, Flag } from "lucide-react";
 
 const navItems = [
   { href: "/teams", label: "Teams", icon: Users },
   { href: "/head-to-head", label: "Head to Head", icon: Swords },
+  { href: "/flag-report", label: "Flag Report", icon: Flag },
 ];
 
 export function Sidebar() {
