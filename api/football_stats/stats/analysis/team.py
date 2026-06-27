@@ -230,6 +230,35 @@ def team_vs_team(results: pd.DataFrame, team1: str, team2: str) -> dict:
         "matches_list": matches_list,
     }
 
+    # -- Biggest wins (top 3 by goal margin for each team) --
+    def _biggest_wins(team: str, n: int = 3) -> list[dict]:
+        """Return the top N victories by goal margin for `team` against the other."""
+        team_matches = matches[
+            ((matches["home_team"] == team) & (matches["home_score"] > matches["away_score"]))
+            | ((matches["away_team"] == team) & (matches["away_score"] > matches["home_score"]))
+        ].copy()
+        if team_matches.empty:
+            return []
+        team_matches["goal_margin"] = team_matches.apply(
+            lambda r: abs(r["home_score"] - r["away_score"]), axis=1
+        )
+        top = team_matches.nlargest(n, "goal_margin")
+        return [
+            {
+                "date": str(row["date"]),
+                "home_team": row["home_team"],
+                "away_team": row["away_team"],
+                "home_score": int(row["home_score"]),
+                "away_score": int(row["away_score"]),
+                "goal_margin": int(row["goal_margin"]),
+                "tournament": row.get("tournament"),
+            }
+            for _, row in top.iterrows()
+        ]
+
+    result[f"{team1}_biggest_wins"] = _biggest_wins(team1)
+    result[f"{team2}_biggest_wins"] = _biggest_wins(team2)
+
     # Add advanced goal stats if there are matches between the two teams
     total_h2h_matches = len(matches)
     if total_h2h_matches > 0:

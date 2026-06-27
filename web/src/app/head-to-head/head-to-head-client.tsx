@@ -7,11 +7,12 @@ import { FilterBar } from "@/components/shared/FilterBar";
 import { AutocompleteInput } from "@/components/shared/AutocompleteInput";
 import { CountryFlag } from "@/components/shared/CountryFlag";
 import { StatsBar, buildH2HStats } from "@/components/shared/StatsBar";
+import { BiggestWinsCard } from "@/components/shared/BiggestWinsCard";
 import { MatchTable } from "@/components/shared/MatchTable";
 import { CumulativeWinsChart } from "@/components/shared/chart/CumulativeWinsChart";
 import { CumulativeGoalsChart } from "@/components/shared/chart/CumulativeGoalsChart";
 import { logApiCall, logUserAction } from "@/lib/observability";
-import type { HeadToHeadResult } from "@/lib/types";
+import type { HeadToHeadResult, BiggestWin } from "@/lib/types";
 
 const API = "/api/proxy";
 
@@ -179,6 +180,8 @@ export function HeadToHeadClient() {
   const team2Wins = result ? ((result[`${result.team2}_wins`] as number) ?? 0) : 0;
   const team1Goals = result ? ((result[`${result.team1}_goals`] as number) ?? 0) : 0;
   const team2Goals = result ? ((result[`${result.team2}_goals`] as number) ?? 0) : 0;
+  const team1BiggestWins = result ? ((result[`${result.team1}_biggest_wins`] as BiggestWin[]) ?? []) : [];
+  const team2BiggestWins = result ? ((result[`${result.team2}_biggest_wins`] as BiggestWin[]) ?? []) : [];
   const avgGoalsPerMatch = result?.total_goals_per_match_stats?.mean ?? undefined;
 
   const sameTeam = team1 && team2 && team1 === team2;
@@ -266,7 +269,7 @@ export function HeadToHeadClient() {
             />
           </div>
 
-          {/* Cumulative charts: wins + goals side-by-side */}
+          {/* Cumulative charts + biggest wins cards */}
           {result.matches > 0 && (
             <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Cumulative wins */}
@@ -294,6 +297,18 @@ export function HeadToHeadClient() {
                   ]}
                 />
               </div>
+
+              {/* Biggest wins cards */}
+              <BiggestWinsCard
+                team={result.team1}
+                opponent={result.team2}
+                wins={team1BiggestWins}
+              />
+              <BiggestWinsCard
+                team={result.team2}
+                opponent={result.team1}
+                wins={team2BiggestWins}
+              />
             </div>
           )}
 

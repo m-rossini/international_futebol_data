@@ -70,6 +70,16 @@ export interface MatchItem {
   neutral?: boolean;
 }
 
+export interface BiggestWin {
+  date: string;
+  home_team: string;
+  away_team: string;
+  home_score: number;
+  away_score: number;
+  goal_margin: number;
+  tournament?: string;
+}
+
 export interface TeamMatchesByYear {
   team: string;
   year: number;
