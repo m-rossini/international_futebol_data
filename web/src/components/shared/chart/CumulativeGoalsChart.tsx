@@ -2,14 +2,13 @@
 
 import { useMemo } from "react";
 import {
+  LineChart,
   Line,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  Area,
-  ComposedChart,
 } from "recharts";
 
 // ---------------------------------------------------------------------------
@@ -105,25 +104,12 @@ export function CumulativeGoalsChart({
 
   const ariaLabel = `Cumulative goals: ${track.map((t) => t.label ?? t.team).join(" vs ")}`;
   const lineChart = (
-    <ComposedChart
+    <LineChart
       width={width}
       height={height}
       data={chartData}
       margin={{ top: 8, right: 20, bottom: 8, left: 4 }}
     >
-      <defs>
-        {track.map((t, i) => (
-          <linearGradient
-            key={i}
-            id={`cg${i}-${t.team.replace(/\s+/g, "-")}`}
-            x1="0" y1="0" x2="0" y2="1"
-          >
-            <stop offset="0%" stopColor={t.color} />
-            <stop offset="100%" stopColor={t.color} stopOpacity={0} />
-          </linearGradient>
-        ))}
-      </defs>
-
       <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
 
       <XAxis
@@ -154,17 +140,6 @@ export function CumulativeGoalsChart({
       />
 
       {track.map((t, i) => (
-        <Area
-          key={`area-${i}`}
-          type="monotone"
-          dataKey={`cum${i}`}
-          fill={`url(#cg${i}-${t.team.replace(/\s+/g, "-")})`}
-          stroke="none"
-          fillOpacity={1}
-        />
-      ))}
-
-      {track.map((t, i) => (
         <Line
           key={`line-${i}`}
           type="monotone"
@@ -175,7 +150,7 @@ export function CumulativeGoalsChart({
           activeDot={{ r: 3 }}
         />
       ))}
-    </ComposedChart>
+    </LineChart>
   );
 
   return (
