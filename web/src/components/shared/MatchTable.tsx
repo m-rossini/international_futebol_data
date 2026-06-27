@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { DataTable, type Column } from "@/components/shared/DataTable";
 import { CountryFlag } from "@/components/shared/CountryFlag";
+import { ShootoutBadge } from "@/components/shared/ShootoutBadge";
 import type { MatchItem } from "@/lib/types";
 
 // ---------------------------------------------------------------------------
@@ -96,8 +97,9 @@ export function MatchTable({ matches, highlightTeam, showNeutral = false, headin
         key: "score",
         header: "Score",
         render: (r) => (
-          <span className="font-mono tabular-nums">
+          <span className="font-mono tabular-nums inline-flex items-center gap-1">
             {r.home_score} – {r.away_score}
+            {r.shootout && <ShootoutBadge />}
           </span>
         ),
       },

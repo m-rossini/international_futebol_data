@@ -63,6 +63,7 @@ export function YearMatchesClient({ teamName, year }: Props) {
   const [filtCity, setFiltCity] = useState<string[]>([]);
   const [filtDateFrom, setFiltDateFrom] = useState("");
   const [filtDateTo, setFiltDateTo] = useState("");
+  const [filtShootout, setFiltShootout] = useState(false);
 
   const qs = useMemo(() => buildQs(sp), [sp]);
 
@@ -92,6 +93,7 @@ export function YearMatchesClient({ teamName, year }: Props) {
             setFiltCity([]);
             setFiltDateFrom("");
             setFiltDateTo("");
+            setFiltShootout(false);
           }
           setLoading(false);
         }
@@ -152,9 +154,10 @@ export function YearMatchesClient({ teamName, year }: Props) {
       if (filtCity.length > 0 && m.city && !filtCity.includes(m.city)) return false;
       if (filtDateFrom && isoInputDate(m.date) < filtDateFrom) return false;
       if (filtDateTo && isoInputDate(m.date) > filtDateTo) return false;
+      if (filtShootout && !m.shootout) return false;
       return true;
     });
-  }, [data, filtOpponent, filtTournament, filtCountry, filtCity, filtDateFrom, filtDateTo]);
+  }, [data, filtOpponent, filtTournament, filtCountry, filtCity, filtDateFrom, filtDateTo, filtShootout]);
 
   const handleBack = useCallback(() => {
     logUserAction("back_to_team_year", { team: teamName, year });
@@ -197,7 +200,8 @@ export function YearMatchesClient({ teamName, year }: Props) {
     filtCountry.length > 0 ||
     filtCity.length > 0 ||
     filtDateFrom !== "" ||
-    filtDateTo !== "";
+    filtDateTo !== "" ||
+    filtShootout;
 
   return (
     <div className="p-8">
@@ -287,6 +291,15 @@ export function YearMatchesClient({ teamName, year }: Props) {
                 className="border border-gray-300 rounded-lg px-2 py-1.5 text-sm bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-200 outline-none"
               />
             </div>
+            <label className="flex items-center gap-1.5 pb-0.5 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={filtShootout}
+                onChange={(e) => setFiltShootout(e.target.checked)}
+                className="rounded border-gray-300 text-amber-600 focus:ring-amber-500"
+              />
+              <span className="text-xs font-medium text-gray-500">Shootouts only</span>
+            </label>
             {anyFilterActive && (
               <button
                 type="button"
@@ -298,6 +311,7 @@ export function YearMatchesClient({ teamName, year }: Props) {
                   setFiltCity([]);
                   setFiltDateFrom("");
                   setFiltDateTo("");
+                  setFiltShootout(false);
                 }}
                 className="px-3 py-1.5 text-xs text-blue-600 hover:text-blue-800 hover:underline"
               >

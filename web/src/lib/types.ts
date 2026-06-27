@@ -70,6 +70,7 @@ export interface MatchItem {
   city?: string;
   country?: string;
   neutral?: boolean;
+  shootout?: boolean;
 }
 
 export interface BiggestWin {
@@ -80,6 +81,7 @@ export interface BiggestWin {
   away_score: number;
   goal_margin: number;
   tournament?: string;
+  shootout?: boolean;
 }
 
 export interface TeamMatchesByYear {

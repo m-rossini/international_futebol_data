@@ -10,6 +10,7 @@ import { YearlyChart } from "@/components/shared/chart/YearlyChart";
 import { CumulativeGoalsChart } from "@/components/shared/chart/CumulativeGoalsChart";
 import { MatchLadderChart } from "@/components/shared/chart/MatchLadderChart";
 import { BiggestWinsCard } from "@/components/shared/BiggestWinsCard";
+import { MatchTable } from "@/components/shared/MatchTable";
 import {
   StatsBar,
   buildMatchStats,
@@ -124,6 +125,7 @@ export function TeamDetailClient({ teamName }: Props) {
   const [detail, setDetail] = useState<TeamDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [filtShootout, setFiltShootout] = useState(false);
 
   const qs = useMemo(() => buildQs(sp), [sp]);
 
@@ -182,6 +184,12 @@ export function TeamDetailClient({ teamName }: Props) {
     },
     [router, sp, teamName],
   );
+
+  const filteredMatches = useMemo(() => {
+    if (!detail?.matches_list) return [];
+    if (!filtShootout) return detail.matches_list;
+    return detail.matches_list.filter((m) => m.shootout);
+  }, [detail, filtShootout]);
 
   return (
     <div className="p-8">
@@ -267,7 +275,7 @@ export function TeamDetailClient({ teamName }: Props) {
                   Cumulative Goals
                 </h3>
                 <CumulativeGoalsChart
-                  matches={detail.matches_list}
+                  matches={filteredMatches}
                   track={[
                     { team: teamName, color: "#22c55e", label: "Goals For" },
                     { team: teamName, color: "#ef4444", label: "Goals Against", against: true },
@@ -278,7 +286,7 @@ export function TeamDetailClient({ teamName }: Props) {
           </div>
 
           {/* W/D/L ladder (match-by-match) */}
-          {detail.matches_list.length >= 2 && (
+          {filteredMatches.length >= 2 && (
             <div className="mb-6">
               <h2 className="text-lg font-semibold text-gray-800 mb-3">
                 W/D/L Ladder
@@ -286,7 +294,7 @@ export function TeamDetailClient({ teamName }: Props) {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="bg-white rounded-lg border border-gray-200 p-4">
                   <MatchLadderChart
-                    matches={detail.matches_list}
+                    matches={filteredMatches}
                     team={teamName}
                     height={200}
                   />
@@ -316,11 +324,22 @@ export function TeamDetailClient({ teamName }: Props) {
             </div>
           )}
 
-          {/* Yearly breakdown */}
+          {/* Yearly breakdown + All matches */}
           <div className="mb-6">
-            <h2 className="text-lg font-semibold text-gray-800 mb-3">
-              Yearly Breakdown
-            </h2>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-lg font-semibold text-gray-800">
+                Yearly Breakdown
+              </h2>
+              <label className="flex items-center gap-1.5 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={filtShootout}
+                  onChange={(e) => setFiltShootout(e.target.checked)}
+                  className="rounded border-gray-300 text-amber-600 focus:ring-amber-500"
+                />
+                <span className="text-xs font-medium text-gray-500">Shootouts only</span>
+              </label>
+            </div>
             {detail.yearly.length > 0 ? (
               <DataTable
                 columns={yearlyColumns}
@@ -333,6 +352,21 @@ export function TeamDetailClient({ teamName }: Props) {
               <p className="text-sm text-gray-400">
                 No yearly data available
               </p>
+            )}
+            {detail.matches_list.length > 0 && (
+              <div className="mt-4">
+                {filteredMatches.length > 0 ? (
+                  <MatchTable
+                    matches={filteredMatches}
+                    highlightTeam={teamName}
+                    showNeutral
+                  />
+                ) : (
+                  <p className="text-sm text-gray-400">
+                    No matches match the current filter.
+                  </p>
+                )}
+              </div>
             )}
           </div>
         </>

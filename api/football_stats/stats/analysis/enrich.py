@@ -41,3 +41,35 @@ def enrich_match_results(df: pd.DataFrame) -> pd.DataFrame:
 
     result["winner"] = result.apply(_winner, axis=1)
     return result
+
+
+def build_shootout_lookup(shootouts: pd.DataFrame) -> set[tuple[str, str, str]]:
+    """Build a set of ``(date_str, home_team, away_team)`` tuples for fast
+    shootout lookups. Date strings are normalised to ``YYYY-MM-DD`` (10 chars)."""
+    lookup: set[tuple[str, str, str]] = set()
+    if shootouts.empty:
+        return lookup
+    for _, row in shootouts.iterrows():
+        ds = str(row["date"]).strip()[:10]  # trim time portion if present
+        ht = str(row["home_team"]).strip()
+        at = str(row["away_team"]).strip()
+        if ds and ht and at:
+            lookup.add((ds, ht, at))
+    return lookup
+
+
+def mark_shootouts(
+    matches_list: list[dict],
+    shootouts_lookup: set[tuple[str, str, str]],
+) -> list[dict]:
+    """Add ``shootout=True`` to each match dict whose (date, home_team, away_team)
+    appears in the shootouts lookup set. Operates in-place and also returns
+    the same list for convenience."""
+    for m in matches_list:
+        date_key = str(m["date"]).strip()
+        if len(date_key) > 10:
+            date_key = date_key[:10]  # trim time portion if present
+        key = (date_key, m["home_team"], m["away_team"])
+        if key in shootouts_lookup:
+            m["shootout"] = True
+    return matches_list

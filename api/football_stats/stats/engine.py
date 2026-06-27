@@ -33,6 +33,7 @@ from .analysis import (
     country_info,
     _strip_accents,
 )
+from .analysis.enrich import build_shootout_lookup, mark_shootouts
 
 logger = get_logger("engine")
 
@@ -96,6 +97,11 @@ class QueryEngine:
         result = team_win_rate(r, canonical)
         result["yearly"] = team_yearly(r, canonical)
         result["matches_list"] = team_matches_all(r, canonical)
+        # Mark shootouts
+        sl = build_shootout_lookup(self._state.shootouts)
+        mark_shootouts(result["matches_list"], sl)
+        mark_shootouts(result.get("biggest_wins", []), sl)
+        mark_shootouts(result.get("worst_defeats", []), sl)
         return result
 
     def team_matches(self, team_name: str, year: int, filters: Optional[FilterParams] = None) -> dict:
@@ -107,6 +113,7 @@ class QueryEngine:
             return {"error": True, "message": f"Team '{team_name}' not found in the data."}
         r = self._filtered_results(filters)
         matches = team_matches_by_year(r, canonical, year)
+        mark_shootouts(matches, build_shootout_lookup(self._state.shootouts))
         return {
             "team": canonical,
             "year": year,
@@ -122,7 +129,13 @@ class QueryEngine:
             t2 = self._resolve_team_name(team2)
         except ValueError as e:
             return {"error": True, "message": str(e)}
-        return team_vs_team(self._filtered_results(filters), t1, t2)
+        result = team_vs_team(self._filtered_results(filters), t1, t2)
+        # Mark shootouts in match list and biggest wins
+        sl = build_shootout_lookup(self._state.shootouts)
+        mark_shootouts(result.get("matches_list", []), sl)
+        mark_shootouts(result.get(f"{t1}_biggest_wins", []), sl)
+        mark_shootouts(result.get(f"{t2}_biggest_wins", []), sl)
+        return result
 
     def most(self, stat: str, top_n: int = 20, filters: Optional[FilterParams] = None) -> dict:
         """Top N by stat across all teams, countries, or cities."""
@@ -158,7 +171,9 @@ class QueryEngine:
         """Detailed stats for a specific tournament edition (season)."""
         logger.debug("Season info requested: %s / %d", tournament_name, year)
         try:
-            return season_info(self._filtered_results(filters), tournament_name, year)
+            result = season_info(self._filtered_results(filters), tournament_name, year)
+            mark_shootouts(result.get("matches_list", []), build_shootout_lookup(self._state.shootouts))
+            return result
         except ValueError as e:
             return {"error": True, "message": str(e)}
 

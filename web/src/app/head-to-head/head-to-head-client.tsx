@@ -81,6 +81,7 @@ export function HeadToHeadClient() {
   const [result, setResult] = useState<HeadToHeadResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [shootoutOnly, setShootoutOnly] = useState(false);
 
   // Load team names once
   useEffect(() => {
@@ -302,23 +303,38 @@ export function HeadToHeadClient() {
               <BiggestWinsCard
                 team={result.team1}
                 opponent={result.team2}
-                wins={team1BiggestWins}
+                wins={shootoutOnly ? team1BiggestWins.filter((w) => w.shootout) : team1BiggestWins}
               />
               <BiggestWinsCard
                 team={result.team2}
                 opponent={result.team1}
-                wins={team2BiggestWins}
+                wins={shootoutOnly ? team2BiggestWins.filter((w) => w.shootout) : team2BiggestWins}
               />
             </div>
           )}
 
           {/* Match history */}
           {result.matches > 0 ? (
-            <MatchTable
-              matches={result.matches_list}
-              heading={`Match History (${result.matches} matches)`}
-              showNeutral
-            />
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-lg font-semibold text-gray-800">
+                  Match History ({result.matches} matches)
+                </h2>
+                <label className="flex items-center gap-1.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={shootoutOnly}
+                    onChange={(e) => setShootoutOnly(e.target.checked)}
+                    className="rounded border-gray-300 text-amber-600 focus:ring-amber-500"
+                  />
+                  <span className="text-xs font-medium text-gray-500">Shootouts only</span>
+                </label>
+              </div>
+              <MatchTable
+                matches={shootoutOnly ? result.matches_list.filter((m) => m.shootout) : result.matches_list}
+                showNeutral
+              />
+            </div>
           ) : (
             <p className="text-sm text-gray-400 mt-4">
               No matches found between {result.team1} and {result.team2} with the current filters.

@@ -168,6 +168,7 @@ class H2HMatchItem(BaseModel):
     city: Optional[str] = None
     country: Optional[str] = None
     neutral: Optional[bool] = None
+    shootout: Optional[bool] = None
 
     model_config = ConfigDict(extra="allow")
 
@@ -380,6 +381,7 @@ class SeasonMatchItem(BaseModel):
     away_score: int
     city: Optional[str] = None
     country: Optional[str] = None
+    shootout: Optional[bool] = None
 
     model_config = ConfigDict(extra="allow")
 

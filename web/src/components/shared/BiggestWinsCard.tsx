@@ -1,6 +1,7 @@
 "use client";
 
 import { CountryFlag } from "./CountryFlag";
+import { ShootoutBadge } from "./ShootoutBadge";
 import type { BiggestWin } from "@/lib/types";
 
 /** Consistent date formatting: "24 Nov 2022" */
@@ -64,9 +65,10 @@ export function BiggestWinsCard({ team, opponent, wins = [], label }: Props) {
                 />
               </span>
 
-              {/* Score — show real home–away scoreline */}
-              <span className="font-mono tabular-nums text-[13px] font-bold shrink-0 w-[44px] text-center">
+              {/* Score — show real home–away scoreline + shootout badge */}
+              <span className="font-mono tabular-nums text-[13px] font-bold shrink-0 text-center inline-flex items-center gap-1">
                 {win.home_score}&ndash;{win.away_score}
+                {win.shootout && <ShootoutBadge />}
               </span>
 
               {/* Away team */}
