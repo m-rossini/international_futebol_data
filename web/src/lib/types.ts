@@ -53,6 +53,7 @@ export interface TeamDetail {
   goals_against_stats?: SeriesStats;
   goal_diff_stats?: SeriesStats;
   biggest_wins: BiggestWin[];
+  worst_defeats: BiggestWin[];
   yearly: YearlyRow[];
   matches_list: MatchItem[];
   error?: boolean;

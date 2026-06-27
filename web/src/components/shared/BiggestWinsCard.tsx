@@ -17,16 +17,17 @@ interface Props {
   team: string;
   opponent?: string;
   wins: BiggestWin[];
+  label?: string;
 }
 
-export function BiggestWinsCard({ team, opponent, wins = [] }: Props) {
+export function BiggestWinsCard({ team, opponent, wins = [], label }: Props) {
   if (wins.length === 0) return null;
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-4">
       <h3 className="text-sm font-semibold text-gray-700 mb-3 inline-flex items-center gap-1.5">
         <CountryFlag countryName={team} size={14} />
-        {opponent ? `Top wins vs ${opponent}` : "Biggest wins"}
+        {label ?? (opponent ? `Top wins vs ${opponent}` : "Biggest wins")}
       </h3>
       <div className="divide-y divide-gray-100">
         {wins.map((win, i) => {

@@ -148,6 +148,7 @@ class TeamResponse(BaseModel):
     goals_against_stats: Optional[SeriesStats] = None
     goal_diff_stats: Optional[SeriesStats] = None
     biggest_wins: list[dict] = Field(default_factory=list, description="Top 3 wins by goal margin")
+    worst_defeats: list[dict] = Field(default_factory=list, description="Top 3 defeats by goal margin")
     error: Optional[bool] = None
     message: Optional[str] = None
 

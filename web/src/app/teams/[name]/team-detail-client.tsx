@@ -196,7 +196,7 @@ export function TeamDetailClient({ teamName }: Props) {
             </div>
           )}
 
-          {/* Yearly chart + Cumulative goals + Biggest wins */}
+          {/* Yearly chart + Cumulative goals */}
           <div className="mb-6">
             <h2 className="text-lg font-semibold text-gray-800 mb-3">
               Charts
@@ -230,12 +230,6 @@ export function TeamDetailClient({ teamName }: Props) {
                   ]}
                 />
               </div>
-
-              {/* Biggest wins */}
-              <BiggestWinsCard
-                team={teamName}
-                wins={detail.biggest_wins}
-              />
             </div>
           </div>
 
@@ -253,6 +247,27 @@ export function TeamDetailClient({ teamName }: Props) {
                     height={200}
                   />
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* Biggest wins & worst defeats */}
+          {(detail.biggest_wins.length > 0 || detail.worst_defeats.length > 0) && (
+            <div className="mb-6">
+              <h2 className="text-lg font-semibold text-gray-800 mb-3">
+                Biggest Wins &amp; Worst Defeats
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <BiggestWinsCard
+                  team={teamName}
+                  wins={detail.biggest_wins}
+                  label="Biggest wins"
+                />
+                <BiggestWinsCard
+                  team={teamName}
+                  wins={detail.worst_defeats}
+                  label="Worst defeats"
+                />
               </div>
             </div>
           )}
