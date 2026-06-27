@@ -1,0 +1,131 @@
+{
+  "title": "🖱️ User Activity",
+  "description": "Track user interactions — team selections, filter changes, searches, and navigation patterns across the application.",
+  "tabs": [
+    {
+      "name": "Activity",
+      "panels": [
+        {
+          "title": "Total User Actions",
+          "type": "number",
+          "h": 4,
+          "w": 3,
+          "queries": [
+            {
+              "type": "logs",
+              "sql": "select count(*) as zo_sql_num from \"web_events\" where event_type='user_action'"
+            }
+          ]
+        },
+        {
+          "title": "Unique Actions",
+          "type": "number",
+          "h": 4,
+          "w": 3,
+          "queries": [
+            {
+              "type": "logs",
+              "sql": "select count(distinct action) as zo_sql_num from \"web_events\" where event_type='user_action'"
+            }
+          ]
+        },
+        {
+          "title": "Filter Changes",
+          "type": "number",
+          "h": 4,
+          "w": 3,
+          "queries": [
+            {
+              "type": "logs",
+              "sql": "select count(*) as zo_sql_num from \"web_events\" where event_type='user_action' and action='filter_change'"
+            }
+          ]
+        },
+        {
+          "title": "Team Selections",
+          "type": "number",
+          "h": 4,
+          "w": 3,
+          "queries": [
+            {
+              "type": "logs",
+              "sql": "select count(*) as zo_sql_num from \"web_events\" where event_type='user_action' and action like 'select_%'"
+            }
+          ]
+        },
+        {
+          "title": "User Actions Over Time",
+          "type": "bar",
+          "h": 8,
+          "w": 8,
+          "queries": [
+            {
+              "type": "logs",
+              "sql": "select histogram(_timestamp) as zo_sql_key, action, count(*) as zo_sql_num from \"web_events\" where event_type='user_action' group by zo_sql_key, action order by zo_sql_key"
+            }
+          ]
+        },
+        {
+          "title": "Action Breakdown",
+          "type": "pie",
+          "h": 8,
+          "w": 4,
+          "queries": [
+            {
+              "type": "logs",
+              "sql": "select action, count(*) as zo_sql_num from \"web_events\" where event_type='user_action' group by action order by zo_sql_num desc"
+            }
+          ]
+        },
+        {
+          "title": "Most Viewed Teams",
+          "type": "bar",
+          "h": 8,
+          "w": 6,
+          "queries": [
+            {
+              "type": "logs",
+              "sql": "select team, count(*) as zo_sql_num from \"web_events\" where event_type='user_action' and action='select_team' and team is not null group by team order by zo_sql_num desc"
+            }
+          ]
+        },
+        {
+          "title": "Head-to-Head Team Pairs",
+          "type": "table",
+          "h": 8,
+          "w": 6,
+          "queries": [
+            {
+              "type": "logs",
+              "sql": "select team1, team2, count(*) as searches from \"web_events\" where team1 is not null and team2 is not null group by team1, team2 order by searches desc"
+            }
+          ]
+        },
+        {
+          "title": "Filter Usage",
+          "type": "table",
+          "h": 8,
+          "w": 6,
+          "queries": [
+            {
+              "type": "logs",
+              "sql": "select filter_key, filter_value, count(*) as used from \"web_events\" where event_type='user_action' and action='filter_change' group by filter_key, filter_value order by used desc"
+            }
+          ]
+        },
+        {
+          "title": "Recent User Actions",
+          "type": "table",
+          "h": 8,
+          "w": 6,
+          "queries": [
+            {
+              "type": "logs",
+              "sql": "select _timestamp, action, page, team, filter_key, filter_value from \"web_events\" where event_type='user_action' order by _timestamp desc limit 25"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

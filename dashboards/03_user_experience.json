@@ -1,0 +1,160 @@
+{
+  "title": "📊 User Experience & Web Vitals",
+  "description": "Page load performance, Core Web Vitals (CLS, LCP, FID, FCP, TTFB), and navigation timing for the football statistics frontend.",
+  "tabs": [
+    {
+      "name": "Web Vitals",
+      "panels": [
+        {
+          "title": "TTFB (ms)",
+          "type": "number",
+          "h": 4,
+          "w": 3,
+          "queries": [
+            {
+              "type": "logs",
+              "sql": "select round(avg(metric_value), 0) as zo_sql_num from \"web_events\" where event_type='metric' and metric_name='web_vital_ttfb'"
+            }
+          ]
+        },
+        {
+          "title": "LCP (ms)",
+          "type": "number",
+          "h": 4,
+          "w": 3,
+          "queries": [
+            {
+              "type": "logs",
+              "sql": "select round(avg(metric_value), 0) as zo_sql_num from \"web_events\" where event_type='metric' and metric_name='web_vital_lcp'"
+            }
+          ]
+        },
+        {
+          "title": "FCP (ms)",
+          "type": "number",
+          "h": 4,
+          "w": 3,
+          "queries": [
+            {
+              "type": "logs",
+              "sql": "select round(avg(metric_value), 0) as zo_sql_num from \"web_events\" where event_type='metric' and metric_name='web_vital_fcp'"
+            }
+          ]
+        },
+        {
+          "title": "CLS",
+          "type": "number",
+          "h": 4,
+          "w": 3,
+          "queries": [
+            {
+              "type": "logs",
+              "sql": "select round(avg(metric_value), 3) as zo_sql_num from \"web_events\" where event_type='metric' and metric_name='web_vital_cls'"
+            }
+          ]
+        },
+        {
+          "title": "Web Vitals Over Time",
+          "type": "line",
+          "h": 8,
+          "w": 12,
+          "queries": [
+            {
+              "type": "logs",
+              "sql": "select histogram(_timestamp) as zo_sql_key, metric_name, round(avg(metric_value), 1) as zo_sql_num from \"web_events\" where event_type='metric' and metric_name like 'web_vital_%' group by zo_sql_key, metric_name order by zo_sql_key"
+            }
+          ]
+        },
+        {
+          "title": "Web Vital Distribution",
+          "type": "bar",
+          "h": 8,
+          "w": 6,
+          "queries": [
+            {
+              "type": "logs",
+              "sql": "select metric_name, round(avg(metric_value), 1) as zo_sql_num from \"web_events\" where event_type='metric' and metric_name like 'web_vital_%' group by metric_name order by zo_sql_num desc"
+            }
+          ]
+        },
+        {
+          "title": "Page Load Timing Breakdown",
+          "type": "bar",
+          "h": 8,
+          "w": 6,
+          "queries": [
+            {
+              "type": "logs",
+              "sql": "select metric_name, round(avg(metric_value), 1) as zo_sql_num from \"web_events\" where event_type='metric' and metric_name like 'page_load_%' group by metric_name order by metric_name"
+            }
+          ]
+        },
+        {
+          "title": "Page Load Time Over Time",
+          "type": "line",
+          "h": 8,
+          "w": 12,
+          "queries": [
+            {
+              "type": "logs",
+              "sql": "select histogram(_timestamp) as zo_sql_key, metric_name, round(avg(metric_value), 1) as zo_sql_num from \"web_events\" where event_type='metric' and metric_name like 'page_load_%' group by zo_sql_key, metric_name order by zo_sql_key"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Navigation",
+      "panels": [
+        {
+          "title": "Page Views by Route",
+          "type": "pie",
+          "h": 8,
+          "w": 6,
+          "queries": [
+            {
+              "type": "logs",
+              "sql": "select page, count(*) as zo_sql_num from \"web_events\" where event_type='page_view' group by page order by zo_sql_num desc"
+            }
+          ]
+        },
+        {
+          "title": "Page Views Over Time",
+          "type": "area",
+          "h": 8,
+          "w": 6,
+          "queries": [
+            {
+              "type": "logs",
+              "sql": "select histogram(_timestamp) as zo_sql_key, count(*) as zo_sql_num from \"web_events\" where event_type='page_view' group by zo_sql_key order by zo_sql_key"
+            }
+          ]
+        },
+        {
+          "title": "Top Referrers",
+          "type": "table",
+          "h": 8,
+          "w": 6,
+          "queries": [
+            {
+              "type": "logs",
+              "sql": "select referrer, count(*) as visits from \"web_events\" where event_type='page_view' and referrer is not null and referrer != '' group by referrer order by visits desc"
+            }
+          ]
+        },
+        {
+          "title": "Navigation Flow (Previous → Current)",
+          "type": "table",
+          "h": 8,
+          "w": 6,
+          "queries": [
+            {
+              "type": "logs",
+              "sql": "select previous_page, page, count(*) as navigations from \"web_events\" where event_type='page_view' and previous_page is not null group by previous_page, page order by navigations desc limit 20"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,172 @@
+{
+  "title": "🏆 Application Overview",
+  "description": "High-level KPIs for the International Football Statistics app — page views, API performance, web vitals, and user activity at a glance.",
+  "tabs": [
+    {
+      "name": "Overview",
+      "panels": [
+        {
+          "title": "Page Views (last 15 min)",
+          "type": "number",
+          "h": 4,
+          "w": 3,
+          "queries": [
+            {
+              "type": "logs",
+              "sql": "select count(*) as zo_sql_num from \"web_events\" where event_type='page_view'"
+            }
+          ]
+        },
+        {
+          "title": "API Calls (last 15 min)",
+          "type": "number",
+          "h": 4,
+          "w": 3,
+          "queries": [
+            {
+              "type": "logs",
+              "sql": "select count(*) as zo_sql_num from \"web_events\" where event_type='api_call'"
+            }
+          ]
+        },
+        {
+          "title": "Avg API Latency (ms)",
+          "type": "number",
+          "h": 4,
+          "w": 3,
+          "queries": [
+            {
+              "type": "logs",
+              "sql": "select avg(duration_ms) as zo_sql_num from \"web_events\" where event_type='api_call'"
+            }
+          ]
+        },
+        {
+          "title": "Errors",
+          "type": "number",
+          "h": 4,
+          "w": 3,
+          "queries": [
+            {
+              "type": "logs",
+              "sql": "select count(*) as zo_sql_num from \"web_events\" where event_type='error' or status >= 400"
+            }
+          ]
+        },
+        {
+          "title": "Page Views Over Time",
+          "type": "line",
+          "h": 8,
+          "w": 8,
+          "queries": [
+            {
+              "type": "logs",
+              "sql": "select histogram(_timestamp) as zo_sql_key, count(*) as zo_sql_num from \"web_events\" where event_type='page_view' group by zo_sql_key order by zo_sql_key"
+            }
+          ]
+        },
+        {
+          "title": "Top Pages",
+          "type": "table",
+          "h": 8,
+          "w": 4,
+          "queries": [
+            {
+              "type": "logs",
+              "sql": "select page, count(*) as views, count(distinct trace_id) as sessions from \"web_events\" where event_type='page_view' group by page order by views desc"
+            }
+          ]
+        },
+        {
+          "title": "API Calls Over Time by Endpoint",
+          "type": "area",
+          "h": 8,
+          "w": 8,
+          "queries": [
+            {
+              "type": "logs",
+              "sql": "select histogram(_timestamp) as zo_sql_key, api_endpoint, count(*) as zo_sql_num from \"web_events\" where event_type='api_call' group by zo_sql_key, api_endpoint order by zo_sql_key"
+            }
+          ]
+        },
+        {
+          "title": "API Latency (p50, p95, p99)",
+          "type": "line",
+          "h": 8,
+          "w": 4,
+          "queries": [
+            {
+              "type": "logs",
+              "sql": "select histogram(_timestamp) as zo_sql_key, approx_percentile_cont(duration_ms, 0.5) as p50, approx_percentile_cont(duration_ms, 0.95) as p95, approx_percentile_cont(duration_ms, 0.99) as p99 from \"web_events\" where event_type='api_call' group by zo_sql_key order by zo_sql_key"
+            }
+          ]
+        },
+        {
+          "title": "User Actions Over Time",
+          "type": "bar",
+          "h": 8,
+          "w": 6,
+          "queries": [
+            {
+              "type": "logs",
+              "sql": "select histogram(_timestamp) as zo_sql_key, action, count(*) as zo_sql_num from \"web_events\" where event_type='user_action' group by zo_sql_key, action order by zo_sql_key"
+            }
+          ]
+        },
+        {
+          "title": "Event Distribution",
+          "type": "pie",
+          "h": 8,
+          "w": 6,
+          "queries": [
+            {
+              "type": "logs",
+              "sql": "select event_type, count(*) as zo_sql_num from \"web_events\" group by event_type order by zo_sql_num desc"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Traces",
+      "panels": [
+        {
+          "title": "Traces Started",
+          "type": "number",
+          "h": 4,
+          "w": 3,
+          "queries": [
+            {
+              "type": "logs",
+              "sql": "select count(*) as zo_sql_num from \"web_events\" where event_type='trace' and trace_action='start'"
+            }
+          ]
+        },
+        {
+          "title": "Active Traces (no end)",
+          "type": "number",
+          "h": 4,
+          "w": 3,
+          "queries": [
+            {
+              "type": "logs",
+              "sql": "select (select count(*) from \"web_events\" where event_type='trace' and trace_action='start') - (select count(*) from \"web_events\" where event_type='trace' and trace_action='end') as zo_sql_num"
+            }
+          ]
+        },
+        {
+          "title": "Trace Timeline",
+          "type": "line",
+          "h": 8,
+          "w": 12,
+          "queries": [
+            {
+              "type": "logs",
+              "sql": "select histogram(_timestamp) as zo_sql_key, trace_action, count(*) as zo_sql_num from \"web_events\" where event_type='trace' group by zo_sql_key, trace_action order by zo_sql_key"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

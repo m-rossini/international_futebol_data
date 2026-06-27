@@ -1,0 +1,160 @@
+{
+  "title": "⚡ API Performance",
+  "description": "Deep dive into API endpoint latency, error rates, and call volumes for the football statistics API.",
+  "tabs": [
+    {
+      "name": "API Performance",
+      "panels": [
+        {
+          "title": "Calls per Endpoint",
+          "type": "number",
+          "h": 4,
+          "w": 3,
+          "queries": [
+            {
+              "type": "logs",
+              "sql": "select count(*) as zo_sql_num from \"web_events\" where event_type='api_call'"
+            }
+          ]
+        },
+        {
+          "title": "Avg Latency (all)",
+          "type": "number",
+          "h": 4,
+          "w": 3,
+          "queries": [
+            {
+              "type": "logs",
+              "sql": "select round(avg(duration_ms), 1) as zo_sql_num from \"web_events\" where event_type='api_call'"
+            }
+          ]
+        },
+        {
+          "title": "P95 Latency (ms)",
+          "type": "number",
+          "h": 4,
+          "w": 3,
+          "queries": [
+            {
+              "type": "logs",
+              "sql": "select round(approx_percentile_cont(duration_ms, 0.95), 1) as zo_sql_num from \"web_events\" where event_type='api_call'"
+            }
+          ]
+        },
+        {
+          "title": "Error Rate",
+          "type": "number",
+          "h": 4,
+          "w": 3,
+          "queries": [
+            {
+              "type": "logs",
+              "sql": "select round(count(*) * 100.0 / (select count(*) from \"web_events\" where event_type='api_call'), 1) as zo_sql_num from \"web_events\" where event_type='api_call' and status >= 400"
+            }
+          ]
+        },
+        {
+          "title": "API Calls by Endpoint",
+          "type": "bar",
+          "h": 8,
+          "w": 6,
+          "queries": [
+            {
+              "type": "logs",
+              "sql": "select api_endpoint, count(*) as zo_sql_num from \"web_events\" where event_type='api_call' group by api_endpoint order by zo_sql_num desc"
+            }
+          ]
+        },
+        {
+          "title": "Avg Latency by Endpoint",
+          "type": "bar",
+          "h": 8,
+          "w": 6,
+          "queries": [
+            {
+              "type": "logs",
+              "sql": "select api_endpoint, round(avg(duration_ms), 1) as zo_sql_num from \"web_events\" where event_type='api_call' group by api_endpoint order by zo_sql_num desc"
+            }
+          ]
+        },
+        {
+          "title": "Latency Heatmap (Endpoint × Time)",
+          "type": "line",
+          "h": 8,
+          "w": 12,
+          "queries": [
+            {
+              "type": "logs",
+              "sql": "select histogram(_timestamp) as zo_sql_key, api_endpoint, round(avg(duration_ms), 1) as zo_sql_num from \"web_events\" where event_type='api_call' group by zo_sql_key, api_endpoint order by zo_sql_key"
+            }
+          ]
+        },
+        {
+          "title": "API Call Duration Distribution",
+          "type": "bar",
+          "h": 8,
+          "w": 6,
+          "queries": [
+            {
+              "type": "logs",
+              "sql": "select case when duration_ms < 50 then '<50ms' when duration_ms < 100 then '50-100ms' when duration_ms < 200 then '100-200ms' when duration_ms < 500 then '200-500ms' else '500ms+' end as bucket, count(*) as zo_sql_num from \"web_events\" where event_type='api_call' group by bucket order by bucket"
+            }
+          ]
+        },
+        {
+          "title": "Last API Calls",
+          "type": "table",
+          "h": 8,
+          "w": 6,
+          "queries": [
+            {
+              "type": "logs",
+              "sql": "select _timestamp, api_endpoint, duration_ms, status, page from \"web_events\" where event_type='api_call' order by _timestamp desc limit 20"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Server Logs",
+      "panels": [
+        {
+          "title": "Server Requests (api_logs)",
+          "type": "number",
+          "h": 4,
+          "w": 3,
+          "queries": [
+            {
+              "type": "logs",
+              "sql": "select count(*) as zo_sql_num from \"api_logs\""
+            }
+          ]
+        },
+        {
+          "title": "Server Request Volume",
+          "type": "line",
+          "h": 8,
+          "w": 12,
+          "queries": [
+            {
+              "type": "logs",
+              "sql": "select histogram(_timestamp) as zo_sql_key, count(*) as zo_sql_num from \"api_logs\" group by zo_sql_key order by zo_sql_key"
+            }
+          ]
+        },
+        {
+          "title": "Recent Server Logs",
+          "type": "table",
+          "h": 10,
+          "w": 12,
+          "queries": [
+            {
+              "type": "logs",
+              "sql": "select _timestamp, body, severity, service_name from \"api_logs\" order by _timestamp desc limit 50"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

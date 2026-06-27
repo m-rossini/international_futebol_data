@@ -78,8 +78,35 @@ The stack includes [OpenObserve](https://openobserve.com) for performance monito
 
 - **API tracing** — FastAPI is auto-instrumented with OpenTelemetry. Every request generates traces and spans sent via OTLP to OpenObserve. Includes request duration, status codes, and exceptions.
 - **Web analytics** — Client-side page views, API call durations, and errors are batched and sent to OpenObserve's JSON ingestion API.
+- **Dashboards** — Pre-built dashboards for application overview, API performance, user experience, and user activity.
 
 OpenObserve UI is available at **http://localhost:5080** (credentials: `admin@futebol.local` / `Futebol@123`).
+
+### Dashboards
+
+Four pre-built dashboards live in [`dashboards/`](dashboards/):
+
+| Dashboard | Panels | Tabs | Description |
+|---|---|---|---|
+| `01_application_overview.json` | 13 | 2 | Page views, API calls, latency, web vitals, trace activity |
+| `02_api_performance.json` | 12 | 2 | Per-endpoint latency, error rates, server logs |
+| `03_user_experience.json` | 12 | 2 | Core Web Vitals (CLS, LCP, FCP, TTFB, FID), page load timings |
+| `04_user_activity.json` | 10 | 1 | Team selections, filter changes, navigation patterns |
+
+#### Import dashboards
+
+```bash
+python scripts/import_dashboards.py
+```
+
+The script:
+1. Creates each dashboard via `POST /api/{org}/dashboards`
+2. Populates panels via `PUT /api/{org}/dashboards/{id}?hash={hash}`
+3. Uses the v8 dashboard schema with custom SQL queries
+
+Run it after `make up` — dashboards appear immediately in the OpenObserve UI under **Dashboards**.
+
+> **Note:** If dashboards already exist (same title), the script updates them in-place. To start fresh, delete them from the UI first.
 
 ### Key Endpoints
 
@@ -118,6 +145,8 @@ All list endpoints support optional filters: `?tournaments=WC&countries=Brazil&d
     ├── public/               Static assets
     ├── Dockerfile
     └── package.json
+├── dashboards/               OpenObserve dashboard definitions (JSON)
+└── scripts/                  Utility scripts (dashboard import, etc.)
 ```
 
 ## Development

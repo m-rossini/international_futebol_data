@@ -108,7 +108,7 @@ interface MetricPoint {
   __name__: string;
   value: number;
   _timestamp: number;
-  _type: string;
+  __type__: string;
   [tag: string]: unknown;
 }
 
@@ -305,7 +305,7 @@ function enqueueMetric(
       __name__: name,
       value,
       _timestamp: Date.now() * 1000, // microseconds
-      _type: type,
+      __type__: type,
       ...tags,
     };
     metricsQueue.push(point);
