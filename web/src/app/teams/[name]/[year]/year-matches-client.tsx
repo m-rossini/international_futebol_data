@@ -10,8 +10,8 @@ import {
   buildGoalStats,
 } from "@/components/shared/StatsBar";
 import { MatchTable } from "@/components/shared/MatchTable";
-import { MatchLadderChart } from "@/components/shared/charts/MatchLadderChart";
-import { CumulativeGoalsChart } from "@/components/shared/CumulativeGoalsChart";
+import { MatchLadderChart } from "@/components/shared/chart/MatchLadderChart";
+import { CumulativeGoalsChart } from "@/components/shared/chart/CumulativeGoalsChart";
 import type { MatchItem, TeamMatchesByYear } from "@/lib/types";
 
 const API = "/api/proxy";
@@ -337,7 +337,7 @@ export function YearMatchesClient({ teamName, year }: Props) {
                   <MatchLadderChart
                     matches={data.matches_list}
                     team={teamName}
-                    height={120}
+                    height={200}
                   />
                 </div>
 
@@ -352,7 +352,7 @@ export function YearMatchesClient({ teamName, year }: Props) {
                       { team: teamName, color: "#22c55e", label: "Goals For" },
                       { team: teamName, color: "#ef4444", label: "Goals Against", against: true },
                     ]}
-                    height={120}
+                    height={200}
                   />
                 </div>
               </div>

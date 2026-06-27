@@ -5,9 +5,9 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { DataTable, type Column } from "@/components/shared/DataTable";
 import { FilterBar } from "@/components/shared/FilterBar";
-import { YearlyChart } from "@/components/shared/YearlyChart";
-import { CumulativeGoalsChart } from "@/components/shared/CumulativeGoalsChart";
-import { MatchLadderChart } from "@/components/shared/charts/MatchLadderChart";
+import { YearlyChart } from "@/components/shared/chart/YearlyChart";
+import { CumulativeGoalsChart } from "@/components/shared/chart/CumulativeGoalsChart";
+import { MatchLadderChart } from "@/components/shared/chart/MatchLadderChart";
 import {
   StatsBar,
   buildMatchStats,
@@ -230,7 +230,7 @@ export function TeamDetailClient({ teamName }: Props) {
                   <MatchLadderChart
                     matches={detail.matches_list}
                     team={teamName}
-                    height={120}
+                    height={200}
                   />
                 </div>
               </div>

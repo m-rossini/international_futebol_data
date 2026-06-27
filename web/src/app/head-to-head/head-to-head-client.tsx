@@ -7,8 +7,8 @@ import { FilterBar } from "@/components/shared/FilterBar";
 import { AutocompleteInput } from "@/components/shared/AutocompleteInput";
 import { StatsBar, buildH2HStats } from "@/components/shared/StatsBar";
 import { MatchTable } from "@/components/shared/MatchTable";
-import { CumulativeWinsChart } from "@/components/shared/CumulativeWinsChart";
-import { CumulativeGoalsChart } from "@/components/shared/CumulativeGoalsChart";
+import { CumulativeWinsChart } from "@/components/shared/chart/CumulativeWinsChart";
+import { CumulativeGoalsChart } from "@/components/shared/chart/CumulativeGoalsChart";
 import type { HeadToHeadResult } from "@/lib/types";
 
 const API = "/api/proxy";

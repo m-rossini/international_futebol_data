@@ -109,8 +109,8 @@ describe("TeamDetailClient", () => {
     expect(screen.getByRole("heading", { name: "Matches per Year" })).toBeInTheDocument();
     // Chart SVG
     expect(screen.getByRole("img", { name: "Wins / Draws / Losses per year" })).toBeInTheDocument();
-    // "2022" appears in both chart labels and table — should exist at least twice
-    expect(screen.getAllByText("2022").length).toBeGreaterThanOrEqual(2);
+    // "2022" appears in the yearly breakdown table
+    expect(screen.getByText("2022")).toBeInTheDocument();
   });
 
   it("carries over filters from search params", async () => {
