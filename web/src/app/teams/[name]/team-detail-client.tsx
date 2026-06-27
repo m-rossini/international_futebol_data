@@ -172,6 +172,7 @@ export function TeamDetailClient({ teamName }: Props) {
                 detail.losses,
                 detail.draws,
                 detail.win_rate,
+                detail.points,
               )}
             />
           </div>

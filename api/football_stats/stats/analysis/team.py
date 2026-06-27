@@ -95,6 +95,7 @@ def team_win_rate(results: pd.DataFrame, team: str) -> dict:
         "wins": wins,
         "draws": draws,
         "losses": losses,
+        "points": wins * 3 + draws * 1,
         "win_rate": round(wins / total * 100, 2) if total else 0,
     }
 
@@ -285,6 +286,7 @@ def _team_aggregate(results: pd.DataFrame) -> pd.DataFrame:
     for col in ["wins", "losses", "draws"]:
         agg[col] = agg[col].astype(int)
 
+    agg["points"] = agg["wins"] * 3 + agg["draws"] * 1
     agg["win_rate"] = round(agg["wins"] / agg["matches_played"] * 100, 2)
     agg["loss_rate"] = round(agg["losses"] / agg["matches_played"] * 100, 2)
 
@@ -310,7 +312,7 @@ def teams_list(results: pd.DataFrame) -> list:
     if agg.empty:
         return []
     result = agg.sort_values("matches_played", ascending=False)
-    for int_col in ["wins", "losses", "draws", "goals_for", "goals_against", "matches_played"]:
+    for int_col in ["wins", "losses", "draws", "goals_for", "goals_against", "matches_played", "points"]:
         if int_col in result.columns:
             result[int_col] = result[int_col].astype(int)
     if "unique_countries" in result.columns:
@@ -341,7 +343,7 @@ def most_teams(results: pd.DataFrame, stat: str, top_n: int = 20) -> list:
     result = agg.nlargest(top_n, col).copy()
 
     # Ensure integer columns are proper int type
-    for int_col in ["wins", "losses", "draws", "goals_for", "goals_against", "matches_played"]:
+    for int_col in ["wins", "losses", "draws", "goals_for", "goals_against", "matches_played", "points"]:
         if int_col in result.columns:
             result[int_col] = result[int_col].astype(int)
 

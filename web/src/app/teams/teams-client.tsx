@@ -53,6 +53,16 @@ const columns: Column<TeamItem>[] = [
     render: (row) => row.draws.toLocaleString(),
   },
   {
+    key: "points",
+    header: "Pts",
+    sortable: true,
+    render: (row) => (
+      <span className="font-bold text-gray-900">
+        {row.points.toLocaleString()}
+      </span>
+    ),
+  },
+  {
     key: "win_rate",
     header: "Win Rate",
     sortable: true,

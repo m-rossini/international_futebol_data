@@ -15,13 +15,14 @@ export interface StatItem {
 //  Use these when you don't want to assemble the array by hand.
 // ---------------------------------------------------------------------------
 
-/** Standard match stats (matches / wins / losses / draws / win rate). */
+/** Standard match stats (matches / wins / losses / draws / win rate / points). */
 export function buildMatchStats(
   total: number,
   wins: number,
   losses: number,
   draws: number,
   winRate?: number, // 0‑100
+  points?: number, // 3‑pts‑per‑win system
 ): StatItem[] {
   const items: StatItem[] = [
     { label: "Matches", value: total.toLocaleString() },
@@ -29,6 +30,14 @@ export function buildMatchStats(
     { label: "Losses", value: losses.toLocaleString() },
     { label: "Draws", value: draws.toLocaleString() },
   ];
+
+  if (points !== undefined) {
+    items.push({
+      label: "Points",
+      value: points.toLocaleString(),
+      accent: "blue",
+    });
+  }
 
   if (winRate !== undefined) {
     const accent =

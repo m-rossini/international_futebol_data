@@ -142,6 +142,7 @@ class TeamResponse(BaseModel):
     wins: int
     draws: int
     losses: int
+    points: int
     win_rate: float
     goals_for_stats: Optional[SeriesStats] = None
     goals_against_stats: Optional[SeriesStats] = None

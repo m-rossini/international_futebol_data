@@ -7,6 +7,7 @@ export interface TeamItem {
   wins: number;
   losses: number;
   draws: number;
+  points: number;
   win_rate: number;
   unique_countries: number;
 }
@@ -46,6 +47,7 @@ export interface TeamDetail {
   wins: number;
   draws: number;
   losses: number;
+  points: number;
   win_rate: number;
   goals_for_stats?: SeriesStats;
   goals_against_stats?: SeriesStats;

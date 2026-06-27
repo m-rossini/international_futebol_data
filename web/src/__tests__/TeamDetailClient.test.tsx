@@ -9,6 +9,7 @@ const mockTeamDetail = {
   wins: 150,
   draws: 20,
   losses: 30,
+  points: 470,
   win_rate: 75.0,
   goals_for_stats: {
     count: 50, sum: 120, mean: 2.4, median: 2, mode: [2],
