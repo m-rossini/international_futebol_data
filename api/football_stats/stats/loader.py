@@ -26,10 +26,14 @@ def _data_path(filename: str) -> str:
 # --- Dataset catalog --------------------------------------------------------
 # Each entry: key (used in the dict returned by load_all_data), file, parse_dates list.
 _DATASETS = [
-    {"key": "results",       "file": "results.csv",       "parse_dates": ["date"]},
-    {"key": "goalscorers",   "file": "goalscorers.csv",   "parse_dates": ["date"]},
-    {"key": "shootouts",     "file": "shootouts.csv",     "parse_dates": ["date"]},
-    {"key": "former_names",  "file": "former_names.csv",  "parse_dates": ["start_date", "end_date"]},
+    {"key": "results", "file": "results.csv", "parse_dates": ["date"]},
+    {"key": "goalscorers", "file": "goalscorers.csv", "parse_dates": ["date"]},
+    {"key": "shootouts", "file": "shootouts.csv", "parse_dates": ["date"]},
+    {
+        "key": "former_names",
+        "file": "former_names.csv",
+        "parse_dates": ["start_date", "end_date"],
+    },
 ]
 
 

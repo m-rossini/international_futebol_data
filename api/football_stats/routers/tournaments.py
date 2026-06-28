@@ -22,7 +22,9 @@ async def tournaments_endpoint(filters: FilterParamsDep = Depends()):
 
 
 @router.get("/tournament/{tournament_name}")
-async def tournament_endpoint(tournament_name: str, filters: FilterParamsDep = Depends()):
+async def tournament_endpoint(
+    tournament_name: str, filters: FilterParamsDep = Depends()
+):
     """Comprehensive stats for a specific tournament, with yearly breakdown.
     Optional filters: ``?countries=Germany&date_from=1990``"""
     require_data()
@@ -31,7 +33,9 @@ async def tournament_endpoint(tournament_name: str, filters: FilterParamsDep = D
 
 
 @router.get("/tournament/{tournament_name}/season/{year}")
-async def season_endpoint(tournament_name: str, year: int, filters: FilterParamsDep = Depends()):
+async def season_endpoint(
+    tournament_name: str, year: int, filters: FilterParamsDep = Depends()
+):
     """Detailed stats for a specific tournament edition (season).
     Returns match list, team standings, and edition summary.
     Optional filters: ``?countries=Germany``"""

@@ -78,7 +78,11 @@ class TestPredictMatch:
     def test_probabilities_sum_to_one(self):
         """Home + draw + away probabilities should sum to 1."""
         result = predict_match("England", "Argentina", SAMPLE_ELO)
-        total = result["home_win_probability"] + result["draw_probability"] + result["away_win_probability"]
+        total = (
+            result["home_win_probability"]
+            + result["draw_probability"]
+            + result["away_win_probability"]
+        )
         assert total == pytest.approx(1.0, rel=1e-4)
 
     def test_close_teams_home(self):
@@ -95,22 +99,26 @@ class TestPredictMatch:
 class TestGetLatestEloMap:
     def test_basic(self):
         """Should return a dict mapping team names to latest ELO."""
-        elo_history = pd.DataFrame({
-            "team": ["Brazil", "Argentina"],
-            "date": pd.to_datetime(["2024-01-01", "2024-01-01"]),
-            "elo_rating_new": [2100.0, 2050.0],
-        })
+        elo_history = pd.DataFrame(
+            {
+                "team": ["Brazil", "Argentina"],
+                "date": pd.to_datetime(["2024-01-01", "2024-01-01"]),
+                "elo_rating_new": [2100.0, 2050.0],
+            }
+        )
         result = get_latest_elo_map(elo_history)
         assert result["Brazil"] == 2100.0
         assert result["Argentina"] == 2050.0
 
     def test_latest_only(self):
         """Should return the latest ELO for teams with multiple entries."""
-        elo_history = pd.DataFrame({
-            "team": ["Brazil", "Brazil", "Brazil"],
-            "date": pd.to_datetime(["2020-01-01", "2022-01-01", "2024-01-01"]),
-            "elo_rating_new": [2000.0, 2050.0, 2100.0],
-        })
+        elo_history = pd.DataFrame(
+            {
+                "team": ["Brazil", "Brazil", "Brazil"],
+                "date": pd.to_datetime(["2020-01-01", "2022-01-01", "2024-01-01"]),
+                "elo_rating_new": [2000.0, 2050.0, 2100.0],
+            }
+        )
         result = get_latest_elo_map(elo_history)
         assert result["Brazil"] == 2100.0
 
@@ -118,27 +126,31 @@ class TestGetLatestEloMap:
 class TestFindUpcomingMatches:
     def test_no_upcoming(self):
         """Should return empty list when no future matches exist."""
-        results = pd.DataFrame({
-            "date": pd.to_datetime(["2000-01-01", "2005-01-01"]),
-            "home_team": ["A", "B"],
-            "away_team": ["C", "D"],
-            "home_score": [1, 2],
-            "away_score": [0, 1],
-        })
+        results = pd.DataFrame(
+            {
+                "date": pd.to_datetime(["2000-01-01", "2005-01-01"]),
+                "home_team": ["A", "B"],
+                "away_team": ["C", "D"],
+                "home_score": [1, 2],
+                "away_score": [0, 1],
+            }
+        )
         upcoming = find_upcoming_matches(results)
         assert upcoming == []
 
     def test_with_upcoming(self):
         """Should find future matches."""
         today = pd.Timestamp.today().normalize()
-        results = pd.DataFrame({
-            "date": pd.to_datetime([today, today + pd.Timedelta(days=7)]),
-            "home_team": ["Brazil", "Argentina"],
-            "away_team": ["England", "Germany"],
-            "home_score": [None, None],
-            "away_score": [None, None],
-            "tournament": ["Friendly", "Friendly"],
-        })
+        results = pd.DataFrame(
+            {
+                "date": pd.to_datetime([today, today + pd.Timedelta(days=7)]),
+                "home_team": ["Brazil", "Argentina"],
+                "away_team": ["England", "Germany"],
+                "home_score": [None, None],
+                "away_score": [None, None],
+                "tournament": ["Friendly", "Friendly"],
+            }
+        )
         upcoming = find_upcoming_matches(results, limit=5)
         assert len(upcoming) == 2
 
@@ -146,12 +158,14 @@ class TestFindUpcomingMatches:
         """Should respect the limit parameter."""
         today = pd.Timestamp.today().normalize()
         dates = [today + pd.Timedelta(days=i) for i in range(10)]
-        results = pd.DataFrame({
-            "date": dates,
-            "home_team": [f"Team{i}" for i in range(10)],
-            "away_team": [f"Opp{i}" for i in range(10)],
-            "home_score": [None] * 10,
-            "away_score": [None] * 10,
-        })
+        results = pd.DataFrame(
+            {
+                "date": dates,
+                "home_team": [f"Team{i}" for i in range(10)],
+                "away_team": [f"Opp{i}" for i in range(10)],
+                "home_score": [None] * 10,
+                "away_score": [None] * 10,
+            }
+        )
         upcoming = find_upcoming_matches(results, limit=3)
         assert len(upcoming) == 3

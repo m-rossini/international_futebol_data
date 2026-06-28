@@ -24,7 +24,11 @@ class TestTeam:
         resp = client.get(f"/team/{_KNOWN_TEAM}")
         _assert_status(resp)
         body = resp.json()
-        _assert_keys(body, {"team", "matches_played", "wins", "draws", "losses", "win_rate"}, "team")
+        _assert_keys(
+            body,
+            {"team", "matches_played", "wins", "draws", "losses", "win_rate"},
+            "team",
+        )
         assert body["team"] == _KNOWN_TEAM
 
     def test_team_case_insensitive_lower(self, client: TestClient):
@@ -63,7 +67,11 @@ class TestTeam:
         """Team endpoint returns goals_for_stats, goals_against_stats, goal_diff_stats."""
         resp = client.get(f"/team/{_KNOWN_TEAM}")
         body = resp.json()
-        _assert_keys(body, {"goals_for_stats", "goals_against_stats", "goal_diff_stats"}, "team.advanced")
+        _assert_keys(
+            body,
+            {"goals_for_stats", "goals_against_stats", "goal_diff_stats"},
+            "team.advanced",
+        )
         _assert_series_stats(body["goals_for_stats"], "team.goals_for")
         _assert_series_stats(body["goals_against_stats"], "team.goals_against")
         _assert_series_stats(body["goal_diff_stats"], "team.goal_diff")
@@ -85,14 +93,20 @@ class TestTeam:
 
     def test_filter_date_range_reduces_matches(self, client: TestClient):
         full = client.get(f"/team/{_KNOWN_TEAM}").json()
-        filt = client.get(f"/team/{_KNOWN_TEAM}?date_from=2000-01-01&date_to=2020-12-31").json()
+        filt = client.get(
+            f"/team/{_KNOWN_TEAM}?date_from=2000-01-01&date_to=2020-12-31"
+        ).json()
         assert filt["matches_played"] < full["matches_played"]
         assert filt["matches_played"] > 0
 
     def test_filter_nonexistent_tournament_returns_zero(self, client: TestClient):
-        resp = client.get(f"/team/{_KNOWN_TEAM}?tournaments=NonExistentTournamentXYZ").json()
+        resp = client.get(
+            f"/team/{_KNOWN_TEAM}?tournaments=NonExistentTournamentXYZ"
+        ).json()
         assert resp["matches_played"] == 0
 
     def test_filter_date_from_after_date_to_returns_zero(self, client: TestClient):
-        resp = client.get(f"/team/{_KNOWN_TEAM}?date_from=2020-01-01&date_to=2010-01-01").json()
+        resp = client.get(
+            f"/team/{_KNOWN_TEAM}?date_from=2020-01-01&date_to=2010-01-01"
+        ).json()
         assert resp["matches_played"] == 0

@@ -28,6 +28,7 @@ _ACCENTED_TEAM_FLAT = "Sao Tome and Principe"
 #  Assertion helpers
 # ---------------------------------------------------------------------------
 
+
 def _assert_status(data, status_code: int = 200):
     """Assert a response has the given status code."""
     assert data.status_code == status_code, (
@@ -57,9 +58,22 @@ _STAT_TO_RESPONSE_KEY = {
 
 # Expected keys for any series_stats() response
 _ADVANCED_STAT_KEYS = {
-    "count", "sum", "mean", "median", "mode",
-    "min", "max", "stdev", "variance", "skewness", "kurtosis",
-    "p25", "p50", "p75", "iqr", "range",
+    "count",
+    "sum",
+    "mean",
+    "median",
+    "mode",
+    "min",
+    "max",
+    "stdev",
+    "variance",
+    "skewness",
+    "kurtosis",
+    "p25",
+    "p50",
+    "p75",
+    "iqr",
+    "range",
 }
 
 
@@ -72,9 +86,15 @@ def _assert_series_stats(stat_dict: dict, label: str, expect_nonzero: bool = Tru
         assert isinstance(stat_dict["median"], float), f"{label}.median should be float"
         assert isinstance(stat_dict["mode"], list), f"{label}.mode should be list"
         assert isinstance(stat_dict["stdev"], float), f"{label}.stdev should be float"
-        assert isinstance(stat_dict["variance"], float), f"{label}.variance should be float"
-        assert stat_dict["skewness"] is None or isinstance(stat_dict["skewness"], float), f"{label}.skewness wrong type"
-        assert stat_dict["kurtosis"] is None or isinstance(stat_dict["kurtosis"], float), f"{label}.kurtosis wrong type"
+        assert isinstance(stat_dict["variance"], float), (
+            f"{label}.variance should be float"
+        )
+        assert stat_dict["skewness"] is None or isinstance(
+            stat_dict["skewness"], float
+        ), f"{label}.skewness wrong type"
+        assert stat_dict["kurtosis"] is None or isinstance(
+            stat_dict["kurtosis"], float
+        ), f"{label}.kurtosis wrong type"
         assert isinstance(stat_dict["p25"], float), f"{label}.p25 should be float"
         assert isinstance(stat_dict["p75"], float), f"{label}.p75 should be float"
         assert isinstance(stat_dict["iqr"], float), f"{label}.iqr should be float"

@@ -23,7 +23,9 @@ def _safe_f(v: Any) -> float | None:
     return f
 
 
-def series_stats(series: pd.Series) -> dict[str, float | int | list[float | int] | None]:
+def series_stats(
+    series: pd.Series,
+) -> dict[str, float | int | list[float | int] | None]:
     """Compute comprehensive descriptive statistics for a numeric Series.
 
     Returns a dict with:
@@ -79,16 +81,34 @@ def series_stats(series: pd.Series) -> dict[str, float | int | list[float | int]
 
     return {
         "count": int(desc["count"]),
-        "sum": int(series.sum()) if series.dtype.kind in ("i", "u") else round(float(series.sum()), 2),
-        "mean": round(_safe_f(desc["mean"]) or 0, 4) if _safe_f(desc["mean"]) is not None else None,
-        "median": round(_safe_f(desc["50%"]) or 0, 4) if _safe_f(desc["50%"]) is not None else None,
+        "sum": int(series.sum())
+        if series.dtype.kind in ("i", "u")
+        else round(float(series.sum()), 2),
+        "mean": round(_safe_f(desc["mean"]) or 0, 4)
+        if _safe_f(desc["mean"]) is not None
+        else None,
+        "median": round(_safe_f(desc["50%"]) or 0, 4)
+        if _safe_f(desc["50%"]) is not None
+        else None,
         "mode": mode_vals,
-        "min": int(desc["min"]) if series.dtype.kind in ("i", "u") and not math.isnan(float(desc["min"])) else _safe_f(desc["min"]),
-        "max": int(desc["max"]) if series.dtype.kind in ("i", "u") and not math.isnan(float(desc["max"])) else _safe_f(desc["max"]),
-        "stdev": round(_safe_f(desc["std"]) or 0, 4) if _safe_f(desc["std"]) is not None else None,
-        "variance": round(_safe_f(series.var()) or 0, 4) if _safe_f(series.var()) is not None else None,
-        "skewness": round(float(series.skew()), 6) if len(series) >= 3 and not math.isnan(float(series.skew())) else None,
-        "kurtosis": round(float(series.kurtosis()), 6) if len(series) >= 4 and not math.isnan(float(series.kurtosis())) else None,
+        "min": int(desc["min"])
+        if series.dtype.kind in ("i", "u") and not math.isnan(float(desc["min"]))
+        else _safe_f(desc["min"]),
+        "max": int(desc["max"])
+        if series.dtype.kind in ("i", "u") and not math.isnan(float(desc["max"]))
+        else _safe_f(desc["max"]),
+        "stdev": round(_safe_f(desc["std"]) or 0, 4)
+        if _safe_f(desc["std"]) is not None
+        else None,
+        "variance": round(_safe_f(series.var()) or 0, 4)
+        if _safe_f(series.var()) is not None
+        else None,
+        "skewness": round(float(series.skew()), 6)
+        if len(series) >= 3 and not math.isnan(float(series.skew()))
+        else None,
+        "kurtosis": round(float(series.kurtosis()), 6)
+        if len(series) >= 4 and not math.isnan(float(series.kurtosis()))
+        else None,
         "p25": None if p25 is None else round(p25, 4),
         "p50": None if p50 is None else round(p50, 4),
         "p75": None if p75 is None else round(p75, 4),

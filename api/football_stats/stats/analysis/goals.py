@@ -23,7 +23,9 @@ def goals_per_year(
         Each record: ``{"year": int, "goals": int, "matches": int, "avg_goals": float}``
     """
     if sort_by not in ("year", "goals", "ratio"):
-        raise ValueError(f"Invalid sort_by '{sort_by}'. Use 'year', 'goals', or 'ratio'.")
+        raise ValueError(
+            f"Invalid sort_by '{sort_by}'. Use 'year', 'goals', or 'ratio'."
+        )
     if order not in ("asc", "desc"):
         raise ValueError(f"Invalid order '{order}'. Use 'asc' or 'desc'.")
 
@@ -34,10 +36,14 @@ def goals_per_year(
     df["year"] = df["date"].dt.year
     df["total_goals"] = df["home_score"] + df["away_score"]
 
-    agg = df.groupby("year").agg(
-        goals=("total_goals", "sum"),
-        matches=("total_goals", "count"),
-    ).reset_index()
+    agg = (
+        df.groupby("year")
+        .agg(
+            goals=("total_goals", "sum"),
+            matches=("total_goals", "count"),
+        )
+        .reset_index()
+    )
 
     agg["avg_goals"] = round(agg["goals"] / agg["matches"], 2)
 
@@ -49,12 +55,14 @@ def goals_per_year(
 
     result = []
     for _, row in agg.iterrows():
-        result.append({
-            "year": int(row["year"]),
-            "goals": int(row["goals"]),
-            "matches": int(row["matches"]),
-            "avg_goals": float(row["avg_goals"]),
-        })
+        result.append(
+            {
+                "year": int(row["year"]),
+                "goals": int(row["goals"]),
+                "matches": int(row["matches"]),
+                "avg_goals": float(row["avg_goals"]),
+            }
+        )
     return result
 
 

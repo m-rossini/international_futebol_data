@@ -45,7 +45,9 @@ class TestMostCountries:
         assert filt["ranking"][0]["matches"] <= full["ranking"][0]["matches"]
 
     def test_filter_date_range(self, client: TestClient):
-        resp = client.get("/most/country?date_from=2000-01-01&date_to=2020-12-31").json()
+        resp = client.get(
+            "/most/country?date_from=2000-01-01&date_to=2020-12-31"
+        ).json()
         assert len(resp["ranking"]) > 0
 
     def test_filter_nonexistent_tournament_returns_empty(self, client: TestClient):
@@ -53,5 +55,7 @@ class TestMostCountries:
         assert resp["ranking"] == []
 
     def test_filter_date_from_after_date_to_returns_empty(self, client: TestClient):
-        resp = client.get("/most/country?date_from=2020-01-01&date_to=2010-01-01").json()
+        resp = client.get(
+            "/most/country?date_from=2020-01-01&date_to=2010-01-01"
+        ).json()
         assert resp["ranking"] == []

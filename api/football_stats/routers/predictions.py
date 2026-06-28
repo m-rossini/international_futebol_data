@@ -6,7 +6,7 @@ for any pairing of teams in the database.
 
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any
 
 from fastapi import APIRouter, HTTPException, Query
 
@@ -48,16 +48,22 @@ async def predict_single_match(
         unknowns.append(away_team)
     if unknowns:
         result["unknown_teams"] = unknowns
-        result["note"] = "Some teams not found in historical data — using default ELO 1500."
+        result["note"] = (
+            "Some teams not found in historical data — using default ELO 1500."
+        )
 
     return result
 
 
 @router.get("/predict/upcoming")
 async def predict_upcoming_matches(
-    limit: int = Query(10, ge=1, le=50, description="Number of upcoming matches to predict"),
+    limit: int = Query(
+        10, ge=1, le=50, description="Number of upcoming matches to predict"
+    ),
     min_probability: float = Query(
-        0.0, ge=0.0, le=1.0,
+        0.0,
+        ge=0.0,
+        le=1.0,
         description="Minimum confidence to include (0 = all)",
     ),
 ):
@@ -88,7 +94,11 @@ async def predict_upcoming_matches(
             elo_map,
             neutral=bool(match.get("neutral", False)),
         )
-        pred["date"] = str(match["date"].date()) if hasattr(match["date"], "date") else str(match["date"])
+        pred["date"] = (
+            str(match["date"].date())
+            if hasattr(match["date"], "date")
+            else str(match["date"])
+        )
         pred["tournament"] = match.get("tournament", "")
         predictions.append(pred)
 

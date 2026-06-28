@@ -10,25 +10,37 @@ def _per_tournament_agg(results: pd.DataFrame) -> pd.DataFrame:
     """Build a per-tournament aggregate DataFrame with all stats."""
     df = enrich_match_results(results)
 
-    agg = df.groupby("tournament").agg(
-        first_year=("year", "min"),
-        last_year=("year", "max"),
-        editions=("year", pd.Series.nunique),
-        matches=("total_goals", "count"),
-        total_goals=("total_goals", "sum"),
-        home_wins=("home_win", "sum"),
-        away_wins=("away_win", "sum"),
-        draws=("draw", "sum"),
-        unique_teams_home=("home_team", pd.Series.nunique),
-        unique_teams_away=("away_team", pd.Series.nunique),
-    ).reset_index()
+    agg = (
+        df.groupby("tournament")
+        .agg(
+            first_year=("year", "min"),
+            last_year=("year", "max"),
+            editions=("year", pd.Series.nunique),
+            matches=("total_goals", "count"),
+            total_goals=("total_goals", "sum"),
+            home_wins=("home_win", "sum"),
+            away_wins=("away_win", "sum"),
+            draws=("draw", "sum"),
+            unique_teams_home=("home_team", pd.Series.nunique),
+            unique_teams_away=("away_team", pd.Series.nunique),
+        )
+        .reset_index()
+    )
 
     agg["avg_goals"] = round(agg["total_goals"] / agg["matches"], 2)
     agg["unique_teams"] = agg[["unique_teams_home", "unique_teams_away"]].max(axis=1)
     agg = agg.drop(columns=["unique_teams_home", "unique_teams_away"])
 
-    for col in ["first_year", "last_year", "editions", "matches", "total_goals",
-                 "home_wins", "away_wins", "draws"]:
+    for col in [
+        "first_year",
+        "last_year",
+        "editions",
+        "matches",
+        "total_goals",
+        "home_wins",
+        "away_wins",
+        "draws",
+    ]:
         agg[col] = agg[col].astype(int)
 
     return agg
@@ -121,11 +133,15 @@ def tournament_info(results: pd.DataFrame, tournament: str, top_n: int = 10) -> 
     away.columns = ["team", "goals_for", "goals_against"]
     combined = pd.concat([home, away], ignore_index=True)
 
-    per_team = combined.groupby("team").agg(
-        matches_played=("goals_for", "count"),
-        goals_for=("goals_for", "sum"),
-        goals_against=("goals_against", "sum"),
-    ).reset_index()
+    per_team = (
+        combined.groupby("team")
+        .agg(
+            matches_played=("goals_for", "count"),
+            goals_for=("goals_for", "sum"),
+            goals_against=("goals_against", "sum"),
+        )
+        .reset_index()
+    )
 
     hw = df[df["home_win"] == 1].groupby("home_team").size()
     aw = df[df["away_win"] == 1].groupby("away_team").size()
@@ -141,9 +157,15 @@ def tournament_info(results: pd.DataFrame, tournament: str, top_n: int = 10) -> 
     losses = _safe_add(hl, al)
     team_draws = _safe_add(hd, ad)
 
-    per_team = per_team.merge(wins.rename("wins"), left_on="team", right_index=True, how="left")
-    per_team = per_team.merge(losses.rename("losses"), left_on="team", right_index=True, how="left")
-    per_team = per_team.merge(team_draws.rename("draws"), left_on="team", right_index=True, how="left")
+    per_team = per_team.merge(
+        wins.rename("wins"), left_on="team", right_index=True, how="left"
+    )
+    per_team = per_team.merge(
+        losses.rename("losses"), left_on="team", right_index=True, how="left"
+    )
+    per_team = per_team.merge(
+        team_draws.rename("draws"), left_on="team", right_index=True, how="left"
+    )
     per_team = per_team.fillna(0)
     for col in ["wins", "losses", "draws", "goals_for", "goals_against"]:
         if col in per_team.columns:
@@ -151,7 +173,11 @@ def tournament_info(results: pd.DataFrame, tournament: str, top_n: int = 10) -> 
     per_team["goal_diff"] = per_team["goals_for"] - per_team["goals_against"]
 
     def _top_n(df, col, n):
-        return df.nlargest(n, col)[["team", col]].rename(columns={col: "value"}).to_dict(orient="records")
+        return (
+            df.nlargest(n, col)[["team", col]]
+            .rename(columns={col: "value"})
+            .to_dict(orient="records")
+        )
 
     top_teams = {
         "by_wins": _top_n(per_team, "wins", top_n),
@@ -167,31 +193,42 @@ def tournament_info(results: pd.DataFrame, tournament: str, top_n: int = 10) -> 
     top_cities = df["city"].value_counts().head(top_n)
 
     # -- yearly breakdown --
-    yearly = df.groupby("year").agg(
-        matches=("total_goals", "count"),
-        goals=("total_goals", "sum"),
-        home_wins=("home_win", "sum"),
-        away_wins=("away_win", "sum"),
-        draws=("draw", "sum"),
-        teams=("home_team", lambda x: len(set(x) | set(df.loc[x.index, "away_team"]))),
-    ).reset_index()
+    yearly = (
+        df.groupby("year")
+        .agg(
+            matches=("total_goals", "count"),
+            goals=("total_goals", "sum"),
+            home_wins=("home_win", "sum"),
+            away_wins=("away_win", "sum"),
+            draws=("draw", "sum"),
+            teams=(
+                "home_team",
+                lambda x: len(set(x) | set(df.loc[x.index, "away_team"])),
+            ),
+        )
+        .reset_index()
+    )
 
     yearly_list = []
     for _, row in yearly.iterrows():
         y = int(row["year"])
         yr_df = df[df["year"] == y]
         host = yr_df["country"].mode().iloc[0] if len(yr_df) else None
-        yearly_list.append({
-            "year": y,
-            "matches": int(row["matches"]),
-            "goals": int(row["goals"]),
-            "avg_goals": round(row["goals"] / row["matches"], 2) if row["matches"] else 0,
-            "home_wins": int(row["home_wins"]),
-            "away_wins": int(row["away_wins"]),
-            "draws": int(row["draws"]),
-            "teams": int(row["teams"]),
-            "host_country": host,
-        })
+        yearly_list.append(
+            {
+                "year": y,
+                "matches": int(row["matches"]),
+                "goals": int(row["goals"]),
+                "avg_goals": round(row["goals"] / row["matches"], 2)
+                if row["matches"]
+                else 0,
+                "home_wins": int(row["home_wins"]),
+                "away_wins": int(row["away_wins"]),
+                "draws": int(row["draws"]),
+                "teams": int(row["teams"]),
+                "host_country": host,
+            }
+        )
 
     return {
         "tournament": tournament,
@@ -209,8 +246,12 @@ def tournament_info(results: pd.DataFrame, tournament: str, top_n: int = 10) -> 
             "biggest_win": biggest_win,
             "top_teams_by_wins": top_teams["by_wins"],
             "top_teams": top_teams,
-            "top_host_countries": [{"country": c, "matches": int(m)} for c, m in top_countries.items()],
-            "top_host_cities": [{"city": c, "matches": int(m)} for c, m in top_cities.items()],
+            "top_host_countries": [
+                {"country": c, "matches": int(m)} for c, m in top_countries.items()
+            ],
+            "top_host_cities": [
+                {"city": c, "matches": int(m)} for c, m in top_cities.items()
+            ],
         },
         "yearly": yearly_list,
     }
@@ -246,15 +287,17 @@ def season_info(results: pd.DataFrame, tournament: str, year: int) -> dict:
     # -- matches list --
     matches_list = []
     for _, row in df.sort_values("date").iterrows():
-        matches_list.append({
-            "date": str(row["date"]),
-            "home_team": row["home_team"],
-            "away_team": row["away_team"],
-            "home_score": int(row["home_score"]),
-            "away_score": int(row["away_score"]),
-            "city": row.get("city"),
-            "country": row.get("country"),
-        })
+        matches_list.append(
+            {
+                "date": str(row["date"]),
+                "home_team": row["home_team"],
+                "away_team": row["away_team"],
+                "home_score": int(row["home_score"]),
+                "away_score": int(row["away_score"]),
+                "city": row.get("city"),
+                "country": row.get("country"),
+            }
+        )
 
     # -- team standings --
     home = df[["home_team", "home_score", "away_score"]].copy()
@@ -263,11 +306,15 @@ def season_info(results: pd.DataFrame, tournament: str, year: int) -> dict:
     away.columns = ["team", "goals_for", "goals_against"]
     combined = pd.concat([home, away], ignore_index=True)
 
-    standings = combined.groupby("team").agg(
-        matches_played=("goals_for", "count"),
-        goals_for=("goals_for", "sum"),
-        goals_against=("goals_against", "sum"),
-    ).reset_index()
+    standings = (
+        combined.groupby("team")
+        .agg(
+            matches_played=("goals_for", "count"),
+            goals_for=("goals_for", "sum"),
+            goals_against=("goals_against", "sum"),
+        )
+        .reset_index()
+    )
 
     hw = df[df["home_win"] == 1].groupby("home_team").size()
     aw = df[df["away_win"] == 1].groupby("away_team").size()
@@ -283,11 +330,24 @@ def season_info(results: pd.DataFrame, tournament: str, year: int) -> dict:
     losses = _safe_add(hl, al)
     draw_counts = _safe_add(hd, ad)
 
-    standings = standings.merge(wins.rename("wins"), left_on="team", right_index=True, how="left")
-    standings = standings.merge(losses.rename("losses"), left_on="team", right_index=True, how="left")
-    standings = standings.merge(draw_counts.rename("draws"), left_on="team", right_index=True, how="left")
+    standings = standings.merge(
+        wins.rename("wins"), left_on="team", right_index=True, how="left"
+    )
+    standings = standings.merge(
+        losses.rename("losses"), left_on="team", right_index=True, how="left"
+    )
+    standings = standings.merge(
+        draw_counts.rename("draws"), left_on="team", right_index=True, how="left"
+    )
     standings = standings.fillna(0)
-    for col in ["wins", "losses", "draws", "goals_for", "goals_against", "matches_played"]:
+    for col in [
+        "wins",
+        "losses",
+        "draws",
+        "goals_for",
+        "goals_against",
+        "matches_played",
+    ]:
         if col in standings.columns:
             standings[col] = standings[col].astype(int)
     standings["goal_diff"] = standings["goals_for"] - standings["goals_against"]
@@ -299,8 +359,19 @@ def season_info(results: pd.DataFrame, tournament: str, year: int) -> dict:
         ascending=[False, False, False],
     ).reset_index(drop=True)
 
-    standings_list = standings[["team", "matches_played", "wins", "draws", "losses",
-                                "goals_for", "goals_against", "goal_diff", "points"]].to_dict(orient="records")
+    standings_list = standings[
+        [
+            "team",
+            "matches_played",
+            "wins",
+            "draws",
+            "losses",
+            "goals_for",
+            "goals_against",
+            "goal_diff",
+            "points",
+        ]
+    ].to_dict(orient="records")
 
     return {
         "tournament": tournament,

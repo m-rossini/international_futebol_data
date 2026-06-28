@@ -20,7 +20,9 @@ class GeographyStats:
         self._group_col = group_col
         self._label = label
 
-    def list_all(self, results: pd.DataFrame, extra_aggs: Optional[dict] = None) -> list:
+    def list_all(
+        self, results: pd.DataFrame, extra_aggs: Optional[dict] = None
+    ) -> list:
         """List all entities with comprehensive stats, sorted by matches desc.
 
         ``extra_aggs`` can supply additional aggregation specs, e.g.::
@@ -35,7 +37,10 @@ class GeographyStats:
             "home_wins": ("home_win", "sum"),
             "away_wins": ("away_win", "sum"),
             "draws": ("draw", "sum"),
-            "unique_teams": ("home_team", lambda x: len(set(x) | set(df.loc[x.index, "away_team"]))),
+            "unique_teams": (
+                "home_team",
+                lambda x: len(set(x) | set(df.loc[x.index, "away_team"])),
+            ),
             "tournaments": ("tournament", pd.Series.nunique),
             "first_year": ("date", lambda x: x.dt.year.min()),
             "last_year": ("date", lambda x: x.dt.year.max()),
@@ -47,8 +52,15 @@ class GeographyStats:
 
         agg["avg_goals"] = round(agg["total_goals"] / agg["matches"], 2)
 
-        int_cols = ["matches", "total_goals", "home_wins", "away_wins", "draws",
-                     "unique_teams", "tournaments"]
+        int_cols = [
+            "matches",
+            "total_goals",
+            "home_wins",
+            "away_wins",
+            "draws",
+            "unique_teams",
+            "tournaments",
+        ]
         for col in int_cols:
             if col in agg.columns:
                 agg[col] = agg[col].astype(int)
@@ -77,9 +89,10 @@ class GeographyStats:
         win entry.
         """
         name_key = strip_accents(name).lower()
-        mask = results[self._group_col].apply(
-            lambda x: strip_accents(x).lower()
-        ) == name_key
+        mask = (
+            results[self._group_col].apply(lambda x: strip_accents(x).lower())
+            == name_key
+        )
         df = results[mask].copy()
         if df.empty:
             raise ValueError(f"Unknown {self._label}: '{name}'")
@@ -111,11 +124,15 @@ class GeographyStats:
         away.columns = ["team", "goals_for", "goals_against"]
         combined = pd.concat([home, away], ignore_index=True)
 
-        per_team = combined.groupby("team").agg(
-            matches_played=("goals_for", "count"),
-            goals_for=("goals_for", "sum"),
-            goals_against=("goals_against", "sum"),
-        ).reset_index()
+        per_team = (
+            combined.groupby("team")
+            .agg(
+                matches_played=("goals_for", "count"),
+                goals_for=("goals_for", "sum"),
+                goals_against=("goals_against", "sum"),
+            )
+            .reset_index()
+        )
 
         hw = df[df["home_win"] == 1].groupby("home_team").size()
         aw = df[df["away_win"] == 1].groupby("away_team").size()
@@ -131,9 +148,15 @@ class GeographyStats:
         losses = _safe_add(hl, al)
         team_draws = _safe_add(hd, ad)
 
-        per_team = per_team.merge(wins.rename("wins"), left_on="team", right_index=True, how="left")
-        per_team = per_team.merge(losses.rename("losses"), left_on="team", right_index=True, how="left")
-        per_team = per_team.merge(team_draws.rename("draws"), left_on="team", right_index=True, how="left")
+        per_team = per_team.merge(
+            wins.rename("wins"), left_on="team", right_index=True, how="left"
+        )
+        per_team = per_team.merge(
+            losses.rename("losses"), left_on="team", right_index=True, how="left"
+        )
+        per_team = per_team.merge(
+            team_draws.rename("draws"), left_on="team", right_index=True, how="left"
+        )
         per_team = per_team.fillna(0)
         for col in ["wins", "losses", "draws", "goals_for", "goals_against"]:
             if col in per_team.columns:
@@ -141,7 +164,11 @@ class GeographyStats:
         per_team["goal_diff"] = per_team["goals_for"] - per_team["goals_against"]
 
         def _top_n(pdf, col, n):
-            return pdf.nlargest(n, col)[["team", col]].rename(columns={col: "value"}).to_dict(orient="records")
+            return (
+                pdf.nlargest(n, col)[["team", col]]
+                .rename(columns={col: "value"})
+                .to_dict(orient="records")
+            )
 
         multi_top_teams = {
             "by_wins": _top_n(per_team, "wins", top_n),
@@ -169,7 +196,9 @@ class GeographyStats:
             "biggest_win": biggest_win,
             "top_teams_by_wins": multi_top_teams["by_wins"],
             "top_teams": multi_top_teams,
-            "top_tournaments": [{"tournament": t, "matches": int(m)} for t, m in top_tournaments.items()],
+            "top_tournaments": [
+                {"tournament": t, "matches": int(m)} for t, m in top_tournaments.items()
+            ],
         }
         if extra_summary:
             summary.update(extra_summary)

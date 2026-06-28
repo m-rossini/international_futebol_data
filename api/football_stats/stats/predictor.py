@@ -111,7 +111,9 @@ def predict_match(
         unknowns.append(away_team)
     if unknowns:
         result["unknown_teams"] = unknowns
-        result["note"] = "Some teams not found in historical data — using default ELO 1500."
+        result["note"] = (
+            "Some teams not found in historical data — using default ELO 1500."
+        )
 
     return result
 

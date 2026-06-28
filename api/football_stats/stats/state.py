@@ -23,7 +23,9 @@ def _drop_future_rows(df: pd.DataFrame, label: str) -> pd.DataFrame:
     df = df[df["date"] <= today]
     dropped = before - len(df)
     if dropped:
-        logger.info("Dropped %d future %s rows (date > %s)", dropped, label, today.date())
+        logger.info(
+            "Dropped %d future %s rows (date > %s)", dropped, label, today.date()
+        )
     return df
 
 
@@ -71,7 +73,9 @@ class DataState:
             "goalscorers_loaded": len(self.goalscorers),
             "shootouts_loaded": len(self.shootouts),
             "former_names_loaded": len(self.former_names),
-            "elo_ratings_loaded": len(self.elo_ratings) if self.elo_ratings is not None else 0,
+            "elo_ratings_loaded": len(self.elo_ratings)
+            if self.elo_ratings is not None
+            else 0,
         }
         logger.info(
             "Data reloaded: %(matches_loaded)d matches, %(goalscorers_loaded)d scorers, "

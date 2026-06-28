@@ -5,7 +5,11 @@ import logging
 from fastapi import APIRouter, Depends, Query
 
 from football_stats.routers.dependencies import FilterParamsDep, engine, require_data
-from football_stats.stats.models import BiggestWinItem, GoalsPerYearItem, SummaryResponse
+from football_stats.stats.models import (
+    BiggestWinItem,
+    GoalsPerYearItem,
+    SummaryResponse,
+)
 
 logger = logging.getLogger("stats.server.matches")
 
@@ -33,7 +37,9 @@ async def biggest_wins_endpoint(
 
 @router.get("/goals_per_year", response_model=list[GoalsPerYearItem])
 async def goals_per_year_endpoint(
-    sort_by: str = Query("goals", description="Sort field: 'year', 'goals', or 'ratio'"),
+    sort_by: str = Query(
+        "goals", description="Sort field: 'year', 'goals', or 'ratio'"
+    ),
     order: str = Query("desc", description="Sort order: 'asc' or 'desc' (default)"),
     filters: FilterParamsDep = Depends(),
 ):

@@ -46,7 +46,8 @@ def apply_filters(df: pd.DataFrame, filters: Optional[FilterParams]) -> pd.DataF
 
     if filters.teams:
         result = result[
-            result["home_team"].isin(filters.teams) | result["away_team"].isin(filters.teams)
+            result["home_team"].isin(filters.teams)
+            | result["away_team"].isin(filters.teams)
         ]
 
     if filters.tournaments:

@@ -3,10 +3,24 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from tests.helpers import _KNOWN_TOURNAMENT, _KNOWN_COUNTRY, _STAT_TO_RESPONSE_KEY, _assert_keys, _assert_status
+from tests.helpers import (
+    _KNOWN_TOURNAMENT,
+    _KNOWN_COUNTRY,
+    _STAT_TO_RESPONSE_KEY,
+    _assert_keys,
+    _assert_status,
+)
 
-_TEAM_MOST_STATS = ["wins", "losses", "draws", "win_rate",
-                     "loss_rate", "goals_pro", "goals_against", "matches"]
+_TEAM_MOST_STATS = [
+    "wins",
+    "losses",
+    "draws",
+    "win_rate",
+    "loss_rate",
+    "goals_pro",
+    "goals_against",
+    "matches",
+]
 
 
 class TestMostTeamStats:
@@ -83,7 +97,6 @@ class TestMostTeamStats:
         assert filt["ranking"][0]["wins"] <= full["ranking"][0]["wins"]
 
     def test_filter_country_reduces_results(self, client: TestClient):
-        full = client.get("/most/wins").json()
         filt = client.get(f"/most/wins?countries={_KNOWN_COUNTRY}").json()
         assert len(filt["ranking"]) > 0
 

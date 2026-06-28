@@ -16,11 +16,24 @@ class TestTournaments:
     def test_tournaments_shape(self, client: TestClient):
         resp = client.get("/tournaments")
         item = resp.json()[0]
-        _assert_keys(item, {
-            "tournament", "first_year", "last_year", "editions",
-            "matches", "total_goals", "home_wins", "away_wins",
-            "draws", "avg_goals", "unique_teams", "seasons",
-        }, "tournaments.item")
+        _assert_keys(
+            item,
+            {
+                "tournament",
+                "first_year",
+                "last_year",
+                "editions",
+                "matches",
+                "total_goals",
+                "home_wins",
+                "away_wins",
+                "draws",
+                "avg_goals",
+                "unique_teams",
+                "seasons",
+            },
+            "tournaments.item",
+        )
 
     def test_tournaments_types(self, client: TestClient):
         resp = client.get("/tournaments")
@@ -51,7 +64,9 @@ class TestTournaments:
 
         # UEFA Nations League: should have cross-year seasons
         cross_year = [s for s in unl["seasons"] if "-" in s]
-        assert len(cross_year) > 0, f"Expected cross-year seasons in UNL, got {unl['seasons']}"
+        assert len(cross_year) > 0, (
+            f"Expected cross-year seasons in UNL, got {unl['seasons']}"
+        )
 
         # Each season string should match YYYY or YYYY-YYYY
         for s in wc["seasons"] + unl["seasons"]:

@@ -12,7 +12,11 @@ class TestEloRankingCurrent:
         resp = client.get(self.ENDPOINT)
         _assert_status(resp)
         data = resp.json()
-        _assert_keys(data, {"calculation_date", "total_teams", "top_n", "ranking"}, "elo-ranking/current")
+        _assert_keys(
+            data,
+            {"calculation_date", "total_teams", "top_n", "ranking"},
+            "elo-ranking/current",
+        )
         assert data["top_n"] == 50
         assert len(data["ranking"]) == 50
 
@@ -45,7 +49,9 @@ class TestEloRankingCurrent:
         _assert_status(resp)
         data = resp.json()
         ratings = [entry["elo_rating"] for entry in data["ranking"]]
-        assert ratings == sorted(ratings, reverse=True), "ELO rankings should be sorted descending"
+        assert ratings == sorted(ratings, reverse=True), (
+            "ELO rankings should be sorted descending"
+        )
 
     def test_calculation_date_exists(self, client):
         resp = client.get(self.ENDPOINT)
@@ -64,8 +70,20 @@ class TestEloRankingHistory:
         resp = client.get(f"{self.ENDPOINT}/{_KNOWN_TEAM}")
         _assert_status(resp)
         data = resp.json()
-        _assert_keys(data, {"team", "matches_calculated", "history", "from", "to",
-                            "min_elo", "max_elo", "current_elo"}, "elo-ranking/history")
+        _assert_keys(
+            data,
+            {
+                "team",
+                "matches_calculated",
+                "history",
+                "from",
+                "to",
+                "min_elo",
+                "max_elo",
+                "current_elo",
+            },
+            "elo-ranking/history",
+        )
         assert data["team"].lower() == _KNOWN_TEAM.lower()
         assert data["matches_calculated"] > 0
         assert len(data["history"]) == data["matches_calculated"]
@@ -75,7 +93,10 @@ class TestEloRankingHistory:
         resp_mixed = client.get(f"{self.ENDPOINT}/BrAzIl")
         _assert_status(resp_lower)
         _assert_status(resp_mixed)
-        assert resp_lower.json()["matches_calculated"] == resp_mixed.json()["matches_calculated"]
+        assert (
+            resp_lower.json()["matches_calculated"]
+            == resp_mixed.json()["matches_calculated"]
+        )
 
     def test_unknown_team(self, client):
         resp = client.get(f"{self.ENDPOINT}/NonExistentTeamXYZ")
@@ -88,8 +109,18 @@ class TestEloRankingHistory:
         data = resp.json()
         if data["history"]:
             entry = data["history"][0]
-            _assert_keys(entry, {"date", "team", "opponent", "elo_rating_new",
-                                 "elo_rating", "rating_change"}, "elo history entry")
+            _assert_keys(
+                entry,
+                {
+                    "date",
+                    "team",
+                    "opponent",
+                    "elo_rating_new",
+                    "elo_rating",
+                    "rating_change",
+                },
+                "elo history entry",
+            )
 
     def test_min_max_current(self, client):
         resp = client.get(f"{self.ENDPOINT}/{_KNOWN_TEAM}")
@@ -100,7 +131,9 @@ class TestEloRankingHistory:
         assert data["current_elo"] >= data["min_elo"]
 
     def test_date_filtering(self, client):
-        resp = client.get(f"{self.ENDPOINT}/{_KNOWN_TEAM}?date_from=2020-01-01&date_to=2020-12-31")
+        resp = client.get(
+            f"{self.ENDPOINT}/{_KNOWN_TEAM}?date_from=2020-01-01&date_to=2020-12-31"
+        )
         _assert_status(resp)
         data = resp.json()
         for entry in data["history"]:
@@ -117,9 +150,20 @@ class TestEloRankingSummary:
         resp = client.get(self.ENDPOINT)
         _assert_status(resp)
         data = resp.json()
-        _assert_keys(data, {"total_matches_calculated", "total_teams", "min_elo",
-                            "max_elo", "mean_elo", "median_elo", "date_range", "top_10"},
-                     "elo-ranking/summary")
+        _assert_keys(
+            data,
+            {
+                "total_matches_calculated",
+                "total_teams",
+                "min_elo",
+                "max_elo",
+                "mean_elo",
+                "median_elo",
+                "date_range",
+                "top_10",
+            },
+            "elo-ranking/summary",
+        )
         assert data["total_matches_calculated"] > 0
         assert data["total_teams"] > 0
 
@@ -137,7 +181,9 @@ class TestEloRankingSummary:
         data = resp.json()
         assert len(data["top_10"]) <= 10
         if data["top_10"]:
-            _assert_keys(data["top_10"][0], {"team", "elo_rating", "ranking"}, "elo top_10 entry")
+            _assert_keys(
+                data["top_10"][0], {"team", "elo_rating", "ranking"}, "elo top_10 entry"
+            )
 
     def test_stats_order(self, client):
         """min_elo <= median_elo <= mean_elo <= max_elo roughly."""

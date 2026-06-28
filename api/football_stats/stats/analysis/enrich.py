@@ -24,7 +24,10 @@ def enrich_match_results(df: pd.DataFrame) -> pd.DataFrame:
     result = result.dropna(subset=["home_score", "away_score"])
     if before != len(result):
         import logging
-        logging.getLogger("enrich").debug("Dropped %d rows with NaN scores", before - len(result))
+
+        logging.getLogger("enrich").debug(
+            "Dropped %d rows with NaN scores", before - len(result)
+        )
     result["year"] = result["date"].dt.year
     result["total_goals"] = result["home_score"] + result["away_score"]
     result["home_win"] = result["home_score"] > result["away_score"]

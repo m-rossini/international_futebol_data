@@ -356,22 +356,6 @@ interface TraceContext {
 
 let currentTrace: TraceContext | null = null;
 
-/** Converts a kind string ("SERVER", "CLIENT", "INTERNAL") to OTLP kind int. */
-function otelSpanKind(kind: string): number {
-  switch (kind) {
-    case 'SERVER':
-      return 2;
-    case 'CLIENT':
-      return 3;
-    case 'PRODUCER':
-      return 4;
-    case 'CONSUMER':
-      return 5;
-    default:
-      return 1; // INTERNAL
-  }
-}
-
 /** Converts context tags to OTLP attributes array. */
 function toOtelAttrs(
   context?: Record<string, unknown>,
@@ -528,74 +512,6 @@ export function endTrace(context?: Record<string, unknown>) {
 }
 
 /**
- * Create a child span within the current trace.
- * Returns the new span ID so the caller can end it later.
- */
-export function startSpan(
-  name: string,
-  kind: string = 'INTERNAL',
-  context?: Record<string, unknown>,
-): string {
-  const traceId = currentTrace?.traceId ?? generateTraceId();
-  const spanId = generateSpanId();
-  const parentSpanId = currentTrace?.spanId ?? '';
-
-  // If there's no active trace, this span becomes the root
-  if (!currentTrace) {
-    currentTrace = { traceId, spanId };
-  }
-
-  pendingSpanStarts.set(spanId, performance.now());
-
-  sendLog('info', `span:start:${name}`, {
-    event_type: 'span',
-    trace_id: traceId,
-    span_id: spanId,
-    parent_span_id: parentSpanId,
-    span_name: name,
-    span_kind: kind,
-    span_action: 'start',
-    ...context,
-  });
-
-  return spanId;
-}
-
-/**
- * End a span.
- */
-function endSpan(spanId: string, name: string, context?: Record<string, unknown>) {
-  if (!currentTrace) return;
-  const now = performance.now();
-  const t0 = pendingSpanStarts.get(spanId) ?? now;
-  const durationMs = now - t0;
-  pendingSpanStarts.delete(spanId);
-
-  sendLog('info', `span:end:${name}`, {
-    event_type: 'span',
-    trace_id: currentTrace.traceId,
-    span_id: spanId,
-    parent_span_id: currentTrace.spanId,
-    span_name: name,
-    span_action: 'end',
-    ...context,
-  });
-
-  // Push OTLP span
-  const endNs = nowInNano();
-  enqueueOtelSpan({
-    traceId: currentTrace.traceId,
-    spanId,
-    parentSpanId: currentTrace.spanId,
-    name,
-    kind: otelSpanKind((context?.span_kind as string) ?? 'INTERNAL'),
-    startTimeUnixNano: String(Math.round(endNs - durationMs * 1e6)),
-    endTimeUnixNano: String(endNs),
-    attributes: toOtelAttrs(context),
-  });
-}
-
-/**
  * Get the current trace ID (for attaching to log events).
  */
 export function getTraceId(): string | null {
@@ -611,44 +527,4 @@ export function getSpanId(): string | null {
 
 function nowInNano(): number {
   return Date.now() * 1_000_000;
-}
-
-/**
- * Run a callback wrapped in a child span.
- * Automatically creates and ends the span with timing.
- */
-function withSpan<T>(
-  name: string,
-  fn: () => T,
-  kind: string = 'INTERNAL',
-  context?: Record<string, unknown>,
-): T {
-  const spanId = startSpan(name, kind, context);
-  const t0 = performance.now();
-  try {
-    return fn();
-  } finally {
-    const durationMs = performance.now() - t0;
-    endSpan(spanId, name, { duration_ms: durationMs, span_kind: kind, ...context });
-  }
-}
-
-/**
- * Run an async callback wrapped in a child span.
- * Automatically creates and ends the span with timing.
- */
-async function withAsyncSpan<T>(
-  name: string,
-  fn: () => Promise<T>,
-  kind: string = 'INTERNAL',
-  context?: Record<string, unknown>,
-): Promise<T> {
-  const spanId = startSpan(name, kind, context);
-  const t0 = performance.now();
-  try {
-    return await fn();
-  } finally {
-    const durationMs = performance.now() - t0;
-    endSpan(spanId, name, { duration_ms: durationMs, span_kind: kind, ...context });
-  }
 }

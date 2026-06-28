@@ -51,8 +51,12 @@ def _parse_filters(
 ) -> FilterParams:
     """Convert comma-separated string args into a FilterParams instance."""
     return FilterParams(
-        tournaments=[t.strip() for t in tournaments.split(",") if t.strip()] if tournaments else None,
-        countries=[c.strip() for c in countries.split(",") if c.strip()] if countries else None,
+        tournaments=[t.strip() for t in tournaments.split(",") if t.strip()]
+        if tournaments
+        else None,
+        countries=[c.strip() for c in countries.split(",") if c.strip()]
+        if countries
+        else None,
         date_from=date_from.strip() if date_from else None,
         date_to=date_to.strip() if date_to else None,
     )
@@ -70,7 +74,10 @@ mcp = FastMCP("International Football Stats")
 @mcp.tool()
 def get_health() -> dict:
     """Health check — returns whether the dataset is loaded and ready."""
-    return {"status": "ok" if state.is_loaded else "not_ready", "data_loaded": state.is_loaded}
+    return {
+        "status": "ok" if state.is_loaded else "not_ready",
+        "data_loaded": state.is_loaded,
+    }
 
 
 # ─── Summary ──────────────────────────────────────────────────────────────
@@ -125,7 +132,9 @@ def get_head_to_head(
 
     Optional filters: tournaments (comma-separated), countries (comma-separated host countries),
     date_from / date_to (YYYY-MM-DD)."""
-    return engine.head_to_head(team1, team2, _parse_filters(tournaments, countries, date_from, date_to))
+    return engine.head_to_head(
+        team1, team2, _parse_filters(tournaments, countries, date_from, date_to)
+    )
 
 
 # ─── Rankings ─────────────────────────────────────────────────────────────
@@ -154,7 +163,9 @@ def get_rankings(
     - city        — most matches hosted by city
 
     Optional filters: tournaments (comma-separated), date_from / date_to (YYYY-MM-DD)."""
-    return engine.most(stat, top_n, _parse_filters(tournaments, None, date_from, date_to))
+    return engine.most(
+        stat, top_n, _parse_filters(tournaments, None, date_from, date_to)
+    )
 
 
 # ─── Scorers ──────────────────────────────────────────────────────────────
@@ -182,7 +193,9 @@ def get_biggest_wins(
 
     Optional filters: tournaments (comma-separated), countries (comma-separated host countries),
     date_from / date_to (YYYY-MM-DD)."""
-    return engine.biggest_wins(top_n, _parse_filters(tournaments, countries, date_from, date_to))
+    return engine.biggest_wins(
+        top_n, _parse_filters(tournaments, countries, date_from, date_to)
+    )
 
 
 @mcp.tool()
@@ -200,7 +213,9 @@ def get_goals_per_year(
 
     Optional filters: tournaments (comma-separated), date_from / date_to (YYYY-MM-DD)."""
     return engine.goals_per_year(
-        sort_by=sort_by, order=order, filters=_parse_filters(tournaments, None, date_from, date_to)
+        sort_by=sort_by,
+        order=order,
+        filters=_parse_filters(tournaments, None, date_from, date_to),
     )
 
 
@@ -301,14 +316,18 @@ def get_country(
 #  Entry point
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="MCP Server for International Football Stats")
+    parser = argparse.ArgumentParser(
+        description="MCP Server for International Football Stats"
+    )
     parser.add_argument(
         "--transport",
         choices=["stdio", "sse"],
         default="stdio",
         help="Transport protocol (default: stdio for Claude Desktop / local agents)",
     )
-    parser.add_argument("--port", type=int, default=7532, help="Port for SSE transport (default: 7532)")
+    parser.add_argument(
+        "--port", type=int, default=7532, help="Port for SSE transport (default: 7532)"
+    )
     args = parser.parse_args()
 
     logger.info("Starting MCP server — transport=%s", args.transport)

@@ -50,7 +50,9 @@ class QueryEngine:
 
     def _teams_set(self) -> set[str]:
         """Return the full set of known team names from results."""
-        return set(self._state.results["home_team"].unique()) | set(self._state.results["away_team"].unique())
+        return set(self._state.results["home_team"].unique()) | set(
+            self._state.results["away_team"].unique()
+        )
 
     def _resolve_team_name(self, name: str) -> str:
         """Find the canonical team name from a case-insensitive input.
@@ -92,7 +94,10 @@ class QueryEngine:
         try:
             canonical = self._resolve_team_name(team_name)
         except ValueError:
-            return {"error": True, "message": f"Team '{team_name}' not found in the data."}
+            return {
+                "error": True,
+                "message": f"Team '{team_name}' not found in the data.",
+            }
         r = self._filtered_results(filters)
         result = team_win_rate(r, canonical)
         result["yearly"] = team_yearly(r, canonical)
@@ -104,13 +109,18 @@ class QueryEngine:
         mark_shootouts(result.get("worst_defeats", []), sl)
         return result
 
-    def team_matches(self, team_name: str, year: int, filters: Optional[FilterParams] = None) -> dict:
+    def team_matches(
+        self, team_name: str, year: int, filters: Optional[FilterParams] = None
+    ) -> dict:
         """Return all matches for a given team in a given year."""
         logger.debug("Team matches requested: %s in %d", team_name, year)
         try:
             canonical = self._resolve_team_name(team_name)
         except ValueError:
-            return {"error": True, "message": f"Team '{team_name}' not found in the data."}
+            return {
+                "error": True,
+                "message": f"Team '{team_name}' not found in the data.",
+            }
         r = self._filtered_results(filters)
         matches = team_matches_by_year(r, canonical, year)
         mark_shootouts(matches, build_shootout_lookup(self._state.shootouts))
@@ -121,8 +131,9 @@ class QueryEngine:
             "matches_list": matches,
         }
 
-
-    def head_to_head(self, team1: str, team2: str, filters: Optional[FilterParams] = None) -> dict:
+    def head_to_head(
+        self, team1: str, team2: str, filters: Optional[FilterParams] = None
+    ) -> dict:
         logger.debug("Head-to-head: %s vs %s", team1, team2)
         try:
             t1 = self._resolve_team_name(team1)
@@ -137,7 +148,9 @@ class QueryEngine:
         mark_shootouts(result.get(f"{t2}_biggest_wins", []), sl)
         return result
 
-    def most(self, stat: str, top_n: int = 20, filters: Optional[FilterParams] = None) -> dict:
+    def most(
+        self, stat: str, top_n: int = 20, filters: Optional[FilterParams] = None
+    ) -> dict:
         """Top N by stat across all teams, countries, or cities."""
         logger.debug("Most requested: stat=%s top_n=%d", stat, top_n)
 
@@ -167,12 +180,17 @@ class QueryEngine:
         except ValueError as e:
             return {"error": True, "message": str(e)}
 
-    def season(self, tournament_name: str, year: int, filters: Optional[FilterParams] = None) -> dict:
+    def season(
+        self, tournament_name: str, year: int, filters: Optional[FilterParams] = None
+    ) -> dict:
         """Detailed stats for a specific tournament edition (season)."""
         logger.debug("Season info requested: %s / %d", tournament_name, year)
         try:
             result = season_info(self._filtered_results(filters), tournament_name, year)
-            mark_shootouts(result.get("matches_list", []), build_shootout_lookup(self._state.shootouts))
+            mark_shootouts(
+                result.get("matches_list", []),
+                build_shootout_lookup(self._state.shootouts),
+            )
             return result
         except ValueError as e:
             return {"error": True, "message": str(e)}
@@ -215,10 +233,19 @@ class QueryEngine:
         logger.debug("Top %d scorers requested", top_n)
         return top_scorers(self._state.goalscorers, top_n).to_dict()
 
-    def biggest_wins(self, top_n: int = 10, filters: Optional[FilterParams] = None) -> list:
+    def biggest_wins(
+        self, top_n: int = 10, filters: Optional[FilterParams] = None
+    ) -> list:
         logger.debug("Top %d biggest wins requested", top_n)
         return biggest_wins(self._filtered_results(filters), top_n)
 
-    def goals_per_year(self, sort_by: str = "goals", order: str = "desc", filters: Optional[FilterParams] = None) -> list:
+    def goals_per_year(
+        self,
+        sort_by: str = "goals",
+        order: str = "desc",
+        filters: Optional[FilterParams] = None,
+    ) -> list:
         logger.debug("Goals per year requested (sort_by=%s, order=%s)", sort_by, order)
-        return goals_per_year(self._filtered_results(filters), sort_by=sort_by, order=order)
+        return goals_per_year(
+            self._filtered_results(filters), sort_by=sort_by, order=order
+        )

@@ -16,8 +16,16 @@ def biggest_wins_in_df(df: pd.DataFrame, top_n: int = 10) -> list:
     df = enrich_match_results(df)
 
     top = df.nlargest(top_n, "goal_diff")[
-        ["date", "home_team", "away_team", "home_score", "away_score",
-         "tournament", "city", "country"]
+        [
+            "date",
+            "home_team",
+            "away_team",
+            "home_score",
+            "away_score",
+            "tournament",
+            "city",
+            "country",
+        ]
     ]
     records = top.to_dict(orient="records")
     for i, r in enumerate(records):

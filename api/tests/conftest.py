@@ -12,10 +12,10 @@ _src = os.path.join(os.path.dirname(__file__), "..", "football_stats")
 if _src not in sys.path:
     sys.path.insert(0, os.path.abspath(_src))
 
-import pytest
-from fastapi.testclient import TestClient
+import pytest  # noqa: E402
+from fastapi.testclient import TestClient  # noqa: E402
 
-from football_stats.server import app
+from football_stats.server import app  # noqa: E402
 
 # Re-export helpers for convenience (pytest auto-loads conftest, not helpers)
 from .helpers import (  # noqa: E402, F401
@@ -41,6 +41,7 @@ from .helpers import (  # noqa: E402, F401
 # ---------------------------------------------------------------------------
 #  Fixtures
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture(scope="session")
 def client():

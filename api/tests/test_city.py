@@ -26,12 +26,25 @@ class TestCity:
     def test_city_summary_keys(self, client: TestClient):
         resp = client.get(f"/city/{_KNOWN_CITY}")
         s = resp.json()["summary"]
-        _assert_keys(s, {
-            "matches", "first_year", "last_year", "total_goals",
-            "avg_goals_per_match", "home_wins", "away_wins", "draws",
-            "unique_teams", "unique_tournaments", "biggest_win",
-            "top_teams_by_wins", "top_tournaments",
-        }, "city.summary")
+        _assert_keys(
+            s,
+            {
+                "matches",
+                "first_year",
+                "last_year",
+                "total_goals",
+                "avg_goals_per_match",
+                "home_wins",
+                "away_wins",
+                "draws",
+                "unique_teams",
+                "unique_tournaments",
+                "biggest_win",
+                "top_teams_by_wins",
+                "top_tournaments",
+            },
+            "city.summary",
+        )
 
     def test_city_summary_types(self, client: TestClient):
         resp = client.get(f"/city/{_KNOWN_CITY}")
@@ -47,8 +60,18 @@ class TestCity:
         resp = client.get(f"/city/{_KNOWN_CITY}")
         bw = resp.json()["summary"]["biggest_win"]
         assert bw is not None
-        _assert_keys(bw, {"date", "home_team", "away_team", "home_score",
-                           "away_score", "tournament"}, "city.biggest_win")
+        _assert_keys(
+            bw,
+            {
+                "date",
+                "home_team",
+                "away_team",
+                "home_score",
+                "away_score",
+                "tournament",
+            },
+            "city.biggest_win",
+        )
 
     def test_city_top_teams_shape(self, client: TestClient):
         resp = client.get(f"/city/{_KNOWN_CITY}")
@@ -78,13 +101,19 @@ class TestCity:
 
     def test_filter_date_range_reduces_matches(self, client: TestClient):
         full = client.get(f"/city/{_KNOWN_CITY}").json()
-        filt = client.get(f"/city/{_KNOWN_CITY}?date_from=2000-01-01&date_to=2020-12-31").json()
+        filt = client.get(
+            f"/city/{_KNOWN_CITY}?date_from=2000-01-01&date_to=2020-12-31"
+        ).json()
         assert 0 < filt["summary"]["matches"] < full["summary"]["matches"]
 
     def test_filter_nonexistent_tournament_returns_error(self, client: TestClient):
-        resp = client.get(f"/city/{_KNOWN_CITY}?tournaments=NonExistentTournamentXYZ").json()
+        resp = client.get(
+            f"/city/{_KNOWN_CITY}?tournaments=NonExistentTournamentXYZ"
+        ).json()
         assert resp.get("error") is True
 
     def test_filter_date_from_after_date_to_returns_error(self, client: TestClient):
-        resp = client.get(f"/city/{_KNOWN_CITY}?date_from=2020-01-01&date_to=2010-01-01").json()
+        resp = client.get(
+            f"/city/{_KNOWN_CITY}?date_from=2020-01-01&date_to=2010-01-01"
+        ).json()
         assert resp.get("error") is True

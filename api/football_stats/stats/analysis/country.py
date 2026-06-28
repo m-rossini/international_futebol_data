@@ -8,9 +8,12 @@ _geo = GeographyStats(group_col="country", label="country")
 
 
 def countries_list(results) -> list:
-    return _geo.list_all(results, extra_aggs={
-        "cities": ("city", pd.Series.nunique),
-    })
+    return _geo.list_all(
+        results,
+        extra_aggs={
+            "cities": ("city", pd.Series.nunique),
+        },
+    )
 
 
 def country_info(results, country: str, top_n: int = 10) -> dict:
@@ -21,7 +24,9 @@ def country_info(results, country: str, top_n: int = 10) -> dict:
     df = results[mask].copy()
 
     unique_cities = int(df["city"].nunique()) if not df.empty else 0
-    top_10_cities = df["city"].value_counts().head(top_n) if not df.empty else pd.Series(dtype=int)
+    top_10_cities = (
+        df["city"].value_counts().head(top_n) if not df.empty else pd.Series(dtype=int)
+    )
 
     def _add_city_and_tournament(bw, row):
         bw["tournament"] = row["tournament"]
@@ -29,10 +34,14 @@ def country_info(results, country: str, top_n: int = 10) -> dict:
         return bw
 
     return _geo.info(
-        results, country, top_n,
+        results,
+        country,
+        top_n,
         extra_summary={
             "unique_cities": unique_cities,
-            "top_cities": [{"city": c, "matches": int(m)} for c, m in top_10_cities.items()],
+            "top_cities": [
+                {"city": c, "matches": int(m)} for c, m in top_10_cities.items()
+            ],
         },
         post_process_biggest=_add_city_and_tournament,
     )

@@ -59,9 +59,17 @@ class FilterParamsDep:
 
     def __init__(
         self,
-        teams: Optional[list[str]] = Query(None, description="Filter by team name (can repeat or be comma-separated)"),
-        tournaments: Optional[list[str]] = Query(None, description="Filter by tournament name (can repeat or be comma-separated)"),
-        countries: Optional[list[str]] = Query(None, description="Filter by host country (can repeat or be comma-separated)"),
+        teams: Optional[list[str]] = Query(
+            None, description="Filter by team name (can repeat or be comma-separated)"
+        ),
+        tournaments: Optional[list[str]] = Query(
+            None,
+            description="Filter by tournament name (can repeat or be comma-separated)",
+        ),
+        countries: Optional[list[str]] = Query(
+            None,
+            description="Filter by host country (can repeat or be comma-separated)",
+        ),
         date_from: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
         date_to: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
     ):
@@ -93,8 +101,10 @@ class FilterParamsDep:
 #  Shared constants used by both meta.py (root endpoint) and rankings.py
 # ---------------------------------------------------------------------------
 
+
 class MostStat(str, Enum):
     """Stat options for the /most/{stat} endpoint."""
+
     wins = "wins"
     losses = "losses"
     draws = "draws"

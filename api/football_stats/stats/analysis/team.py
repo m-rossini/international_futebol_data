@@ -2,7 +2,6 @@
 
 import pandas as pd
 
-from .enrich import enrich_match_results
 from .advanced_stats import series_stats
 
 _MIN_MATCHES_FOR_RATES = 10
@@ -25,17 +24,29 @@ def team_yearly(results: pd.DataFrame, team: str) -> list[dict]:
         return []
 
     # Build a single DataFrame with all of this team's appearances
-    home = results.loc[results["home_team"] == team, ["date", "home_score", "away_score"]].copy()
+    home = results.loc[
+        results["home_team"] == team, ["date", "home_score", "away_score"]
+    ].copy()
     home["result"] = home.apply(
-        lambda r: "win" if r["home_score"] > r["away_score"] else ("loss" if r["home_score"] < r["away_score"] else "draw"),
+        lambda r: (
+            "win"
+            if r["home_score"] > r["away_score"]
+            else ("loss" if r["home_score"] < r["away_score"] else "draw")
+        ),
         axis=1,
     )
     home["goals_for"] = home["home_score"]
     home["goals_against"] = home["away_score"]
 
-    away = results.loc[results["away_team"] == team, ["date", "home_score", "away_score"]].copy()
+    away = results.loc[
+        results["away_team"] == team, ["date", "home_score", "away_score"]
+    ].copy()
     away["result"] = away.apply(
-        lambda r: "win" if r["away_score"] > r["home_score"] else ("loss" if r["away_score"] < r["home_score"] else "draw"),
+        lambda r: (
+            "win"
+            if r["away_score"] > r["home_score"]
+            else ("loss" if r["away_score"] < r["home_score"] else "draw")
+        ),
         axis=1,
     )
     away["goals_for"] = away["away_score"]
@@ -59,7 +70,14 @@ def team_yearly(results: pd.DataFrame, team: str) -> list[dict]:
     )
 
     # Convert int columns after pandas
-    for col in ["matches_played", "wins", "losses", "draws", "goals_for", "goals_against"]:
+    for col in [
+        "matches_played",
+        "wins",
+        "losses",
+        "draws",
+        "goals_for",
+        "goals_against",
+    ]:
         yearly[col] = yearly[col].astype(int)
     yearly["year"] = yearly["year"].astype(int)
 
@@ -68,12 +86,26 @@ def team_yearly(results: pd.DataFrame, team: str) -> list[dict]:
 
 def team_win_rate(results: pd.DataFrame, team: str) -> dict:
     """Calculate win/draw/loss stats for a given team, with advanced goal statistics."""
-    home_wins = results[(results["home_team"] == team) & (results["home_score"] > results["away_score"])]
-    away_wins = results[(results["away_team"] == team) & (results["away_score"] > results["home_score"])]
-    home_draws = results[(results["home_team"] == team) & (results["home_score"] == results["away_score"])]
-    away_draws = results[(results["away_team"] == team) & (results["away_score"] == results["home_score"])]
-    home_losses = results[(results["home_team"] == team) & (results["home_score"] < results["away_score"])]
-    away_losses = results[(results["away_team"] == team) & (results["away_score"] < results["home_score"])]
+    home_wins = results[
+        (results["home_team"] == team) & (results["home_score"] > results["away_score"])
+    ]
+    away_wins = results[
+        (results["away_team"] == team) & (results["away_score"] > results["home_score"])
+    ]
+    home_draws = results[
+        (results["home_team"] == team)
+        & (results["home_score"] == results["away_score"])
+    ]
+    away_draws = results[
+        (results["away_team"] == team)
+        & (results["away_score"] == results["home_score"])
+    ]
+    home_losses = results[
+        (results["home_team"] == team) & (results["home_score"] < results["away_score"])
+    ]
+    away_losses = results[
+        (results["away_team"] == team) & (results["away_score"] < results["home_score"])
+    ]
 
     wins = len(home_wins) + len(away_wins)
     draws = len(home_draws) + len(away_draws)
@@ -104,7 +136,9 @@ def team_win_rate(results: pd.DataFrame, team: str) -> dict:
         result["goals_for_stats"] = series_stats(all_goals_for)
         result["goals_against_stats"] = series_stats(all_goals_against)
         # Goal difference per match (positive means team scored more)
-        goal_diff_series = all_goals_for.reset_index(drop=True) - all_goals_against.reset_index(drop=True)
+        goal_diff_series = all_goals_for.reset_index(
+            drop=True
+        ) - all_goals_against.reset_index(drop=True)
         result["goal_diff_stats"] = series_stats(goal_diff_series)
 
     # -- Best wins (top 3 by goal margin) --
@@ -169,17 +203,21 @@ def team_matches_all(results: pd.DataFrame, team: str) -> list[dict]:
 
     matches_list = []
     for _, row in matches.iterrows():
-        matches_list.append({
-            "date": str(row["date"]),
-            "home_team": row["home_team"],
-            "away_team": row["away_team"],
-            "home_score": int(row["home_score"]),
-            "away_score": int(row["away_score"]),
-            "tournament": row.get("tournament"),
-            "city": row.get("city"),
-            "country": row.get("country"),
-            "neutral": bool(row.get("neutral", False)) if "neutral" in row.index else None,
-        })
+        matches_list.append(
+            {
+                "date": str(row["date"]),
+                "home_team": row["home_team"],
+                "away_team": row["away_team"],
+                "home_score": int(row["home_score"]),
+                "away_score": int(row["away_score"]),
+                "tournament": row.get("tournament"),
+                "city": row.get("city"),
+                "country": row.get("country"),
+                "neutral": bool(row.get("neutral", False))
+                if "neutral" in row.index
+                else None,
+            }
+        )
 
     return matches_list
 
@@ -189,9 +227,8 @@ def team_matches_by_year(results: pd.DataFrame, team: str, year: int) -> list[di
     if results.empty:
         return []
 
-    mask = (
-        ((results["home_team"] == team) | (results["away_team"] == team))
-        & (pd.to_datetime(results["date"], utc=True).dt.year == year)
+    mask = ((results["home_team"] == team) | (results["away_team"] == team)) & (
+        pd.to_datetime(results["date"], utc=True).dt.year == year
     )
     matches = results[mask].copy()
     # Drop rows with NaN scores (unplayed / future matches)
@@ -200,26 +237,29 @@ def team_matches_by_year(results: pd.DataFrame, team: str, year: int) -> list[di
 
     matches_list = []
     for _, row in matches.iterrows():
-        matches_list.append({
-            "date": str(row["date"]),
-            "home_team": row["home_team"],
-            "away_team": row["away_team"],
-            "home_score": int(row["home_score"]),
-            "away_score": int(row["away_score"]),
-            "tournament": row.get("tournament"),
-            "city": row.get("city"),
-            "country": row.get("country"),
-            "neutral": bool(row.get("neutral", False)) if "neutral" in row.index else None,
-        })
+        matches_list.append(
+            {
+                "date": str(row["date"]),
+                "home_team": row["home_team"],
+                "away_team": row["away_team"],
+                "home_score": int(row["home_score"]),
+                "away_score": int(row["away_score"]),
+                "tournament": row.get("tournament"),
+                "city": row.get("city"),
+                "country": row.get("country"),
+                "neutral": bool(row.get("neutral", False))
+                if "neutral" in row.index
+                else None,
+            }
+        )
 
     return matches_list
 
 
 def team_vs_team(results: pd.DataFrame, team1: str, team2: str) -> dict:
     """Head-to-head stats between two teams, with advanced goal statistics."""
-    mask = (
-        ((results["home_team"] == team1) & (results["away_team"] == team2))
-        | ((results["home_team"] == team2) & (results["away_team"] == team1))
+    mask = ((results["home_team"] == team1) & (results["away_team"] == team2)) | (
+        (results["home_team"] == team2) & (results["away_team"] == team1)
     )
     matches = results[mask].copy()
 
@@ -236,33 +276,35 @@ def team_vs_team(results: pd.DataFrame, team1: str, team2: str) -> dict:
     team2_wins = len(matches[matches["winner"] == team2])
     draws = len(matches[matches["winner"] == "Draw"])
 
-    team1_goals = matches[
-        (matches["home_team"] == team1)
-    ]["home_score"].sum() + matches[
-        (matches["away_team"] == team1)
-    ]["away_score"].sum()
+    team1_goals = (
+        matches[(matches["home_team"] == team1)]["home_score"].sum()
+        + matches[(matches["away_team"] == team1)]["away_score"].sum()
+    )
 
-    team2_goals = matches[
-        (matches["home_team"] == team2)
-    ]["home_score"].sum() + matches[
-        (matches["away_team"] == team2)
-    ]["away_score"].sum()
+    team2_goals = (
+        matches[(matches["home_team"] == team2)]["home_score"].sum()
+        + matches[(matches["away_team"] == team2)]["away_score"].sum()
+    )
 
     # -- matches list (chronological) --
     matches_sorted = matches.sort_values("date")
     matches_list = []
     for _, row in matches_sorted.iterrows():
-        matches_list.append({
-            "date": str(row["date"]),
-            "home_team": row["home_team"],
-            "away_team": row["away_team"],
-            "home_score": int(row["home_score"]),
-            "away_score": int(row["away_score"]),
-            "tournament": row.get("tournament"),
-            "city": row.get("city"),
-            "country": row.get("country"),
-            "neutral": bool(row.get("neutral", False)) if "neutral" in row.index else None,
-        })
+        matches_list.append(
+            {
+                "date": str(row["date"]),
+                "home_team": row["home_team"],
+                "away_team": row["away_team"],
+                "home_score": int(row["home_score"]),
+                "away_score": int(row["away_score"]),
+                "tournament": row.get("tournament"),
+                "city": row.get("city"),
+                "country": row.get("country"),
+                "neutral": bool(row.get("neutral", False))
+                if "neutral" in row.index
+                else None,
+            }
+        )
 
     result = {
         "team1": team1,
@@ -280,8 +322,14 @@ def team_vs_team(results: pd.DataFrame, team1: str, team2: str) -> dict:
     def _biggest_wins(team: str, n: int = 3) -> list[dict]:
         """Return the top N victories by goal margin for `team` against the other."""
         team_matches = matches[
-            ((matches["home_team"] == team) & (matches["home_score"] > matches["away_score"]))
-            | ((matches["away_team"] == team) & (matches["away_score"] > matches["home_score"]))
+            (
+                (matches["home_team"] == team)
+                & (matches["home_score"] > matches["away_score"])
+            )
+            | (
+                (matches["away_team"] == team)
+                & (matches["away_score"] > matches["home_score"])
+            )
         ].copy()
         if team_matches.empty:
             return []
@@ -333,18 +381,46 @@ def _team_aggregate(results: pd.DataFrame) -> pd.DataFrame:
 
     combined = pd.concat([home, away], ignore_index=True)
 
-    agg = combined.groupby("team").agg(
-        matches_played=("goals_for", "count"),
-        goals_for=("goals_for", "sum"),
-        goals_against=("goals_against", "sum"),
-    ).reset_index()
+    agg = (
+        combined.groupby("team")
+        .agg(
+            matches_played=("goals_for", "count"),
+            goals_for=("goals_for", "sum"),
+            goals_against=("goals_against", "sum"),
+        )
+        .reset_index()
+    )
 
-    hw = results[results["home_score"] > results["away_score"]].groupby("home_team").size()
-    aw = results[results["away_score"] > results["home_score"]].groupby("away_team").size()
-    hl = results[results["home_score"] < results["away_score"]].groupby("home_team").size()
-    al = results[results["away_score"] < results["home_score"]].groupby("away_team").size()
-    hd = results[results["home_score"] == results["away_score"]].groupby("home_team").size()
-    ad = results[results["home_score"] == results["away_score"]].groupby("away_team").size()
+    hw = (
+        results[results["home_score"] > results["away_score"]]
+        .groupby("home_team")
+        .size()
+    )
+    aw = (
+        results[results["away_score"] > results["home_score"]]
+        .groupby("away_team")
+        .size()
+    )
+    hl = (
+        results[results["home_score"] < results["away_score"]]
+        .groupby("home_team")
+        .size()
+    )
+    al = (
+        results[results["away_score"] < results["home_score"]]
+        .groupby("away_team")
+        .size()
+    )
+    hd = (
+        results[results["home_score"] == results["away_score"]]
+        .groupby("home_team")
+        .size()
+    )
+    ad = (
+        results[results["home_score"] == results["away_score"]]
+        .groupby("away_team")
+        .size()
+    )
 
     def _safe_add(s1, s2):
         return s1.add(s2, fill_value=0)
@@ -354,7 +430,9 @@ def _team_aggregate(results: pd.DataFrame) -> pd.DataFrame:
     draws = _safe_add(hd, ad)
 
     agg = agg.merge(wins.rename("wins"), left_on="team", right_index=True, how="left")
-    agg = agg.merge(losses.rename("losses"), left_on="team", right_index=True, how="left")
+    agg = agg.merge(
+        losses.rename("losses"), left_on="team", right_index=True, how="left"
+    )
     agg = agg.merge(draws.rename("draws"), left_on="team", right_index=True, how="left")
 
     agg = agg.fillna(0)
@@ -373,7 +451,12 @@ def _team_aggregate(results: pd.DataFrame) -> pd.DataFrame:
         away_countries.columns = ["team", "country"]
         all_countries = pd.concat([home_countries, away_countries], ignore_index=True)
         unique_countries = all_countries.groupby("team")["country"].nunique()
-        agg = agg.merge(unique_countries.rename("unique_countries"), left_on="team", right_index=True, how="left")
+        agg = agg.merge(
+            unique_countries.rename("unique_countries"),
+            left_on="team",
+            right_index=True,
+            how="left",
+        )
         agg["unique_countries"] = agg["unique_countries"].fillna(0).astype(int)
 
     return agg
@@ -387,7 +470,15 @@ def teams_list(results: pd.DataFrame) -> list:
     if agg.empty:
         return []
     result = agg.sort_values("matches_played", ascending=False)
-    for int_col in ["wins", "losses", "draws", "goals_for", "goals_against", "matches_played", "points"]:
+    for int_col in [
+        "wins",
+        "losses",
+        "draws",
+        "goals_for",
+        "goals_against",
+        "matches_played",
+        "points",
+    ]:
         if int_col in result.columns:
             result[int_col] = result[int_col].astype(int)
     if "unique_countries" in result.columns:
@@ -418,7 +509,15 @@ def most_teams(results: pd.DataFrame, stat: str, top_n: int = 20) -> list:
     result = agg.nlargest(top_n, col).copy()
 
     # Ensure integer columns are proper int type
-    for int_col in ["wins", "losses", "draws", "goals_for", "goals_against", "matches_played", "points"]:
+    for int_col in [
+        "wins",
+        "losses",
+        "draws",
+        "goals_for",
+        "goals_against",
+        "matches_played",
+        "points",
+    ]:
         if int_col in result.columns:
             result[int_col] = result[int_col].astype(int)
 

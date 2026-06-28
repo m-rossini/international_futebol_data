@@ -16,11 +16,24 @@ class TestCountries:
     def test_countries_shape(self, client: TestClient):
         resp = client.get("/countries")
         item = resp.json()[0]
-        _assert_keys(item, {
-            "country", "matches", "total_goals", "home_wins", "away_wins",
-            "draws", "unique_teams", "tournaments", "cities",
-            "first_year", "last_year", "avg_goals",
-        }, "countries.item")
+        _assert_keys(
+            item,
+            {
+                "country",
+                "matches",
+                "total_goals",
+                "home_wins",
+                "away_wins",
+                "draws",
+                "unique_teams",
+                "tournaments",
+                "cities",
+                "first_year",
+                "last_year",
+                "avg_goals",
+            },
+            "countries.item",
+        )
 
     def test_countries_types(self, client: TestClient):
         resp = client.get("/countries")

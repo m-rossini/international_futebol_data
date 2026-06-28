@@ -32,7 +32,11 @@ class TestPredictSingleMatch:
         assert "home_win_probability" in data
         assert "draw_probability" in data
         assert "away_win_probability" in data
-        total = data["home_win_probability"] + data["draw_probability"] + data["away_win_probability"]
+        total = (
+            data["home_win_probability"]
+            + data["draw_probability"]
+            + data["away_win_probability"]
+        )
         assert total == pytest.approx(1.0, rel=1e-4)
 
     def test_predict_with_neutral(self):
@@ -95,12 +99,18 @@ class TestPredictUpcoming:
 class TestPredictHeadToHead:
     def test_h2h_query(self):
         """Query-parameter based endpoint should work."""
-        response = client.get("/predict/head-to-head?home_team=Spain&away_team=Portugal")
+        response = client.get(
+            "/predict/head-to-head?home_team=Spain&away_team=Portugal"
+        )
         assert response.status_code == 200
         data = response.json()
         assert data["home_team"] == "Spain"
         assert data["away_team"] == "Portugal"
-        total = data["home_win_probability"] + data["draw_probability"] + data["away_win_probability"]
+        total = (
+            data["home_win_probability"]
+            + data["draw_probability"]
+            + data["away_win_probability"]
+        )
         assert total == pytest.approx(1.0, rel=1e-4)
 
     def test_h2h_neutral(self):

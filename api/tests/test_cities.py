@@ -2,7 +2,12 @@
 
 from fastapi.testclient import TestClient
 
-from tests.helpers import _KNOWN_TOURNAMENT, _KNOWN_COUNTRY, _assert_keys, _assert_status
+from tests.helpers import (
+    _KNOWN_TOURNAMENT,
+    _KNOWN_COUNTRY,
+    _assert_keys,
+    _assert_status,
+)
 
 
 class TestCities:
@@ -16,11 +21,24 @@ class TestCities:
     def test_cities_shape(self, client: TestClient):
         resp = client.get("/cities")
         item = resp.json()[0]
-        _assert_keys(item, {
-            "city", "country", "matches", "total_goals", "home_wins",
-            "away_wins", "draws", "unique_teams", "tournaments",
-            "first_year", "last_year", "avg_goals",
-        }, "cities.item")
+        _assert_keys(
+            item,
+            {
+                "city",
+                "country",
+                "matches",
+                "total_goals",
+                "home_wins",
+                "away_wins",
+                "draws",
+                "unique_teams",
+                "tournaments",
+                "first_year",
+                "last_year",
+                "avg_goals",
+            },
+            "cities.item",
+        )
 
     def test_cities_types(self, client: TestClient):
         resp = client.get("/cities")

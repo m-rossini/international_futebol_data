@@ -26,7 +26,11 @@ class TestDecadeLeaders:
         resp = client.get(f"{self.ENDPOINT}?top_n=3")
         data = resp.json()
         for decade in data["decades"]:
-            _assert_keys(decade, {"decade", "year_range", "leader", "teams"}, f"{self.ENDPOINT}/decade")
+            _assert_keys(
+                decade,
+                {"decade", "year_range", "leader", "teams"},
+                f"{self.ENDPOINT}/decade",
+            )
             assert len(decade["teams"]) == 3
 
     def test_leader_structure(self, client):
@@ -35,7 +39,11 @@ class TestDecadeLeaders:
         data = resp.json()
         for decade in data["decades"]:
             leader = decade["leader"]
-            _assert_keys(leader, {"team", "avg_elo", "peak_elo", "match_count"}, f"{self.ENDPOINT}/leader")
+            _assert_keys(
+                leader,
+                {"team", "avg_elo", "peak_elo", "match_count"},
+                f"{self.ENDPOINT}/leader",
+            )
             assert isinstance(leader["avg_elo"], (int, float))
             assert leader["avg_elo"] > 0
 
@@ -106,5 +114,9 @@ class TestDecadeLeaders:
         data = resp.json()
         for decade in data["decades"]:
             for team in decade["teams"]:
-                assert 1000 <= team["avg_elo"] <= 2500, f"{team['team']} avg ELO {team['avg_elo']} out of range"
-                assert 1000 <= team["peak_elo"] <= 2500, f"{team['team']} peak ELO {team['peak_elo']} out of range"
+                assert 1000 <= team["avg_elo"] <= 2500, (
+                    f"{team['team']} avg ELO {team['avg_elo']} out of range"
+                )
+                assert 1000 <= team["peak_elo"] <= 2500, (
+                    f"{team['team']} peak ELO {team['peak_elo']} out of range"
+                )

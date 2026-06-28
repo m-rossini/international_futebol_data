@@ -4,7 +4,6 @@ from typing import Optional
 
 import pandas as pd
 
-from .enrich import enrich_match_results
 from .advanced_stats import (
     goals_distribution_stats,
     matches_distribution_stats,
@@ -38,8 +37,13 @@ def home_advantage(results: pd.DataFrame) -> dict:
     total = len(results)
     if total == 0:
         return {
-            "total_matches": 0, "home_wins": 0, "home_win_pct": 0,
-            "draws": 0, "draw_pct": 0, "away_wins": 0, "away_win_pct": 0,
+            "total_matches": 0,
+            "home_wins": 0,
+            "home_win_pct": 0,
+            "draws": 0,
+            "draw_pct": 0,
+            "away_wins": 0,
+            "away_win_pct": 0,
         }
     home_wins = len(results[results["home_score"] > results["away_score"]])
     draws = len(results[results["home_score"] == results["away_score"]])
@@ -76,8 +80,12 @@ def results_metadata(results: pd.DataFrame) -> dict:
         },
         "tournaments_count": len(tournaments_available(results)),
         "most_common_tournament": most_common_tournament(results),
-        "unique_home_teams": int(results["home_team"].nunique()) if not results.empty else 0,
-        "unique_away_teams": int(results["away_team"].nunique()) if not results.empty else 0,
+        "unique_home_teams": int(results["home_team"].nunique())
+        if not results.empty
+        else 0,
+        "unique_away_teams": int(results["away_team"].nunique())
+        if not results.empty
+        else 0,
         "total_goals": total_g,
         "avg_goals_per_match": avg_goals,
         "home_advantage": home_advantage(results),
@@ -121,7 +129,9 @@ def shootouts_metadata(shootouts: pd.DataFrame) -> dict:
         "total_shootouts": len(shootouts),
         "date_range": {"from": str(dr[0].date()), "to": str(dr[1].date())},
         "unique_winners": int(shootouts["winner"].nunique()),
-        "most_common_winner": str(shootouts["winner"].mode().iloc[0]) if len(shootouts) else None,
+        "most_common_winner": str(shootouts["winner"].mode().iloc[0])
+        if len(shootouts)
+        else None,
         "winner_distribution": winner_dist,
     }
 
@@ -132,8 +142,12 @@ def former_names_metadata(former_names: pd.DataFrame) -> dict:
         "total_renamed_countries": len(former_names),
         "unique_current_names": int(former_names["current"].nunique()),
         "unique_former_names": int(former_names["former"].nunique()),
-        "earliest_rename": str(former_names["start_date"].min().date()) if len(former_names) else None,
-        "latest_rename": str(former_names["end_date"].max().date()) if len(former_names) else None,
+        "earliest_rename": str(former_names["start_date"].min().date())
+        if len(former_names)
+        else None,
+        "latest_rename": str(former_names["end_date"].max().date())
+        if len(former_names)
+        else None,
     }
 
 

@@ -10,7 +10,16 @@ class TestReload:
         resp = client.post("/reload")
         _assert_status(resp)
         body = resp.json()
-        _assert_keys(body, {"message", "matches_loaded", "goalscorers_loaded",
-                             "shootouts_loaded", "former_names_loaded"}, "reload")
+        _assert_keys(
+            body,
+            {
+                "message",
+                "matches_loaded",
+                "goalscorers_loaded",
+                "shootouts_loaded",
+                "former_names_loaded",
+            },
+            "reload",
+        )
         assert body["matches_loaded"] > 0
         assert body["goalscorers_loaded"] > 0

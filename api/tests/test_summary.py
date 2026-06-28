@@ -2,7 +2,12 @@
 
 from fastapi.testclient import TestClient
 
-from tests.helpers import _KNOWN_TOURNAMENT, _assert_keys, _assert_series_stats, _assert_status
+from tests.helpers import (
+    _KNOWN_TOURNAMENT,
+    _assert_keys,
+    _assert_series_stats,
+    _assert_status,
+)
 
 
 class TestSummary:
@@ -13,39 +18,74 @@ class TestSummary:
         resp = client.get("/summary")
         _assert_status(resp)
         body = resp.json()
-        _assert_keys(body, {"results", "goalscorers", "shootouts", "former_names"}, "summary")
+        _assert_keys(
+            body, {"results", "goalscorers", "shootouts", "former_names"}, "summary"
+        )
 
     def test_summary_results_keys(self, client: TestClient):
         resp = client.get("/summary")
         body = resp.json()
-        _assert_keys(body["results"], {
-            "total_matches", "date_range", "tournaments_count",
-            "most_common_tournament", "unique_home_teams", "unique_away_teams",
-            "total_goals", "avg_goals_per_match", "home_advantage",
-        }, "summary.results")
+        _assert_keys(
+            body["results"],
+            {
+                "total_matches",
+                "date_range",
+                "tournaments_count",
+                "most_common_tournament",
+                "unique_home_teams",
+                "unique_away_teams",
+                "total_goals",
+                "avg_goals_per_match",
+                "home_advantage",
+            },
+            "summary.results",
+        )
 
     def test_summary_goalscorers_keys(self, client: TestClient):
         resp = client.get("/summary")
         body = resp.json()
-        _assert_keys(body["goalscorers"], {
-            "total_goals_recorded", "unique_scorers", "unique_teams_scored_for",
-            "date_range", "own_goals", "penalty_goals", "top_scorer",
-        }, "summary.goalscorers")
+        _assert_keys(
+            body["goalscorers"],
+            {
+                "total_goals_recorded",
+                "unique_scorers",
+                "unique_teams_scored_for",
+                "date_range",
+                "own_goals",
+                "penalty_goals",
+                "top_scorer",
+            },
+            "summary.goalscorers",
+        )
 
     def test_summary_shootouts_keys(self, client: TestClient):
         resp = client.get("/summary")
         body = resp.json()
-        _assert_keys(body["shootouts"], {
-            "total_shootouts", "date_range", "unique_winners", "most_common_winner",
-        }, "summary.shootouts")
+        _assert_keys(
+            body["shootouts"],
+            {
+                "total_shootouts",
+                "date_range",
+                "unique_winners",
+                "most_common_winner",
+            },
+            "summary.shootouts",
+        )
 
     def test_summary_former_names_keys(self, client: TestClient):
         resp = client.get("/summary")
         body = resp.json()
-        _assert_keys(body["former_names"], {
-            "total_renamed_countries", "unique_current_names",
-            "unique_former_names", "earliest_rename", "latest_rename",
-        }, "summary.former_names")
+        _assert_keys(
+            body["former_names"],
+            {
+                "total_renamed_countries",
+                "unique_current_names",
+                "unique_former_names",
+                "earliest_rename",
+                "latest_rename",
+            },
+            "summary.former_names",
+        )
 
     def test_summary_types(self, client: TestClient):
         resp = client.get("/summary")
@@ -62,16 +102,26 @@ class TestSummary:
         """Verify goal_distribution sub-keys exist and are valid."""
         resp = client.get("/summary")
         gd = resp.json()["results"]["goal_distribution"]
-        _assert_keys(gd, {"home_score", "away_score", "total_goals", "goal_diff"}, "goal_distribution")
-        for key, label in [("home_score", "goal_dist.home"), ("away_score", "goal_dist.away"),
-                           ("total_goals", "goal_dist.total"), ("goal_diff", "goal_dist.diff")]:
+        _assert_keys(
+            gd,
+            {"home_score", "away_score", "total_goals", "goal_diff"},
+            "goal_distribution",
+        )
+        for key, label in [
+            ("home_score", "goal_dist.home"),
+            ("away_score", "goal_dist.away"),
+            ("total_goals", "goal_dist.total"),
+            ("goal_diff", "goal_dist.diff"),
+        ]:
             _assert_series_stats(gd[key], label)
 
     def test_summary_match_distribution_keys(self, client: TestClient):
         """Verify match_distribution sub-keys exist and are valid."""
         resp = client.get("/summary")
         md = resp.json()["results"]["match_distribution"]
-        _assert_keys(md, {"matches_per_year", "matches_per_tournament"}, "match_distribution")
+        _assert_keys(
+            md, {"matches_per_year", "matches_per_tournament"}, "match_distribution"
+        )
         _assert_series_stats(md["matches_per_year"], "match_dist.per_year")
         _assert_series_stats(md["matches_per_tournament"], "match_dist.per_tournament")
 
@@ -112,7 +162,9 @@ class TestSummary:
         assert filt["results"]["total_matches"] > 0
 
     def test_filter_multiple_tournaments(self, client: TestClient):
-        resp = client.get(f"/summary?tournaments=Friendly&tournaments={_KNOWN_TOURNAMENT}").json()
+        resp = client.get(
+            f"/summary?tournaments=Friendly&tournaments={_KNOWN_TOURNAMENT}"
+        ).json()
         assert resp["results"]["total_matches"] > 0
 
     def test_filter_country_reduces_totals(self, client: TestClient):

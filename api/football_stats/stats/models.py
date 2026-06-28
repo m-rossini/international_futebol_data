@@ -6,7 +6,7 @@ FastAPI's automatic /docs & /openapi.json show full field-level schemas.
 
 from __future__ import annotations
 
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -15,23 +15,31 @@ from pydantic import BaseModel, ConfigDict, Field
 #  Advanced stats primitives
 # ===========================================================================
 
+
 class SeriesStats(BaseModel):
     """Full descriptive statistics for a numeric series."""
+
     count: int = Field(description="Number of non-null values")
     sum: float = Field(description="Sum of all values (float to accommodate any dtype)")
     mean: Optional[float] = Field(default=None, description="Arithmetic mean")
     median: Optional[float] = Field(default=None, description="50th percentile")
-    mode: list[float] = Field(default_factory=list, description="Most frequent value(s)")
+    mode: list[float] = Field(
+        default_factory=list, description="Most frequent value(s)"
+    )
     min: Optional[float] = Field(default=None, description="Minimum value")
     max: Optional[float] = Field(default=None, description="Maximum value")
-    stdev: Optional[float] = Field(default=None, description="Sample standard deviation")
+    stdev: Optional[float] = Field(
+        default=None, description="Sample standard deviation"
+    )
     variance: Optional[float] = Field(default=None, description="Sample variance")
     skewness: Optional[float] = Field(default=None, description="Skewness (asymmetry)")
     kurtosis: Optional[float] = Field(default=None, description="Excess kurtosis")
     p25: Optional[float] = Field(default=None, description="25th percentile (Q1)")
     p50: Optional[float] = Field(default=None, description="50th percentile (median)")
     p75: Optional[float] = Field(default=None, description="75th percentile (Q3)")
-    iqr: Optional[float] = Field(default=None, description="Inter-quartile range (Q3 - Q1)")
+    iqr: Optional[float] = Field(
+        default=None, description="Inter-quartile range (Q3 - Q1)"
+    )
     range: Optional[int] = Field(default=None, description="Range (max - min)")
 
     model_config = ConfigDict(extra="allow")
@@ -39,6 +47,7 @@ class SeriesStats(BaseModel):
 
 class GoalDistribution(BaseModel):
     """Descriptive stats for goals scored / conceded across all matches."""
+
     home_score: SeriesStats
     away_score: SeriesStats
     total_goals: SeriesStats
@@ -47,23 +56,27 @@ class GoalDistribution(BaseModel):
 
 class MatchDistribution(BaseModel):
     """Frequency distributions: matches per year / per tournament."""
+
     matches_per_year: SeriesStats
     matches_per_tournament: SeriesStats
 
 
 class ScorerDistribution(BaseModel):
     """Distribution of goals per individual scorer."""
+
     goals_per_scorer: SeriesStats
 
 
 class WinnerDistribution(BaseModel):
     """Distribution of shootout wins per winner team."""
+
     winner_frequency: SeriesStats
 
 
 # ===========================================================================
 #  Shared primitives
 # ===========================================================================
+
 
 class DateRange(BaseModel):
     from_field: Optional[str] = Field(default=None, alias="from")
@@ -83,6 +96,7 @@ class HomeAdvantage(BaseModel):
 # ===========================================================================
 #  GET /summary
 # ===========================================================================
+
 
 class ResultsMetadata(BaseModel):
     total_matches: int
@@ -136,6 +150,7 @@ class SummaryResponse(BaseModel):
 #  GET /team/{team_name}
 # ===========================================================================
 
+
 class TeamResponse(BaseModel):
     team: str
     matches_played: int
@@ -147,8 +162,12 @@ class TeamResponse(BaseModel):
     goals_for_stats: Optional[SeriesStats] = None
     goals_against_stats: Optional[SeriesStats] = None
     goal_diff_stats: Optional[SeriesStats] = None
-    biggest_wins: list[dict] = Field(default_factory=list, description="Top 3 wins by goal margin")
-    worst_defeats: list[dict] = Field(default_factory=list, description="Top 3 defeats by goal margin")
+    biggest_wins: list[dict] = Field(
+        default_factory=list, description="Top 3 wins by goal margin"
+    )
+    worst_defeats: list[dict] = Field(
+        default_factory=list, description="Top 3 defeats by goal margin"
+    )
     error: Optional[bool] = None
     message: Optional[str] = None
 
@@ -157,8 +176,10 @@ class TeamResponse(BaseModel):
 #  GET /head_to_head
 # ===========================================================================
 
+
 class H2HMatchItem(BaseModel):
     """A single match between two teams in head-to-head results."""
+
     date: str
     home_team: str
     away_team: str
@@ -190,17 +211,20 @@ class HeadToHeadResponse(BaseModel):
 #  GET /top_scorers
 # ===========================================================================
 
+
 class TopScorersResponse(BaseModel):
     """Dict mapping scorer name → goal count.
 
     Shape: {"Cristiano Ronaldo": 135, "Lionel Messi": 112, ...}
     """
+
     model_config = ConfigDict(extra="allow")
 
 
 # ===========================================================================
 #  GET /biggest_wins
 # ===========================================================================
+
 
 class BiggestWinItem(BaseModel):
     rank: int
@@ -221,6 +245,7 @@ class BiggestWinItem(BaseModel):
 #  GET /goals_per_year
 # ===========================================================================
 
+
 class GoalsPerYearItem(BaseModel):
     year: int
     goals: int
@@ -231,6 +256,7 @@ class GoalsPerYearItem(BaseModel):
 # ===========================================================================
 #  GET /most/{stat}
 # ===========================================================================
+
 
 class TeamRankingItem(BaseModel):
     team: str
@@ -272,6 +298,7 @@ class CityRankingResponse(BaseModel):
 #  GET /tournaments  &  GET /tournament/{name}
 # ===========================================================================
 
+
 class TournamentListItem(BaseModel):
     tournament: str
     first_year: int
@@ -286,7 +313,7 @@ class TournamentListItem(BaseModel):
     unique_teams: int
     seasons: list[str] = Field(
         default_factory=list,
-        description="Edition years, e.g. [\"1930\", \"1934\"] or [\"2018-2019\", \"2020-2021\"]",
+        description='Edition years, e.g. ["1930", "1934"] or ["2018-2019", "2020-2021"]',
     )
 
     model_config = ConfigDict(extra="allow")
@@ -304,6 +331,7 @@ class TeamCategoryItem(BaseModel):
 
 class TopTeams(BaseModel):
     """Multi-category team rankings (wins, losses, draws, goals for/against/diff)."""
+
     by_wins: list[TeamCategoryItem]
     by_losses: list[TeamCategoryItem]
     by_draws: list[TeamCategoryItem]
@@ -373,6 +401,7 @@ class TournamentInfoResponse(BaseModel):
 #  GET /tournament/{name}/season/{year}
 # ===========================================================================
 
+
 class SeasonMatchItem(BaseModel):
     date: str
     home_team: str
@@ -426,6 +455,7 @@ class SeasonInfoResponse(BaseModel):
 #  GET /cities  &  GET /city/{name}
 # ===========================================================================
 
+
 class CityListItem(BaseModel):
     city: str
     country: str
@@ -471,6 +501,7 @@ class CityInfoResponse(BaseModel):
 # ===========================================================================
 #  GET /countries  &  GET /country/{name}
 # ===========================================================================
+
 
 class CountryListItem(BaseModel):
     country: str
@@ -519,6 +550,7 @@ class CountryInfoResponse(BaseModel):
 #  GET /health
 # ===========================================================================
 
+
 class HealthResponse(BaseModel):
     status: str
     data_loaded: bool
@@ -528,6 +560,7 @@ class HealthResponse(BaseModel):
 #  GET /version
 # ===========================================================================
 
+
 class VersionResponse(BaseModel):
     version: str
 
@@ -535,6 +568,7 @@ class VersionResponse(BaseModel):
 # ===========================================================================
 #  POST /reload
 # ===========================================================================
+
 
 class ReloadResponse(BaseModel):
     message: str
@@ -554,6 +588,7 @@ class ReloadResponse(BaseModel):
 #  GET /filters
 # ===========================================================================
 
+
 class FilterOptionsResponse(BaseModel):
     tournaments: list[str]
     countries: list[str]
@@ -564,6 +599,7 @@ class FilterOptionsResponse(BaseModel):
 # ===========================================================================
 #  GET /
 # ===========================================================================
+
 
 class RootResponse(BaseModel):
     service: str

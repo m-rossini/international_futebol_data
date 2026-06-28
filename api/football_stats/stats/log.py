@@ -26,11 +26,11 @@ _DEFAULT_LEVEL = logging.INFO
 # ANSI colour codes
 _RESET = "\033[0m"
 _COLORS = {
-    "DEBUG":    "\033[38;5;244m",   # grey
-    "INFO":     "\033[38;5;40m",    # green
-    "WARNING":  "\033[38;5;214m",   # orange
-    "ERROR":    "\033[38;5;196m",   # red
-    "CRITICAL": "\033[38;5;196;1m", # bold red
+    "DEBUG": "\033[38;5;244m",  # grey
+    "INFO": "\033[38;5;40m",  # green
+    "WARNING": "\033[38;5;214m",  # orange
+    "ERROR": "\033[38;5;196m",  # red
+    "CRITICAL": "\033[38;5;196;1m",  # bold red
 }
 
 

@@ -20,12 +20,25 @@ class TestHeadToHead:
         resp = client.get(f"/head_to_head?team1={_KNOWN_TEAM}&team2={_KNOWN_TEAM2}")
         _assert_status(resp)
         body = resp.json()
-        _assert_keys(body, {"team1", "team2", "matches", "draws",
-                             f"{_KNOWN_TEAM}_wins", f"{_KNOWN_TEAM2}_wins",
-                             f"{_KNOWN_TEAM}_goals", f"{_KNOWN_TEAM2}_goals"}, "h2h")
+        _assert_keys(
+            body,
+            {
+                "team1",
+                "team2",
+                "matches",
+                "draws",
+                f"{_KNOWN_TEAM}_wins",
+                f"{_KNOWN_TEAM2}_wins",
+                f"{_KNOWN_TEAM}_goals",
+                f"{_KNOWN_TEAM2}_goals",
+            },
+            "h2h",
+        )
 
     def test_h2h_case_insensitive(self, client: TestClient):
-        resp = client.get(f"/head_to_head?team1={_KNOWN_TEAM_LOWER}&team2={_KNOWN_TEAM2.upper()}")
+        resp = client.get(
+            f"/head_to_head?team1={_KNOWN_TEAM_LOWER}&team2={_KNOWN_TEAM2.upper()}"
+        )
         _assert_status(resp)
         body = resp.json()
         assert body["team1"] == _KNOWN_TEAM
@@ -56,7 +69,9 @@ class TestHeadToHead:
     # ------------------------------------------------------------------
 
     def test_filter_tournament_reduces_matches(self, client: TestClient):
-        full = client.get(f"/head_to_head?team1={_KNOWN_TEAM}&team2={_KNOWN_TEAM2}").json()
+        full = client.get(
+            f"/head_to_head?team1={_KNOWN_TEAM}&team2={_KNOWN_TEAM2}"
+        ).json()
         filt = client.get(
             f"/head_to_head?team1={_KNOWN_TEAM}&team2={_KNOWN_TEAM2}&tournaments=FIFA+World+Cup"
         ).json()

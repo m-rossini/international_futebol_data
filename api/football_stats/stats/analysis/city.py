@@ -6,9 +6,15 @@ _geo = GeographyStats(group_col="city", label="city")
 
 
 def cities_list(results) -> list:
-    return _geo.list_all(results, extra_aggs={
-        "country": ("country", lambda x: x.mode().iloc[0] if len(x.mode()) else None),
-    })
+    return _geo.list_all(
+        results,
+        extra_aggs={
+            "country": (
+                "country",
+                lambda x: x.mode().iloc[0] if len(x.mode()) else None,
+            ),
+        },
+    )
 
 
 def city_info(results, city: str, top_n: int = 10) -> dict:

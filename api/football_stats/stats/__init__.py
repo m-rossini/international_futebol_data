@@ -15,3 +15,21 @@ from .analysis import (
     shootouts_metadata,
     former_names_metadata,
 )
+
+__all__ = [
+    "load_all_data",
+    "DataState",
+    "QueryEngine",
+    "total_matches",
+    "most_common_tournament",
+    "top_scorers",
+    "biggest_wins",
+    "team_win_rate",
+    "goals_per_year",
+    "home_advantage",
+    "shootout_stats",
+    "results_metadata",
+    "goalscorers_metadata",
+    "shootouts_metadata",
+    "former_names_metadata",
+]

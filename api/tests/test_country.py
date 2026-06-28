@@ -26,12 +26,27 @@ class TestCountry:
     def test_country_summary_keys(self, client: TestClient):
         resp = client.get(f"/country/{_KNOWN_COUNTRY}")
         s = resp.json()["summary"]
-        _assert_keys(s, {
-            "matches", "first_year", "last_year", "total_goals",
-            "avg_goals_per_match", "home_wins", "away_wins", "draws",
-            "unique_teams", "unique_tournaments", "unique_cities",
-            "biggest_win", "top_teams_by_wins", "top_tournaments", "top_cities",
-        }, "country.summary")
+        _assert_keys(
+            s,
+            {
+                "matches",
+                "first_year",
+                "last_year",
+                "total_goals",
+                "avg_goals_per_match",
+                "home_wins",
+                "away_wins",
+                "draws",
+                "unique_teams",
+                "unique_tournaments",
+                "unique_cities",
+                "biggest_win",
+                "top_teams_by_wins",
+                "top_tournaments",
+                "top_cities",
+            },
+            "country.summary",
+        )
 
     def test_country_summary_types(self, client: TestClient):
         resp = client.get(f"/country/{_KNOWN_COUNTRY}")
@@ -46,8 +61,19 @@ class TestCountry:
         resp = client.get(f"/country/{_KNOWN_COUNTRY}")
         bw = resp.json()["summary"]["biggest_win"]
         assert bw is not None
-        _assert_keys(bw, {"date", "home_team", "away_team", "home_score",
-                           "away_score", "tournament", "city"}, "country.biggest_win")
+        _assert_keys(
+            bw,
+            {
+                "date",
+                "home_team",
+                "away_team",
+                "home_score",
+                "away_score",
+                "tournament",
+                "city",
+            },
+            "country.biggest_win",
+        )
 
     def test_country_top_teams_shape(self, client: TestClient):
         resp = client.get(f"/country/{_KNOWN_COUNTRY}")
@@ -66,18 +92,26 @@ class TestCountry:
 
     def test_filter_tournament_reduces_matches(self, client: TestClient):
         full = client.get(f"/country/{_KNOWN_COUNTRY}").json()
-        filt = client.get(f"/country/{_KNOWN_COUNTRY}?tournaments={_KNOWN_TOURNAMENT}").json()
+        filt = client.get(
+            f"/country/{_KNOWN_COUNTRY}?tournaments={_KNOWN_TOURNAMENT}"
+        ).json()
         assert 0 < filt["summary"]["matches"] < full["summary"]["matches"]
 
     def test_filter_date_range_reduces_matches(self, client: TestClient):
         full = client.get(f"/country/{_KNOWN_COUNTRY}").json()
-        filt = client.get(f"/country/{_KNOWN_COUNTRY}?date_from=2000-01-01&date_to=2020-12-31").json()
+        filt = client.get(
+            f"/country/{_KNOWN_COUNTRY}?date_from=2000-01-01&date_to=2020-12-31"
+        ).json()
         assert 0 < filt["summary"]["matches"] < full["summary"]["matches"]
 
     def test_filter_nonexistent_tournament_returns_error(self, client: TestClient):
-        resp = client.get(f"/country/{_KNOWN_COUNTRY}?tournaments=NonExistentTournamentXYZ").json()
+        resp = client.get(
+            f"/country/{_KNOWN_COUNTRY}?tournaments=NonExistentTournamentXYZ"
+        ).json()
         assert resp.get("error") is True
 
     def test_filter_date_from_after_date_to_returns_error(self, client: TestClient):
-        resp = client.get(f"/country/{_KNOWN_COUNTRY}?date_from=2020-01-01&date_to=2010-01-01").json()
+        resp = client.get(
+            f"/country/{_KNOWN_COUNTRY}?date_from=2020-01-01&date_to=2010-01-01"
+        ).json()
         assert resp.get("error") is True
