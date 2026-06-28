@@ -31,7 +31,7 @@ def load_version() -> str:
         with open(_CONFIG_PATH) as f:
             cfg = json.load(f)
         return cfg.get("version", "unknown")
-    except (FileNotFoundError, json.JSONDecodeError):
+    except FileNotFoundError | json.JSONDecodeError:
         return "unknown"
 
 
