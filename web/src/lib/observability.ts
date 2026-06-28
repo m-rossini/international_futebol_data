@@ -24,18 +24,11 @@ function getConfig(): OOConfig | null {
     //
     // When endpoint is empty, we use a same-origin relative path
     // (proxied by Next.js rewrites) to avoid CORS preflight issues.
-    const endpoint =
-      (typeof process !== "undefined" && process.env?.NEXT_PUBLIC_OO_ENDPOINT) ??
-      "";
-    const org =
-      (typeof process !== "undefined" && process.env?.NEXT_PUBLIC_OO_ORG) ??
-      "";
-    const stream =
-      (typeof process !== "undefined" && process.env?.NEXT_PUBLIC_OO_STREAM) ??
-      "";
+    const endpoint = (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_OO_ENDPOINT) ?? '';
+    const org = (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_OO_ORG) ?? '';
+    const stream = (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_OO_STREAM) ?? '';
     const basicAuth =
-      (typeof process !== "undefined" && process.env?.NEXT_PUBLIC_OO_BASIC_AUTH) ??
-      "";
+      (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_OO_BASIC_AUTH) ?? '';
 
     if (!org || !stream || !basicAuth) return null;
 
@@ -56,10 +49,10 @@ function getConfig(): OOConfig | null {
 
 type LogEntry = Record<string, unknown>;
 
-let queue: LogEntry[] = [];
+const queue: LogEntry[] = [];
 let timer: ReturnType<typeof setTimeout> | null = null;
 
-const FLUSH_INTERVAL_MS = 2000; // flush every 2s
+const FLUSH_INTERVAL = 2000; // flush every 2s
 const MAX_BATCH = 50;
 
 function flush() {
@@ -75,7 +68,7 @@ function flush() {
 
 function scheduleFlush() {
   if (timer) return;
-  timer = setTimeout(flush, FLUSH_INTERVAL_MS);
+  timer = setTimeout(flush, FLUSH_INTERVAL);
 }
 
 function ooUrl(config: OOConfig, path: string): string {
@@ -89,10 +82,10 @@ function sendBatch(batch: LogEntry[]) {
   if (!config) return;
 
   fetch(ooUrl(config, `${config.stream}/_json`), {
-    method: "POST",
+    method: 'POST',
     headers: {
       Authorization: config.authHeader,
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
     },
     body: JSON.stringify(batch),
   }).catch(() => {
@@ -112,7 +105,7 @@ interface MetricPoint {
   [tag: string]: unknown;
 }
 
-let metricsQueue: MetricPoint[] = [];
+const metricsQueue: MetricPoint[] = [];
 let metricsTimer: ReturnType<typeof setTimeout> | null = null;
 
 function flushMetrics() {
@@ -128,7 +121,7 @@ function flushMetrics() {
 
 function scheduleMetricsFlush() {
   if (metricsTimer) return;
-  metricsTimer = setTimeout(flushMetrics, FLUSH_INTERVAL_MS);
+  metricsTimer = setTimeout(flushMetrics, FLUSH_INTERVAL);
 }
 
 function sendMetricsBatch(batch: MetricPoint[]) {
@@ -136,10 +129,10 @@ function sendMetricsBatch(batch: MetricPoint[]) {
   if (!config) return;
 
   fetch(ooUrl(config, `ingest/metrics/_json`), {
-    method: "POST",
+    method: 'POST',
     headers: {
       Authorization: config.authHeader,
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
     },
     body: JSON.stringify(batch),
   }).catch(() => {
@@ -154,11 +147,7 @@ function sendMetricsBatch(batch: MetricPoint[]) {
 /**
  * Enqueue a log entry. Entries are batched and sent periodically.
  */
-export function sendLog(
-  level: string,
-  message: string,
-  context?: Record<string, unknown>,
-) {
+export function sendLog(level: string, message: string, context?: Record<string, unknown>) {
   try {
     const entry: LogEntry = {
       _timestamp: new Date().toISOString(),
@@ -191,29 +180,23 @@ export function flushLogs() {
 // ---------------------------------------------------------------------------
 
 /** Log a page view. */
-export function logPageView(
-  page: string,
-  context?: Record<string, unknown>,
-) {
-  sendLog("info", `page_view:${page}`, {
-    event_type: "page_view",
+export function logPageView(page: string, context?: Record<string, unknown>) {
+  sendLog('info', `page_view:${page}`, {
+    event_type: 'page_view',
     page,
     ...context,
   });
-  incrementMetric("page_view", 1, { page });
+  incrementMetric('page_view', 1, { page });
 }
 
 /** Log a user interaction (click, selection, etc.). */
-export function logUserAction(
-  action: string,
-  context?: Record<string, unknown>,
-) {
-  sendLog("info", `user_action:${action}`, {
-    event_type: "user_action",
+export function logUserAction(action: string, context?: Record<string, unknown>) {
+  sendLog('info', `user_action:${action}`, {
+    event_type: 'user_action',
     action,
     ...context,
   });
-  incrementMetric("user_action", 1, { action });
+  incrementMetric('user_action', 1, { action });
 }
 
 /** Log an API call. */
@@ -223,36 +206,33 @@ export function logApiCall(
   status: number,
   context?: Record<string, unknown>,
 ) {
-  sendLog("info", `api_call:${endpoint}`, {
-    event_type: "api_call",
+  sendLog('info', `api_call:${endpoint}`, {
+    event_type: 'api_call',
     api_endpoint: endpoint,
     duration_ms: durationMs,
     status,
     ...context,
   });
-  incrementMetric("api_call", 1, { endpoint, status_category: status >= 400 ? "error" : "success" });
-  recordTiming("api_call_duration", durationMs, { endpoint });
+  incrementMetric('api_call', 1, {
+    endpoint,
+    status_category: status >= 400 ? 'error' : 'success',
+  });
+  recordTiming('api_call_duration', durationMs, { endpoint });
 }
 
 /** Log an error. */
-export function logError(
-  message: string,
-  context?: Record<string, unknown>,
-) {
-  sendLog("error", message, {
-    event_type: "error",
+export function logError(message: string, context?: Record<string, unknown>) {
+  sendLog('error', message, {
+    event_type: 'error',
     ...context,
   });
-  incrementMetric("error", 1, { error_message: message });
+  incrementMetric('error', 1, { error_message: message });
 }
 
 /** Log a form submission. */
-export function logFormSubmit(
-  formName: string,
-  context?: Record<string, unknown>,
-) {
-  sendLog("info", `form_submit:${formName}`, {
-    event_type: "form_submit",
+export function logFormSubmit(formName: string, context?: Record<string, unknown>) {
+  sendLog('info', `form_submit:${formName}`, {
+    event_type: 'form_submit',
     form_name: formName,
     ...context,
   });
@@ -271,12 +251,12 @@ export function logFormSubmit(
 export function sendMetric(
   metricName: string,
   value: number,
-  unit: string = "count",
+  unit: string = 'count',
   tags?: Record<string, string | number | boolean>,
 ) {
   // Log entry (visible in Logs tab)
-  sendLog("info", `metric:${metricName}`, {
-    event_type: "metric",
+  sendLog('info', `metric:${metricName}`, {
+    event_type: 'metric',
     metric_name: metricName,
     metric_value: value,
     metric_unit: unit,
@@ -289,9 +269,9 @@ export function sendMetric(
 }
 
 function toMetricType(unit: string): string {
-  if (unit === "ms" || unit === "histogram") return "histogram";
-  if (unit === "count") return "counter";
-  return "gauge";
+  if (unit === 'ms' || unit === 'histogram') return 'histogram';
+  if (unit === 'count') return 'counter';
+  return 'gauge';
 }
 
 function enqueueMetric(
@@ -329,7 +309,7 @@ export function incrementMetric(
   delta: number = 1,
   tags?: Record<string, string | number | boolean>,
 ) {
-  sendMetric(metricName, delta, "count", tags);
+  sendMetric(metricName, delta, 'count', tags);
 }
 
 /**
@@ -340,7 +320,7 @@ export function recordTiming(
   durationMs: number,
   tags?: Record<string, string | number | boolean>,
 ) {
-  sendMetric(metricName, durationMs, "ms", tags);
+  sendMetric(metricName, durationMs, 'ms', tags);
 }
 
 // ---------------------------------------------------------------------------
@@ -354,8 +334,8 @@ function generateTraceId(): string {
   const bytes = new Uint8Array(16);
   crypto.getRandomValues(bytes);
   return Array.from(bytes)
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
 }
 
 /**
@@ -365,8 +345,8 @@ function generateSpanId(): string {
   const bytes = new Uint8Array(8);
   crypto.getRandomValues(bytes);
   return Array.from(bytes)
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
 }
 
 interface TraceContext {
@@ -379,25 +359,44 @@ let currentTrace: TraceContext | null = null;
 /** Converts a kind string ("SERVER", "CLIENT", "INTERNAL") to OTLP kind int. */
 function otelSpanKind(kind: string): number {
   switch (kind) {
-    case "SERVER": return 2;
-    case "CLIENT": return 3;
-    case "PRODUCER": return 4;
-    case "CONSUMER": return 5;
-    default: return 1; // INTERNAL
+    case 'SERVER':
+      return 2;
+    case 'CLIENT':
+      return 3;
+    case 'PRODUCER':
+      return 4;
+    case 'CONSUMER':
+      return 5;
+    default:
+      return 1; // INTERNAL
   }
 }
 
 /** Converts context tags to OTLP attributes array. */
-function toOtelAttrs(context?: Record<string, unknown>): Array<{ key: string; value: { stringValue: string } }> {
+function toOtelAttrs(
+  context?: Record<string, unknown>,
+): Array<{ key: string; value: { stringValue: string } }> {
   if (!context) return [];
   return Object.entries(context).map(([key, val]) => ({
     key,
-    value: { stringValue: String(val ?? "") },
+    value: { stringValue: String(val ?? '') },
   }));
 }
 
+/** OTLP JSON span shape sent to OpenObserve traces endpoint. */
+interface OtelSpan {
+  traceId: string;
+  spanId: string;
+  parentSpanId: string;
+  name: string;
+  kind: number;
+  startTimeUnixNano: string;
+  endTimeUnixNano: string;
+  attributes: Array<{ key: string; value: { stringValue: string } }>;
+}
+
 // --- OTLP span queue ---
-let spanQueue: any[] = [];
+const spanQueue: OtelSpan[] = [];
 let spanTimer: ReturnType<typeof setTimeout> | null = null;
 
 function flushSpans() {
@@ -413,28 +412,32 @@ function flushSpans() {
 
 function scheduleSpanFlush() {
   if (spanTimer) return;
-  spanTimer = setTimeout(flushSpans, FLUSH_INTERVAL_MS);
+  spanTimer = setTimeout(flushSpans, FLUSH_INTERVAL);
 }
 
-function sendSpanBatch(spans: any[]) {
+function sendSpanBatch(spans: OtelSpan[]) {
   const config = getConfig();
   if (!config) return;
 
   const body = {
-    resourceSpans: [{
-      resource: {},
-      scopeSpans: [{
-        scope: {},
-        spans,
-      }],
-    }],
+    resourceSpans: [
+      {
+        resource: {},
+        scopeSpans: [
+          {
+            scope: {},
+            spans,
+          },
+        ],
+      },
+    ],
   };
 
   fetch(ooUrl(config, `v1/traces`), {
-    method: "POST",
+    method: 'POST',
     headers: {
       Authorization: config.authHeader,
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
     },
     body: JSON.stringify(body),
   }).catch(() => {
@@ -442,7 +445,7 @@ function sendSpanBatch(spans: any[]) {
   });
 }
 
-function enqueueOtelSpan(span: any) {
+function enqueueOtelSpan(span: OtelSpan) {
   try {
     spanQueue.push(span);
     if (spanQueue.length >= MAX_BATCH) {
@@ -473,14 +476,14 @@ export function startTrace(context?: Record<string, unknown>): TraceContext {
 
   pendingSpanStarts.set(spanId, performance.now());
 
-  sendLog("info", "trace:start", {
-    event_type: "trace",
+  sendLog('info', 'trace:start', {
+    event_type: 'trace',
     trace_id: traceId,
     span_id: spanId,
     parent_span_id: null,
-    span_name: "root",
-    span_kind: "SERVER",
-    trace_action: "start",
+    span_name: 'root',
+    span_kind: 'SERVER',
+    trace_action: 'start',
     ...context,
   });
 
@@ -497,14 +500,14 @@ export function endTrace(context?: Record<string, unknown>) {
   const durationMs = now - t0;
   pendingSpanStarts.delete(currentTrace.spanId);
 
-  sendLog("info", "trace:end", {
-    event_type: "trace",
+  sendLog('info', 'trace:end', {
+    event_type: 'trace',
     trace_id: currentTrace.traceId,
     span_id: currentTrace.spanId,
     parent_span_id: null,
-    span_name: "root",
-    span_kind: "SERVER",
-    trace_action: "end",
+    span_name: 'root',
+    span_kind: 'SERVER',
+    trace_action: 'end',
     ...context,
   });
 
@@ -513,8 +516,8 @@ export function endTrace(context?: Record<string, unknown>) {
   enqueueOtelSpan({
     traceId: currentTrace.traceId,
     spanId: currentTrace.spanId,
-    parentSpanId: "",
-    name: "root",
+    parentSpanId: '',
+    name: 'root',
     kind: 2, // SERVER
     startTimeUnixNano: String(Math.round(endNs - durationMs * 1e6)),
     endTimeUnixNano: String(endNs),
@@ -530,12 +533,12 @@ export function endTrace(context?: Record<string, unknown>) {
  */
 export function startSpan(
   name: string,
-  kind: string = "INTERNAL",
+  kind: string = 'INTERNAL',
   context?: Record<string, unknown>,
 ): string {
   const traceId = currentTrace?.traceId ?? generateTraceId();
   const spanId = generateSpanId();
-  const parentSpanId = currentTrace?.spanId ?? "";
+  const parentSpanId = currentTrace?.spanId ?? '';
 
   // If there's no active trace, this span becomes the root
   if (!currentTrace) {
@@ -544,14 +547,14 @@ export function startSpan(
 
   pendingSpanStarts.set(spanId, performance.now());
 
-  sendLog("info", `span:start:${name}`, {
-    event_type: "span",
+  sendLog('info', `span:start:${name}`, {
+    event_type: 'span',
     trace_id: traceId,
     span_id: spanId,
     parent_span_id: parentSpanId,
     span_name: name,
     span_kind: kind,
-    span_action: "start",
+    span_action: 'start',
     ...context,
   });
 
@@ -561,24 +564,20 @@ export function startSpan(
 /**
  * End a span.
  */
-export function endSpan(
-  spanId: string,
-  name: string,
-  context?: Record<string, unknown>,
-) {
+export function endSpan(spanId: string, name: string, context?: Record<string, unknown>) {
   if (!currentTrace) return;
   const now = performance.now();
   const t0 = pendingSpanStarts.get(spanId) ?? now;
   const durationMs = now - t0;
   pendingSpanStarts.delete(spanId);
 
-  sendLog("info", `span:end:${name}`, {
-    event_type: "span",
+  sendLog('info', `span:end:${name}`, {
+    event_type: 'span',
     trace_id: currentTrace.traceId,
     span_id: spanId,
     parent_span_id: currentTrace.spanId,
     span_name: name,
-    span_action: "end",
+    span_action: 'end',
     ...context,
   });
 
@@ -589,7 +588,7 @@ export function endSpan(
     spanId,
     parentSpanId: currentTrace.spanId,
     name,
-    kind: otelSpanKind(context?.span_kind as string ?? "INTERNAL"),
+    kind: otelSpanKind((context?.span_kind as string) ?? 'INTERNAL'),
     startTimeUnixNano: String(Math.round(endNs - durationMs * 1e6)),
     endTimeUnixNano: String(endNs),
     attributes: toOtelAttrs(context),
@@ -621,7 +620,7 @@ function nowInNano(): number {
 export function withSpan<T>(
   name: string,
   fn: () => T,
-  kind: string = "INTERNAL",
+  kind: string = 'INTERNAL',
   context?: Record<string, unknown>,
 ): T {
   const spanId = startSpan(name, kind, context);
@@ -641,7 +640,7 @@ export function withSpan<T>(
 export async function withAsyncSpan<T>(
   name: string,
   fn: () => Promise<T>,
-  kind: string = "INTERNAL",
+  kind: string = 'INTERNAL',
   context?: Record<string, unknown>,
 ): Promise<T> {
   const spanId = startSpan(name, kind, context);

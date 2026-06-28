@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { useEffect, useState, useCallback } from "react";
-import { AutocompleteInput } from "@/components/shared/AutocompleteInput";
+import { useEffect, useState, useCallback } from 'react';
+import { AutocompleteInput } from '@/components/shared/AutocompleteInput';
 
-const API = "/api/proxy";
+const API = '/api/proxy';
 
 interface Prediction {
   home_team: string;
@@ -23,34 +23,7 @@ interface Prediction {
   tournament?: string;
 }
 
-function ProbabilityBar({
-  label,
-  value,
-  color,
-}: {
-  label: string;
-  value: number;
-  color: string;
-}) {
-  const pct = (value * 100).toFixed(1);
-  return (
-    <div className="mb-3">
-      <div className="flex justify-between text-sm mb-1">
-        <span className="font-medium text-gray-700">{label}</span>
-        <span className="text-gray-500 tabular-nums">{pct}%</span>
-      </div>
-      <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
-        <div
-          className={`h-full rounded-full transition-all duration-500 ${color}`}
-          style={{ width: `${Math.max(value * 100, 1)}%` }}
-        />
-      </div>
-    </div>
-  );
-}
-
 function HBar({ v, color }: { v: number; color: string }) {
-  const pct = (v * 100).toFixed(1);
   return (
     <div className="h-4 bg-gray-100 rounded-full overflow-hidden flex-1 mx-2">
       <div
@@ -71,7 +44,7 @@ export default function PredictMatchClient() {
   const [loading, setLoading] = useState(false);
   const [upcomingLoading, setUpcomingLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [mode, setMode] = useState<"single" | "upcoming" | "h2h">("single");
+  const [mode, setMode] = useState<'single' | 'upcoming' | 'h2h'>('single');
 
   // Fetch team names
   useEffect(() => {
@@ -83,6 +56,7 @@ export default function PredictMatchClient() {
 
   // Fetch upcoming matches on mount
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setUpcomingLoading(true);
     fetch(`${API}/predict/upcoming?limit=5`)
       .then((r) => r.json())
@@ -97,7 +71,7 @@ export default function PredictMatchClient() {
     setError(null);
     try {
       const res = await fetch(
-        `${API}/predict/${encodeURIComponent(homeTeam[0])}/${encodeURIComponent(awayTeam[0])}${neutral ? "?neutral=true" : ""}`
+        `${API}/predict/${encodeURIComponent(homeTeam[0])}/${encodeURIComponent(awayTeam[0])}${neutral ? '?neutral=true' : ''}`,
       );
       if (!res.ok) {
         const text = await res.text();
@@ -106,7 +80,7 @@ export default function PredictMatchClient() {
       const data: Prediction = await res.json();
       setPrediction(data);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Prediction failed");
+      setError(err instanceof Error ? err.message : 'Prediction failed');
       setPrediction(null);
     } finally {
       setLoading(false);
@@ -118,17 +92,17 @@ export default function PredictMatchClient() {
       {/* Mode tabs */}
       <div className="flex gap-2 border-b border-gray-200 pb-2">
         {[
-          { key: "single", label: "Predict Match" },
-          { key: "upcoming", label: "Upcoming" },
-          { key: "h2h", label: "Head to Head" },
+          { key: 'single', label: 'Predict Match' },
+          { key: 'upcoming', label: 'Upcoming' },
+          { key: 'h2h', label: 'Head to Head' },
         ].map((tab) => (
           <button
             key={tab.key}
             onClick={() => setMode(tab.key as typeof mode)}
             className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors ${
               mode === tab.key
-                ? "bg-blue-50 text-blue-700 border-b-2 border-blue-600"
-                : "text-gray-500 hover:text-gray-700"
+                ? 'bg-blue-50 text-blue-700 border-b-2 border-blue-600'
+                : 'text-gray-500 hover:text-gray-700'
             }`}
           >
             {tab.label}
@@ -137,7 +111,7 @@ export default function PredictMatchClient() {
       </div>
 
       {/* Single prediction */}
-      {mode === "single" && (
+      {mode === 'single' && (
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
@@ -179,13 +153,11 @@ export default function PredictMatchClient() {
             disabled={!homeTeam[0] || !awayTeam[0] || loading}
             className="px-6 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            {loading ? "Predicting..." : "Predict Outcome"}
+            {loading ? 'Predicting...' : 'Predict Outcome'}
           </button>
 
           {error && (
-            <div className="mt-4 p-3 bg-red-50 text-red-700 text-sm rounded-lg">
-              {error}
-            </div>
+            <div className="mt-4 p-3 bg-red-50 text-red-700 text-sm rounded-lg">{error}</div>
           )}
 
           {prediction && !error && (
@@ -196,7 +168,9 @@ export default function PredictMatchClient() {
                 </h3>
                 <span className="text-xs text-gray-400">
                   ELO: {prediction.home_elo} vs {prediction.away_elo}
-                  {prediction.neutral_venue ? " (neutral)" : ` (+${prediction.home_advantage_applied} home adv.)`}
+                  {prediction.neutral_venue
+                    ? ' (neutral)'
+                    : ` (+${prediction.home_advantage_applied} home adv.)`}
                 </span>
               </div>
 
@@ -256,7 +230,7 @@ export default function PredictMatchClient() {
       )}
 
       {/* Upcoming matches */}
-      {mode === "upcoming" && (
+      {mode === 'upcoming' && (
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <h3 className="text-lg font-bold text-gray-900 mb-4">Upcoming Match Predictions</h3>
           {upcomingLoading ? (
@@ -305,7 +279,7 @@ export default function PredictMatchClient() {
       )}
 
       {/* Head to head */}
-      {mode === "h2h" && (
+      {mode === 'h2h' && (
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <p className="text-sm text-gray-500 mb-4">
             Predict outcome with query parameters instead of path-based teams.
@@ -346,7 +320,7 @@ export default function PredictMatchClient() {
             disabled={!homeTeam[0] || !awayTeam[0] || loading}
             className="px-6 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            {loading ? "Predicting..." : "Predict Outcome"}
+            {loading ? 'Predicting...' : 'Predict Outcome'}
           </button>
 
           {prediction && (
@@ -396,10 +370,23 @@ export default function PredictMatchClient() {
       <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
         <h4 className="text-sm font-semibold text-amber-800 mb-2">How Predictions Work</h4>
         <ul className="text-xs text-amber-700 space-y-1">
-          <li>• Each team has an ELO rating calculated from all historical matches (1872–present).</li>
-          <li>• The probability formula uses the standard ELO expected score: <code className="bg-amber-100 px-1 rounded">1 / (1 + 10^((ELO_away - (ELO_home + home_adv)) / 400))</code></li>
-          <li>• Home advantage adds +100 ELO points by default (toggle &ldquo;neutral venue&rdquo; to remove it).</li>
-          <li>• Draw probability is estimated heuristically from the rating gap (higher for equal teams).</li>
+          <li>
+            • Each team has an ELO rating calculated from all historical matches (1872–present).
+          </li>
+          <li>
+            • The probability formula uses the standard ELO expected score:{' '}
+            <code className="bg-amber-100 px-1 rounded">
+              1 / (1 + 10^((ELO_away - (ELO_home + home_adv)) / 400))
+            </code>
+          </li>
+          <li>
+            • Home advantage adds +100 ELO points by default (toggle &ldquo;neutral venue&rdquo; to
+            remove it).
+          </li>
+          <li>
+            • Draw probability is estimated heuristically from the rating gap (higher for equal
+            teams).
+          </li>
           <li>• Teams not found in historical data get a default rating of 1500.</li>
         </ul>
       </div>

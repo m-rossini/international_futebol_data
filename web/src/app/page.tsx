@@ -1,13 +1,13 @@
-"use client";
+'use client';
 
-import { useEffect, useState, useCallback } from "react";
-import Link from "next/link";
-import { Users, Swords, Trophy, Check, RotateCcw, TrendingUp, Clock, Zap } from "lucide-react";
-import { AutocompleteInput } from "@/components/shared/AutocompleteInput";
-import { useDefaults } from "@/lib/useDefaults";
-import { logUserAction, logApiCall } from "@/lib/observability";
+import { useEffect, useState, useCallback } from 'react';
+import Link from 'next/link';
+import { Users, Swords, Trophy, Check, RotateCcw, TrendingUp, Clock, Zap } from 'lucide-react';
+import { AutocompleteInput } from '@/components/shared/AutocompleteInput';
+import { useDefaults } from '@/lib/useDefaults';
+import { logUserAction, logApiCall } from '@/lib/observability';
 
-const API = "/api/proxy";
+const API = '/api/proxy';
 
 export default function HomePage() {
   const { defaultTeam, defaultTournament, setDefaults, clearDefaults, hasDefaults } = useDefaults();
@@ -25,6 +25,7 @@ export default function HomePage() {
 
   // After hydration, read from localStorage to restore defaults
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsHydrated(true);
     if (defaultTeam) {
       setEnableTeam(true);
@@ -42,7 +43,7 @@ export default function HomePage() {
     fetch(`${API}/filters`)
       .then((r) => {
         const duration = performance.now() - t0;
-        logApiCall("/filters", duration, r.status, { page: "home" });
+        logApiCall('/filters', duration, r.status, { page: 'home' });
         return r.json();
       })
       .then((data) => {
@@ -51,21 +52,21 @@ export default function HomePage() {
       })
       .catch((err) => {
         const duration = performance.now() - t0;
-        logApiCall("/filters", duration, 0, { page: "home", error: String(err) });
+        logApiCall('/filters', duration, 0, { page: 'home', error: String(err) });
       });
   }, []);
 
   const handleSave = useCallback(() => {
     const team = enableTeam ? (localTeam[0] ?? null) : null;
     const tournament = enableTournament ? (localTournament[0] ?? null) : null;
-    logUserAction("save_defaults", { default_team: team, default_tournament: tournament });
+    logUserAction('save_defaults', { default_team: team, default_tournament: tournament });
     setDefaults(team, tournament);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   }, [enableTeam, enableTournament, localTeam, localTournament, setDefaults]);
 
   const handleClear = useCallback(() => {
-    logUserAction("clear_defaults", {});
+    logUserAction('clear_defaults', {});
     clearDefaults();
     setEnableTeam(false);
     setEnableTournament(false);
@@ -82,7 +83,8 @@ export default function HomePage() {
           International Football Statistics
         </h1>
         <p className="mt-3 text-lg text-gray-500 max-w-lg mx-auto">
-          Explore teams, tournaments, and head-to-head matchups across the history of international football.
+          Explore teams, tournaments, and head-to-head matchups across the history of international
+          football.
         </p>
       </div>
 
@@ -154,7 +156,7 @@ export default function HomePage() {
                 className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 <Check size={14} />
-                {saved ? "Saved!" : "Save Preferences"}
+                {saved ? 'Saved!' : 'Save Preferences'}
               </button>
               {hasDefaults && (
                 <button
@@ -170,9 +172,14 @@ export default function HomePage() {
 
             {hasDefaults && (
               <p className="mt-3 text-xs text-gray-400">
-                Active defaults: {defaultTeam ? <span className="font-medium text-gray-600">{defaultTeam}</span> : null}
-                {defaultTeam && defaultTournament ? " + " : null}
-                {defaultTournament ? <span className="font-medium text-gray-600">{defaultTournament}</span> : null}
+                Active defaults:{' '}
+                {defaultTeam ? (
+                  <span className="font-medium text-gray-600">{defaultTeam}</span>
+                ) : null}
+                {defaultTeam && defaultTournament ? ' + ' : null}
+                {defaultTournament ? (
+                  <span className="font-medium text-gray-600">{defaultTournament}</span>
+                ) : null}
                 — they will be pre-applied to filters across the app.
               </p>
             )}
@@ -190,7 +197,9 @@ export default function HomePage() {
         >
           <Users size={24} className="text-blue-600" />
           <span className="text-sm font-semibold text-gray-700">Teams</span>
-          <span className="text-xs text-gray-400 text-center">Browse all teams and their stats</span>
+          <span className="text-xs text-gray-400 text-center">
+            Browse all teams and their stats
+          </span>
         </Link>
         <Link
           href="/head-to-head"
@@ -206,7 +215,9 @@ export default function HomePage() {
         >
           <TrendingUp size={24} className="text-violet-500" />
           <span className="text-sm font-semibold text-gray-700">ELO Rankings</span>
-          <span className="text-xs text-gray-400 text-center">ELO ratings calculated from match results</span>
+          <span className="text-xs text-gray-400 text-center">
+            ELO ratings calculated from match results
+          </span>
         </Link>
         <Link
           href="/decade-leaders"
@@ -222,7 +233,9 @@ export default function HomePage() {
         >
           <Zap size={24} className="text-amber-500" />
           <span className="text-sm font-semibold text-gray-700">Predictions</span>
-          <span className="text-xs text-gray-400 text-center">Match outcome predictions using ELO</span>
+          <span className="text-xs text-gray-400 text-center">
+            Match outcome predictions using ELO
+          </span>
         </Link>
       </div>
     </div>

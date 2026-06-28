@@ -1,20 +1,20 @@
-"use client";
+'use client';
 
-import { useEffect, useState, useMemo, useCallback, useRef } from "react";
-import { useSearchParams, useRouter, usePathname } from "next/navigation";
-import { ArrowRightLeft } from "lucide-react";
-import { FilterBar } from "@/components/shared/FilterBar";
-import { AutocompleteInput } from "@/components/shared/AutocompleteInput";
-import { CountryFlag } from "@/components/shared/CountryFlag";
-import { StatsBar, buildH2HStats } from "@/components/shared/StatsBar";
-import { BiggestWinsCard } from "@/components/shared/BiggestWinsCard";
-import { MatchTable } from "@/components/shared/MatchTable";
-import { CumulativeWinsChart } from "@/components/shared/chart/CumulativeWinsChart";
-import { CumulativeGoalsChart } from "@/components/shared/chart/CumulativeGoalsChart";
-import { logApiCall, logUserAction } from "@/lib/observability";
-import type { HeadToHeadResult, BiggestWin } from "@/lib/types";
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
+import { ArrowRightLeft } from 'lucide-react';
+import { FilterBar } from '@/components/shared/FilterBar';
+import { AutocompleteInput } from '@/components/shared/AutocompleteInput';
+import { CountryFlag } from '@/components/shared/CountryFlag';
+import { StatsBar, buildH2HStats } from '@/components/shared/StatsBar';
+import { BiggestWinsCard } from '@/components/shared/BiggestWinsCard';
+import { MatchTable } from '@/components/shared/MatchTable';
+import { CumulativeWinsChart } from '@/components/shared/chart/CumulativeWinsChart';
+import { CumulativeGoalsChart } from '@/components/shared/chart/CumulativeGoalsChart';
+import { logApiCall, logUserAction } from '@/lib/observability';
+import type { HeadToHeadResult, BiggestWin } from '@/lib/types';
 
-const API = "/api/proxy";
+const API = '/api/proxy';
 
 let cachedTeams: string[] | null = null;
 async function fetchTeams(): Promise<string[]> {
@@ -27,9 +27,9 @@ async function fetchTeams(): Promise<string[]> {
 
 function buildQs(params: URLSearchParams, team1: string, team2: string): string {
   const q = new URLSearchParams();
-  q.set("team1", team1);
-  q.set("team2", team2);
-  for (const key of ["tournaments", "countries", "date_from", "date_to"]) {
+  q.set('team1', team1);
+  q.set('team2', team2);
+  for (const key of ['tournaments', 'countries', 'date_from', 'date_to']) {
     const v = params.get(key);
     if (v) q.set(key, v);
   }
@@ -44,9 +44,9 @@ export function HeadToHeadClient() {
   // Inject defaults (team + tournament) on first mount in a single URL replace
   const defaultsInjectedRef = useRef(false);
   const [teamNames, setTeamNames] = useState<string[]>([]);
-  const initialTeam1 = sp.get("team1");
-  const [team1, setTeam1] = useState(initialTeam1 || "");
-  const [team2, setTeam2] = useState(sp.get("team2") || "");
+  const initialTeam1 = sp.get('team1');
+  const [team1, setTeam1] = useState(initialTeam1 || '');
+  const [team2, setTeam2] = useState(sp.get('team2') || '');
 
   useEffect(() => {
     if (defaultsInjectedRef.current) return;
@@ -54,21 +54,24 @@ export function HeadToHeadClient() {
 
     let defaults: { defaultTeam?: string | null; defaultTournament?: string | null } | null = null;
     try {
-      const raw = localStorage.getItem("football-defaults");
+      const raw = localStorage.getItem('football-defaults');
       if (raw) defaults = JSON.parse(raw);
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
     if (!defaults?.defaultTeam && !defaults?.defaultTournament) return;
 
     const params = new URLSearchParams(sp.toString());
     let changed = false;
 
-    if (defaults.defaultTeam && !params.has("team1")) {
+    if (defaults.defaultTeam && !params.has('team1')) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setTeam1(defaults.defaultTeam);
-      params.set("team1", defaults.defaultTeam);
+      params.set('team1', defaults.defaultTeam);
       changed = true;
     }
-    if (defaults.defaultTournament && !params.has("tournaments")) {
-      params.set("tournaments", defaults.defaultTournament);
+    if (defaults.defaultTournament && !params.has('tournaments')) {
+      params.set('tournaments', defaults.defaultTournament);
       changed = true;
     }
 
@@ -85,7 +88,9 @@ export function HeadToHeadClient() {
 
   // Load team names once
   useEffect(() => {
-    fetchTeams().then(setTeamNames).catch(() => {});
+    fetchTeams()
+      .then(setTeamNames)
+      .catch(() => {});
   }, []);
 
   // Persist team selection to URL
@@ -99,38 +104,38 @@ export function HeadToHeadClient() {
       }
       router.replace(`${pathname}?${params.toString()}`);
     },
-    [router, pathname, sp]
+    [router, pathname, sp],
   );
 
   const handleTeam1 = useCallback(
     (sel: string[]) => {
-      const val = sel[0] || "";
-      logUserAction("select_h2h_team1", { team: val });
+      const val = sel[0] || '';
+      logUserAction('select_h2h_team1', { team: val });
       setTeam1(val);
-      updateTeamParam("team1", val);
+      updateTeamParam('team1', val);
     },
-    [updateTeamParam]
+    [updateTeamParam],
   );
 
   const handleTeam2 = useCallback(
     (sel: string[]) => {
-      const val = sel[0] || "";
-      logUserAction("select_h2h_team2", { team: val });
+      const val = sel[0] || '';
+      logUserAction('select_h2h_team2', { team: val });
       setTeam2(val);
-      updateTeamParam("team2", val);
+      updateTeamParam('team2', val);
     },
-    [updateTeamParam]
+    [updateTeamParam],
   );
 
   const swapTeams = useCallback(() => {
-    logUserAction("swap_h2h_teams", { team1: team2, team2: team1 });
+    logUserAction('swap_h2h_teams', { team1: team2, team2: team1 });
     const t1 = team2;
     const t2 = team1;
     setTeam1(t1);
     setTeam2(t2);
     const params = new URLSearchParams(sp.toString());
-    params.set("team1", t1);
-    params.set("team2", t2);
+    params.set('team1', t1);
+    params.set('team2', t2);
     router.replace(`${pathname}?${params.toString()}`);
   }, [team1, team2, router, pathname, sp]);
 
@@ -148,11 +153,11 @@ export function HeadToHeadClient() {
         const url = `${API}/head_to_head?${qs}`;
         const res = await fetch(url);
         const duration = performance.now() - t0;
-        logApiCall("/head_to_head", duration, res.status, { team1, team2 });
+        logApiCall('/head_to_head', duration, res.status, { team1, team2 });
         const data: HeadToHeadResult = await res.json();
         if (!cancelled) {
           if (data.error) {
-            setError(data.message || "An error occurred");
+            setError(data.message || 'An error occurred');
             setResult(null);
           } else {
             setResult(data);
@@ -161,9 +166,13 @@ export function HeadToHeadClient() {
         }
       } catch (err) {
         const duration = performance.now() - t0;
-        logApiCall("/head_to_head", duration, 0, { team1, team2, error: err instanceof Error ? err.message : String(err) });
+        logApiCall('/head_to_head', duration, 0, {
+          team1,
+          team2,
+          error: err instanceof Error ? err.message : String(err),
+        });
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : "Failed to load");
+          setError(err instanceof Error ? err.message : 'Failed to load');
           setLoading(false);
         }
       }
@@ -181,8 +190,12 @@ export function HeadToHeadClient() {
   const team2Wins = result ? ((result[`${result.team2}_wins`] as number) ?? 0) : 0;
   const team1Goals = result ? ((result[`${result.team1}_goals`] as number) ?? 0) : 0;
   const team2Goals = result ? ((result[`${result.team2}_goals`] as number) ?? 0) : 0;
-  const team1BiggestWins = result ? ((result[`${result.team1}_biggest_wins`] as BiggestWin[]) ?? []) : [];
-  const team2BiggestWins = result ? ((result[`${result.team2}_biggest_wins`] as BiggestWin[]) ?? []) : [];
+  const team1BiggestWins = result
+    ? ((result[`${result.team1}_biggest_wins`] as BiggestWin[]) ?? [])
+    : [];
+  const team2BiggestWins = result
+    ? ((result[`${result.team2}_biggest_wins`] as BiggestWin[]) ?? [])
+    : [];
   const avgGoalsPerMatch = result?.total_goals_per_match_stats?.mean ?? undefined;
 
   const sameTeam = team1 && team2 && team1 === team2;
@@ -244,7 +257,9 @@ export function HeadToHeadClient() {
       {sameTeam ? (
         <p className="text-sm text-amber-600 mt-4">Select two different teams to compare.</p>
       ) : !team1 || !team2 ? (
-        <p className="text-sm text-gray-400 mt-4">Select two teams to compare their head-to-head record.</p>
+        <p className="text-sm text-gray-400 mt-4">
+          Select two teams to compare their head-to-head record.
+        </p>
       ) : loading ? (
         <p className="text-sm text-gray-400 mt-4">Loading...</p>
       ) : error ? (
@@ -275,9 +290,7 @@ export function HeadToHeadClient() {
             <div className="mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Cumulative wins */}
               <div className="bg-white rounded-lg border border-gray-200 p-4">
-                <h3 className="text-sm font-semibold text-gray-700 mb-2">
-                  Cumulative Wins
-                </h3>
+                <h3 className="text-sm font-semibold text-gray-700 mb-2">Cumulative Wins</h3>
                 <CumulativeWinsChart
                   matches={result.matches_list}
                   team1={result.team1}
@@ -287,14 +300,12 @@ export function HeadToHeadClient() {
 
               {/* Cumulative goals */}
               <div className="bg-white rounded-lg border border-gray-200 p-4">
-                <h3 className="text-sm font-semibold text-gray-700 mb-2">
-                  Cumulative Goals
-                </h3>
+                <h3 className="text-sm font-semibold text-gray-700 mb-2">Cumulative Goals</h3>
                 <CumulativeGoalsChart
                   matches={result.matches_list}
                   track={[
-                    { team: result.team1, color: "#3b82f6", label: result.team1 },
-                    { team: result.team2, color: "#ef4444", label: result.team2 },
+                    { team: result.team1, color: '#3b82f6', label: result.team1 },
+                    { team: result.team2, color: '#ef4444', label: result.team2 },
                   ]}
                 />
               </div>
@@ -331,7 +342,9 @@ export function HeadToHeadClient() {
                 </label>
               </div>
               <MatchTable
-                matches={shootoutOnly ? result.matches_list.filter((m) => m.shootout) : result.matches_list}
+                matches={
+                  shootoutOnly ? result.matches_list.filter((m) => m.shootout) : result.matches_list
+                }
                 showNeutral
               />
             </div>
@@ -347,4 +360,3 @@ export function HeadToHeadClient() {
     </div>
   );
 }
-

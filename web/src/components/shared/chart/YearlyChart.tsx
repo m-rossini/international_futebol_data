@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useMemo } from "react";
+import { useMemo } from 'react';
 import {
   ScatterChart,
   Scatter,
@@ -10,7 +10,7 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
-} from "recharts";
+} from 'recharts';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -35,9 +35,9 @@ interface Props {
 // ---------------------------------------------------------------------------
 
 const SERIES = [
-  { dataKey: "wins" as const, color: "#22c55e", label: "Wins" },
-  { dataKey: "draws" as const, color: "#f59e0b", label: "Draws" },
-  { dataKey: "losses" as const, color: "#ef4444", label: "Losses" },
+  { dataKey: 'wins' as const, color: '#22c55e', label: 'Wins' },
+  { dataKey: 'draws' as const, color: '#f59e0b', label: 'Draws' },
+  { dataKey: 'losses' as const, color: '#ef4444', label: 'Losses' },
 ] as const;
 
 // ---------------------------------------------------------------------------
@@ -57,22 +57,10 @@ function DotShape(props: Record<string, unknown>) {
 // ---------------------------------------------------------------------------
 
 export function YearlyChart({ data, height = 240, width }: Props) {
-  const sorted = useMemo(
-    () => [...data].sort((a, b) => a.year - b.year),
-    [data],
-  );
-
-  if (data.length === 0) {
-    return (
-      <div className="text-center text-xs text-gray-400 py-2">
-        No yearly data available
-      </div>
-    );
-  }
+  const sorted = useMemo(() => [...data].sort((a, b) => a.year - b.year), [data]);
 
   // Dot radius: larger for small datasets, smaller for dense ones
-  const dotR =
-    sorted.length <= 20 ? 4 : sorted.length <= 60 ? 3 : sorted.length <= 100 ? 2 : 1.5;
+  const dotR = sorted.length <= 20 ? 4 : sorted.length <= 60 ? 3 : sorted.length <= 100 ? 2 : 1.5;
 
   // X-axis ticks: show all years for small sets, spaced subset for large
   const xTicks = useMemo(() => {
@@ -85,29 +73,29 @@ export function YearlyChart({ data, height = 240, width }: Props) {
     return ticks;
   }, [sorted]);
 
+  if (data.length === 0) {
+    return <div className="text-center text-xs text-gray-400 py-2">No yearly data available</div>;
+  }
+
   const chart = (
-    <ScatterChart
-      width={width}
-      height={height}
-      margin={{ top: 8, right: 20, bottom: 20, left: 4 }}
-    >
+    <ScatterChart width={width} height={height} margin={{ top: 8, right: 20, bottom: 20, left: 4 }}>
       <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
 
       <XAxis
         dataKey="year"
         type="number"
-        domain={["dataMin", "dataMax"]}
+        domain={['dataMin', 'dataMax']}
         ticks={xTicks}
         interval={0}
-        tick={{ fontSize: 10, fill: "#9ca3af" }}
+        tick={{ fontSize: 10, fill: '#9ca3af' }}
         tickLine={false}
-        axisLine={{ stroke: "#e5e7eb" }}
+        axisLine={{ stroke: '#e5e7eb' }}
       />
 
       <YAxis
-        tick={{ fontSize: 10, fill: "#9ca3af" }}
+        tick={{ fontSize: 10, fill: '#9ca3af' }}
         tickLine={false}
-        axisLine={{ stroke: "#e5e7eb" }}
+        axisLine={{ stroke: '#e5e7eb' }}
         allowDecimals={false}
       />
 

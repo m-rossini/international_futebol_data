@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import { Trophy, TrendingUp, Medal, BarChart3, Calendar, Clock, Loader2 } from "lucide-react";
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { Trophy, Medal, BarChart3, Calendar, Clock, Loader2 } from 'lucide-react';
 
-const API = "/api/proxy";
+const API = '/api/proxy';
 
 interface TeamEntry {
   team: string;
@@ -25,27 +25,45 @@ interface DecadeLeadersResponse {
   total_decades: number;
 }
 
-const DECADE_VALUES = ["", "1870s", "1880s", "1890s", "1900s", "1910s", "1920s", "1930s", "1940s", "1950s", "1960s", "1970s", "1980s", "1990s", "2000s", "2010s", "2020s"];
+const DECADE_VALUES = [
+  '',
+  '1870s',
+  '1880s',
+  '1890s',
+  '1900s',
+  '1910s',
+  '1920s',
+  '1930s',
+  '1940s',
+  '1950s',
+  '1960s',
+  '1970s',
+  '1980s',
+  '1990s',
+  '2000s',
+  '2010s',
+  '2020s',
+];
 
-const MEDAL_COLORS = ["#FFD700", "#C0C0C0", "#CD7F32"];
+const MEDAL_COLORS = ['#FFD700', '#C0C0C0', '#CD7F32'];
 
 const DECADE_COLORS: Record<string, string> = {
-  "1870s": "#8B4513",
-  "1880s": "#A0522D",
-  "1890s": "#CD853F",
-  "1900s": "#DAA520",
-  "1910s": "#B8860B",
-  "1920s": "#4682B4",
-  "1930s": "#4169E1",
-  "1940s": "#6A5ACD",
-  "1950s": "#2E8B57",
-  "1960s": "#228B22",
-  "1970s": "#008080",
-  "1980s": "#008B8B",
-  "1990s": "#1E90FF",
-  "2000s": "#4169E1",
-  "2010s": "#6A5ACD",
-  "2020s": "#8A2BE2",
+  '1870s': '#8B4513',
+  '1880s': '#A0522D',
+  '1890s': '#CD853F',
+  '1900s': '#DAA520',
+  '1910s': '#B8860B',
+  '1920s': '#4682B4',
+  '1930s': '#4169E1',
+  '1940s': '#6A5ACD',
+  '1950s': '#2E8B57',
+  '1960s': '#228B22',
+  '1970s': '#008080',
+  '1980s': '#008B8B',
+  '1990s': '#1E90FF',
+  '2000s': '#4169E1',
+  '2010s': '#6A5ACD',
+  '2020s': '#8A2BE2',
 };
 
 export function DecadeLeadersClient() {
@@ -53,13 +71,14 @@ export function DecadeLeadersClient() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [topN, setTopN] = useState(5);
-  const [filterDecade, setFilterDecade] = useState("");
+  const [filterDecade, setFilterDecade] = useState('');
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
     setError(null);
     const params = new URLSearchParams({ top_n: String(topN) });
-    if (filterDecade) params.set("decade", filterDecade);
+    if (filterDecade) params.set('decade', filterDecade);
 
     fetch(`${API}/elo-ranking/decade-leaders?${params}`)
       .then((r) => {
@@ -100,10 +119,6 @@ export function DecadeLeadersClient() {
     );
   }
 
-  const allMaxElo = Math.max(
-    ...data.decades.flatMap((d) => d.teams.map((t) => t.avg_elo))
-  );
-
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
       {/* Header */}
@@ -113,7 +128,8 @@ export function DecadeLeadersClient() {
           <h1 className="text-2xl font-bold text-gray-900">Decade Leaders</h1>
         </div>
         <p className="text-gray-500 text-sm">
-          Which teams dominated each decade? Ranked by average ELO rating calculated from historical match results.
+          Which teams dominated each decade? Ranked by average ELO rating calculated from historical
+          match results.
         </p>
       </div>
 
@@ -127,7 +143,9 @@ export function DecadeLeadersClient() {
             className="border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-violet-400 focus:border-violet-400"
           >
             {[3, 5, 10].map((n) => (
-              <option key={n} value={n}>{n}</option>
+              <option key={n} value={n}>
+                {n}
+              </option>
             ))}
           </select>
         </div>
@@ -140,7 +158,9 @@ export function DecadeLeadersClient() {
           >
             <option value="">All Decades</option>
             {DECADE_VALUES.filter(Boolean).map((d) => (
-              <option key={d} value={d}>{d}</option>
+              <option key={d} value={d}>
+                {d}
+              </option>
             ))}
           </select>
         </div>
@@ -150,7 +170,7 @@ export function DecadeLeadersClient() {
       <div className="space-y-8">
         {data.decades.map((decade) => {
           const maxElo = Math.max(...decade.teams.map((t) => t.avg_elo));
-          const color = DECADE_COLORS[decade.decade] || "#6B7280";
+          const color = DECADE_COLORS[decade.decade] || '#6B7280';
 
           return (
             <div
@@ -171,9 +191,7 @@ export function DecadeLeadersClient() {
                 </div>
                 <div className="flex items-center gap-2">
                   <Medal size={16} className="text-amber-500" />
-                  <span className="text-sm font-semibold text-gray-700">
-                    {decade.leader.team}
-                  </span>
+                  <span className="text-sm font-semibold text-gray-700">{decade.leader.team}</span>
                   <span className="text-xs text-gray-400 ml-1">
                     — avg ELO {decade.leader.avg_elo}
                   </span>
@@ -195,14 +213,19 @@ export function DecadeLeadersClient() {
                   </thead>
                   <tbody>
                     {decade.teams.map((team, idx) => {
-                      const barWidth = (team.avg_elo / allMaxElo) * 100;
+                      const barWidth = (team.avg_elo / maxElo) * 100;
                       const isLeader = idx === 0;
                       return (
                         <tr key={team.team} className="border-b border-gray-50 last:border-b-0">
                           <td className="py-3 text-sm">
                             {isLeader ? (
-                              <span className="inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold"
-                                style={{ backgroundColor: MEDAL_COLORS[0] + "33", color: "#B8860B" }}>
+                              <span
+                                className="inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold"
+                                style={{
+                                  backgroundColor: MEDAL_COLORS[0] + '33',
+                                  color: '#B8860B',
+                                }}
+                              >
                                 1
                               </span>
                             ) : (
@@ -217,8 +240,10 @@ export function DecadeLeadersClient() {
                               {team.team}
                             </Link>
                           </td>
-                          <td className="py-3 text-sm text-right font-mono font-semibold"
-                            style={{ color: isLeader ? color : undefined }}>
+                          <td
+                            className="py-3 text-sm text-right font-mono font-semibold"
+                            style={{ color: isLeader ? color : undefined }}
+                          >
                             {team.avg_elo}
                           </td>
                           <td className="py-3 text-sm text-right font-mono text-gray-500">
@@ -258,8 +283,8 @@ export function DecadeLeadersClient() {
         <div className="flex items-center gap-2 text-sm text-gray-500">
           <BarChart3 size={16} className="text-violet-400" />
           <span>
-            Based on average ELO ratings across <strong>{data.total_decades}</strong>{" "}
-            decades of international football. Higher average ELO indicates more consistent performance.
+            Based on average ELO ratings across <strong>{data.total_decades}</strong> decades of
+            international football. Higher average ELO indicates more consistent performance.
           </span>
         </div>
       </div>

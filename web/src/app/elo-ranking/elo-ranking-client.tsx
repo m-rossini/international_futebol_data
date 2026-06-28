@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { Trophy, TrendingUp, Search, LineChart, Calendar, Info } from "lucide-react";
-import { CountryFlag } from "@/components/shared/CountryFlag";
-import { DownloadButton } from "@/components/shared/DownloadButton";
-import { logApiCall } from "@/lib/observability";
+import { useEffect, useState } from 'react';
+import { Trophy, TrendingUp, Search, LineChart, Calendar, Info } from 'lucide-react';
+import { CountryFlag } from '@/components/shared/CountryFlag';
+import { DownloadButton } from '@/components/shared/DownloadButton';
+import { logApiCall } from '@/lib/observability';
 
-const API = "/api/proxy";
+const API = '/api/proxy';
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -73,6 +73,7 @@ function useCurrentElo(topN: number) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
     setError(null);
     const t0 = performance.now();
@@ -98,7 +99,7 @@ function useSummary() {
     const t0 = performance.now();
     fetch(`${API}/elo-ranking/summary`)
       .then((r) => {
-        logApiCall("/elo-ranking/summary", performance.now() - t0, r.status, {});
+        logApiCall('/elo-ranking/summary', performance.now() - t0, r.status, {});
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json();
       })
@@ -117,6 +118,7 @@ function useTeamHistory(team: string | null) {
 
   useEffect(() => {
     if (!team) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setData(null);
       return;
     }
@@ -144,15 +146,14 @@ function EloHistoryChart({ data }: { data: EloHistoryEntry[] }) {
   if (!data || data.length < 2)
     return <p className="text-xs text-gray-400">Not enough data for chart.</p>;
 
-  const points = [...data].sort(
-    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
-  );
+  const points = [...data].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
   const minElo = Math.min(...points.map((p) => p.elo_rating_new)) - 50;
   const maxElo = Math.max(...points.map((p) => p.elo_rating_new)) + 50;
   const range = maxElo - minElo || 1;
 
-  const w = 600, h = 250;
+  const w = 600,
+    h = 250;
   const pad = { top: 20, right: 20, bottom: 30, left: 60 };
   const iw = w - pad.left - pad.right;
   const ih = h - pad.top - pad.bottom;
@@ -163,9 +164,9 @@ function EloHistoryChart({ data }: { data: EloHistoryEntry[] }) {
   const linePath = points
     .map(
       (p, i) =>
-        `${i === 0 ? "M" : "L"}${xScale(i).toFixed(1)},${yScale(p.elo_rating_new).toFixed(1)}`
+        `${i === 0 ? 'M' : 'L'}${xScale(i).toFixed(1)},${yScale(p.elo_rating_new).toFixed(1)}`,
     )
-    .join(" ");
+    .join(' ');
 
   // Y-axis ticks
   const yStep = Math.max(50, Math.round(range / 5 / 50) * 50);
@@ -237,16 +238,12 @@ function EloHistoryChart({ data }: { data: EloHistoryEntry[] }) {
 /* ------------------------------------------------------------------ */
 export function EloRankingClient() {
   const [topN, setTopN] = useState(20);
-  const [search, setSearch] = useState("");
+  const [search] = useState('');
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
 
   const { data: current, loading, error } = useCurrentElo(topN);
   const { data: summary } = useSummary();
-  const {
-    data: history,
-    loading: histLoading,
-    error: histError,
-  } = useTeamHistory(selectedTeam);
+  const { data: history, loading: histLoading, error: histError } = useTeamHistory(selectedTeam);
 
   const filteredRanking =
     current?.ranking?.filter((e) => {
@@ -340,13 +337,11 @@ export function EloRankingClient() {
                   <tr
                     key={entry.team}
                     className={`border-b border-gray-50 hover:bg-violet-50/40 transition-colors cursor-pointer ${
-                      selectedTeam === entry.team ? "bg-violet-50" : ""
+                      selectedTeam === entry.team ? 'bg-violet-50' : ''
                     }`}
                     onClick={() => setSelectedTeam(entry.team)}
                   >
-                    <td className="px-4 py-3 font-semibold text-gray-800">
-                      {entry.ranking}
-                    </td>
+                    <td className="px-4 py-3 font-semibold text-gray-800">{entry.ranking}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <CountryFlag country={entry.team} size={16} />
@@ -357,13 +352,11 @@ export function EloRankingClient() {
                       {entry.elo_rating.toFixed(1)}
                     </td>
                     <td className="px-4 py-3 text-right font-mono text-gray-400 text-xs">
-                      {entry.date?.slice(0, 10) ?? "—"}
+                      {entry.date?.slice(0, 10) ?? '—'}
                     </td>
                     <td className="px-4 py-3 text-center">
                       {selectedTeam === entry.team ? (
-                        <span className="text-[10px] text-violet-600 font-medium">
-                          SELECTED
-                        </span>
+                        <span className="text-[10px] text-violet-600 font-medium">SELECTED</span>
                       ) : (
                         <span className="text-[10px] text-gray-300 hover:text-violet-500">
                           View history
@@ -395,15 +388,13 @@ export function EloRankingClient() {
             <input
               type="text"
               placeholder="Search team…"
-              value={selectedTeam ?? ""}
+              value={selectedTeam ?? ''}
               onChange={(e) => setSelectedTeam(e.target.value || null)}
               className="text-xs border border-gray-200 rounded-lg px-3 py-1.5 w-48 text-gray-600 focus:ring-1 focus:ring-blue-400 focus:outline-none"
               list="team-list"
             />
             <datalist id="team-list">
-              {current?.ranking?.map((e) => (
-                <option key={e.team} value={e.team} />
-              ))}
+              {current?.ranking?.map((e) => <option key={e.team} value={e.team} />)}
             </datalist>
           </div>
         </div>
@@ -442,7 +433,9 @@ export function EloRankingClient() {
               </div>
               <div className="bg-gray-50 rounded-lg p-2 text-center">
                 <span className="text-gray-400">Current</span>
-                <div className="font-semibold text-violet-600">{history.current_elo.toFixed(0)}</div>
+                <div className="font-semibold text-violet-600">
+                  {history.current_elo.toFixed(0)}
+                </div>
               </div>
               <div className="bg-gray-50 rounded-lg p-2 text-center">
                 <span className="text-gray-400">Worst</span>
@@ -464,14 +457,15 @@ export function EloRankingClient() {
           <div className="text-xs text-blue-700 space-y-1">
             <p className="font-semibold">How ELO Ratings Work</p>
             <p>
-              ELO ratings are calculated from all historical match results. Each match updates both teams&apos;
-              ratings based on the actual result vs. the expected result. Home teams get a +100 point
-              advantage. Neutral venue matches (World Cup, continental cups) have no home advantage.
+              ELO ratings are calculated from all historical match results. Each match updates both
+              teams&apos; ratings based on the actual result vs. the expected result. Home teams get
+              a +100 point advantage. Neutral venue matches (World Cup, continental cups) have no
+              home advantage.
             </p>
             <p>
               Formula: <code>new_elo = old_elo + K × (result − expected)</code> where K=60, and
-              <code>expected = 1 / (1 + 10^((elo_opponent − elo_team) / 400))</code>.
-              Teams start at 1500 ELO.
+              <code>expected = 1 / (1 + 10^((elo_opponent − elo_team) / 400))</code>. Teams start at
+              1500 ELO.
             </p>
           </div>
         </div>
