@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Users, Swords, Flag, Trophy, TrendingUp, ArrowUpDown, BarChart3 } from "lucide-react";
+import { Users, Swords, Flag, Trophy, TrendingUp, ArrowUpDown, BarChart3, Zap } from "lucide-react";
 
 const navItems = [
   { href: "/teams", label: "Teams", icon: Users },
@@ -12,6 +12,7 @@ const navItems = [
   { href: "/elo-ranking", label: "ELO Rankings", icon: TrendingUp },
   { href: "/ranking-comparison", label: "FIFA vs ELO", icon: ArrowUpDown },
   { href: "/team-ranking-comparison", label: "Team Timeline", icon: BarChart3 },
+  { href: "/predict-match", label: "Predictions", icon: Zap },
 ];
 
 export function Sidebar() {
