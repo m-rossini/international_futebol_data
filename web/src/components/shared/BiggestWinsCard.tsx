@@ -1,16 +1,16 @@
-"use client";
+'use client';
 
-import { CountryFlag } from "./CountryFlag";
-import { ShootoutBadge } from "./ShootoutBadge";
-import type { BiggestWin } from "@/lib/types";
+import { CountryFlag } from './CountryFlag';
+import { ShootoutBadge } from './ShootoutBadge';
+import type { BiggestWin } from '@/lib/types';
 
 /** Consistent date formatting: "24 Nov 2022" */
 function fmtDate(raw: string): string {
-  const d = new Date(raw.slice(0, 10) + "T00:00:00");
-  return d.toLocaleDateString("en-GB", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
+  const d = new Date(raw.slice(0, 10) + 'T00:00:00');
+  return d.toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
   });
 }
 
@@ -28,14 +28,14 @@ export function BiggestWinsCard({ team, opponent, wins = [], label }: Props) {
     <div className="bg-white rounded-lg border border-gray-200 p-4">
       <h3 className="text-sm font-semibold text-gray-700 mb-3 inline-flex items-center gap-1.5">
         <CountryFlag countryName={team} size={14} />
-        {label ?? (opponent ? `Top wins vs ${opponent}` : "Biggest wins")}
+        {label ?? (opponent ? `Top wins vs ${opponent}` : 'Biggest wins')}
       </h3>
       <div className="divide-y divide-gray-100">
         {wins.map((win, i) => {
           const isHome = win.home_team === team;
           const opponentName = isHome ? win.away_team : win.home_team;
-          const teamBold = "font-semibold";
-          const oppBold = "";
+          const teamBold = 'font-semibold';
+          const oppBold = '';
 
           return (
             <div
@@ -44,9 +44,7 @@ export function BiggestWinsCard({ team, opponent, wins = [], label }: Props) {
             >
               {/* Date + tournament */}
               <div className="flex flex-col items-start min-w-0 shrink-0 w-[90px]">
-                <span className="text-[11px] text-gray-400 leading-tight">
-                  {fmtDate(win.date)}
-                </span>
+                <span className="text-[11px] text-gray-400 leading-tight">{fmtDate(win.date)}</span>
                 {win.tournament && (
                   <span className="text-[10px] text-gray-400 leading-tight truncate max-w-[90px]">
                     {win.tournament}
@@ -59,10 +57,7 @@ export function BiggestWinsCard({ team, opponent, wins = [], label }: Props) {
                 className={`inline-flex items-center gap-1 min-w-0 flex-1 justify-end text-right ${isHome ? teamBold : oppBold}`}
               >
                 {isHome ? team : opponentName}
-                <CountryFlag
-                  countryName={isHome ? team : opponentName}
-                  size={12}
-                />
+                <CountryFlag countryName={isHome ? team : opponentName} size={12} />
               </span>
 
               {/* Score — show real home–away scoreline + shootout badge */}
@@ -75,10 +70,7 @@ export function BiggestWinsCard({ team, opponent, wins = [], label }: Props) {
               <span
                 className={`inline-flex items-center gap-1 min-w-0 flex-1 ${!isHome ? teamBold : oppBold}`}
               >
-                <CountryFlag
-                  countryName={!isHome ? team : opponentName}
-                  size={12}
-                />
+                <CountryFlag countryName={!isHome ? team : opponentName} size={12} />
                 {!isHome ? team : opponentName}
               </span>
 

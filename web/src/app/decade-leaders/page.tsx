@@ -1,8 +1,8 @@
-import { DecadeLeadersClient } from "./decade-leaders-client";
+import { DecadeLeadersClient } from './decade-leaders-client';
 
 export const metadata = {
-  title: "Decade Leaders - ELO Ratings",
-  description: "See which teams dominated each decade based on ELO ratings",
+  title: 'Decade Leaders - ELO Ratings',
+  description: 'See which teams dominated each decade based on ELO ratings',
 };
 
 export default function DecadeLeadersPage() {

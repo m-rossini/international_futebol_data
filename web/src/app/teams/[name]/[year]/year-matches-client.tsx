@@ -1,26 +1,22 @@
-"use client";
+'use client';
 
-import { useEffect, useState, useMemo, useCallback } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
-import { AutocompleteInput } from "@/components/shared/AutocompleteInput";
-import { CountryFlag } from "@/components/shared/CountryFlag";
-import {
-  StatsBar,
-  buildMatchStats,
-  buildGoalStats,
-} from "@/components/shared/StatsBar";
-import { MatchTable } from "@/components/shared/MatchTable";
-import { MatchLadderChart } from "@/components/shared/chart/MatchLadderChart";
-import { CumulativeGoalsChart } from "@/components/shared/chart/CumulativeGoalsChart";
-import { logApiCall, logUserAction } from "@/lib/observability";
-import type { MatchItem, TeamMatchesByYear } from "@/lib/types";
+import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { ArrowLeft } from 'lucide-react';
+import { AutocompleteInput } from '@/components/shared/AutocompleteInput';
+import { CountryFlag } from '@/components/shared/CountryFlag';
+import { StatsBar, buildMatchStats, buildGoalStats } from '@/components/shared/StatsBar';
+import { MatchTable } from '@/components/shared/MatchTable';
+import { MatchLadderChart } from '@/components/shared/chart/MatchLadderChart';
+import { CumulativeGoalsChart } from '@/components/shared/chart/CumulativeGoalsChart';
+import { logApiCall, logUserAction } from '@/lib/observability';
+import type { MatchItem, TeamMatchesByYear } from '@/lib/types';
 
-const API = "/api/proxy";
+const API = '/api/proxy';
 
 function buildQs(params: URLSearchParams): string {
   const q = new URLSearchParams();
-  for (const key of ["tournaments", "countries", "date_from", "date_to"]) {
+  for (const key of ['tournaments', 'countries', 'date_from', 'date_to']) {
     const v = params.get(key);
     if (v) q.set(key, v);
   }
@@ -31,16 +27,13 @@ function isoInputDate(raw: string): string {
   return raw.slice(0, 10); // → "2022-11-24"
 }
 
-function resultLabel(
-  m: MatchItem,
-  teamName: string,
-): { label: string; cls: string } {
+function resultLabel(m: MatchItem, teamName: string): { label: string; cls: string } {
   const isHome = m.home_team === teamName;
   const gf = isHome ? m.home_score : m.away_score;
   const ga = isHome ? m.away_score : m.home_score;
-  if (gf > ga) return { label: "W", cls: "bg-green-100 text-green-700" };
-  if (gf < ga) return { label: "L", cls: "bg-red-100 text-red-700" };
-  return { label: "D", cls: "bg-amber-100 text-amber-700" };
+  if (gf > ga) return { label: 'W', cls: 'bg-green-100 text-green-700' };
+  if (gf < ga) return { label: 'L', cls: 'bg-red-100 text-red-700' };
+  return { label: 'D', cls: 'bg-amber-100 text-amber-700' };
 }
 
 interface Props {
@@ -61,8 +54,8 @@ export function YearMatchesClient({ teamName, year }: Props) {
   const [filtTournament, setFiltTournament] = useState<string[]>([]);
   const [filtCountry, setFiltCountry] = useState<string[]>([]);
   const [filtCity, setFiltCity] = useState<string[]>([]);
-  const [filtDateFrom, setFiltDateFrom] = useState("");
-  const [filtDateTo, setFiltDateTo] = useState("");
+  const [filtDateFrom, setFiltDateFrom] = useState('');
+  const [filtDateTo, setFiltDateTo] = useState('');
   const [filtShootout, setFiltShootout] = useState(false);
 
   const qs = useMemo(() => buildQs(sp), [sp]);
@@ -75,15 +68,19 @@ export function YearMatchesClient({ teamName, year }: Props) {
       setError(null);
       const t0 = performance.now();
       try {
-        const url = `${API}/team/${encodeURIComponent(teamName)}/matches/${year}${qs ? "?" + qs : ""}`;
+        const url = `${API}/team/${encodeURIComponent(teamName)}/matches/${year}${qs ? '?' + qs : ''}`;
         const res = await fetch(url);
         const duration = performance.now() - t0;
-        logApiCall("/team/:name/matches/:year", duration, res.status, { team: teamName, year, query: qs || undefined });
+        logApiCall('/team/:name/matches/:year', duration, res.status, {
+          team: teamName,
+          year,
+          query: qs || undefined,
+        });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const json: TeamMatchesByYear = await res.json();
         if (!cancelled) {
           if (json.error) {
-            setError(json.message || "Team not found");
+            setError(json.message || 'Team not found');
           } else {
             setData(json);
             // Reset local filters when new data arrives
@@ -91,17 +88,21 @@ export function YearMatchesClient({ teamName, year }: Props) {
             setFiltTournament([]);
             setFiltCountry([]);
             setFiltCity([]);
-            setFiltDateFrom("");
-            setFiltDateTo("");
+            setFiltDateFrom('');
+            setFiltDateTo('');
             setFiltShootout(false);
           }
           setLoading(false);
         }
       } catch (err) {
         const duration = performance.now() - t0;
-        logApiCall("/team/:name/matches/:year", duration, 0, { team: teamName, year, error: err instanceof Error ? err.message : String(err) });
+        logApiCall('/team/:name/matches/:year', duration, 0, {
+          team: teamName,
+          year,
+          error: err instanceof Error ? err.message : String(err),
+        });
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : "Failed to load matches");
+          setError(err instanceof Error ? err.message : 'Failed to load matches');
           setLoading(false);
         }
       }
@@ -149,21 +150,29 @@ export function YearMatchesClient({ teamName, year }: Props) {
         return false;
       if (filtTournament.length > 0 && m.tournament && !filtTournament.includes(m.tournament))
         return false;
-      if (filtCountry.length > 0 && m.country && !filtCountry.includes(m.country))
-        return false;
+      if (filtCountry.length > 0 && m.country && !filtCountry.includes(m.country)) return false;
       if (filtCity.length > 0 && m.city && !filtCity.includes(m.city)) return false;
       if (filtDateFrom && isoInputDate(m.date) < filtDateFrom) return false;
       if (filtDateTo && isoInputDate(m.date) > filtDateTo) return false;
       if (filtShootout && !m.shootout) return false;
       return true;
     });
-  }, [data, filtOpponent, filtTournament, filtCountry, filtCity, filtDateFrom, filtDateTo, filtShootout]);
+  }, [
+    data,
+    filtOpponent,
+    filtTournament,
+    filtCountry,
+    filtCity,
+    filtDateFrom,
+    filtDateTo,
+    filtShootout,
+  ]);
 
   const handleBack = useCallback(() => {
-    logUserAction("back_to_team_year", { team: teamName, year });
+    logUserAction('back_to_team_year', { team: teamName, year });
     const params = new URLSearchParams(sp.toString());
     const q = params.toString();
-    router.push(`/teams/${encodeURIComponent(teamName)}${q ? `?${q}` : ""}`);
+    router.push(`/teams/${encodeURIComponent(teamName)}${q ? `?${q}` : ''}`);
   }, [router, sp, teamName, year]);
 
   // Summary counts (based on filtered data)
@@ -177,8 +186,8 @@ export function YearMatchesClient({ teamName, year }: Props) {
     for (const m of filtered) {
       const isHome = m.home_team === teamName;
       const r = resultLabel(m, teamName);
-      if (r.label === "W") wins++;
-      else if (r.label === "L") losses++;
+      if (r.label === 'W') wins++;
+      else if (r.label === 'L') losses++;
       else draws++;
       goalsFor += isHome ? m.home_score : m.away_score;
       goalsAgainst += isHome ? m.away_score : m.home_score;
@@ -199,8 +208,8 @@ export function YearMatchesClient({ teamName, year }: Props) {
     filtTournament.length > 0 ||
     filtCountry.length > 0 ||
     filtCity.length > 0 ||
-    filtDateFrom !== "" ||
-    filtDateTo !== "" ||
+    filtDateFrom !== '' ||
+    filtDateTo !== '' ||
     filtShootout;
 
   return (
@@ -220,7 +229,7 @@ export function YearMatchesClient({ teamName, year }: Props) {
         {teamName} — {year} Matches
       </h1>
       <p className="text-sm text-gray-500 mb-6">
-        {sp.toString() ? "Results filtered by current selection" : "All matches"}
+        {sp.toString() ? 'Results filtered by current selection' : 'All matches'}
       </p>
 
       {loading ? (
@@ -304,13 +313,13 @@ export function YearMatchesClient({ teamName, year }: Props) {
               <button
                 type="button"
                 onClick={() => {
-                  logUserAction("clear_filters", { page: "year_matches", team: teamName, year });
+                  logUserAction('clear_filters', { page: 'year_matches', team: teamName, year });
                   setFiltOpponent([]);
                   setFiltTournament([]);
                   setFiltCountry([]);
                   setFiltCity([]);
-                  setFiltDateFrom("");
-                  setFiltDateTo("");
+                  setFiltDateFrom('');
+                  setFiltDateTo('');
                   setFiltShootout(false);
                 }}
                 className="px-3 py-1.5 text-xs text-blue-600 hover:text-blue-800 hover:underline"
@@ -330,9 +339,7 @@ export function YearMatchesClient({ teamName, year }: Props) {
                     summary.wins,
                     summary.losses,
                     summary.draws,
-                    summary.total > 0
-                      ? (summary.wins / summary.total) * 100
-                      : undefined,
+                    summary.total > 0 ? (summary.wins / summary.total) * 100 : undefined,
                   )}
                 />
               </div>
@@ -355,32 +362,22 @@ export function YearMatchesClient({ teamName, year }: Props) {
           {/* Charts: W/L/D + Cumulative Goals side-by-side */}
           {data.matches_list.length > 0 && (
             <div className="mb-6">
-              <h2 className="text-sm font-semibold text-gray-700 mb-3">
-                Charts — {year}
-              </h2>
+              <h2 className="text-sm font-semibold text-gray-700 mb-3">Charts — {year}</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* W/D/L match-by-match ladder */}
                 <div className="bg-white rounded-lg border border-gray-200 p-4">
-                  <h3 className="text-sm font-semibold text-gray-700 mb-2">
-                    W/D/L Ladder
-                  </h3>
-                  <MatchLadderChart
-                    matches={data.matches_list}
-                    team={teamName}
-                    height={200}
-                  />
+                  <h3 className="text-sm font-semibold text-gray-700 mb-2">W/D/L Ladder</h3>
+                  <MatchLadderChart matches={data.matches_list} team={teamName} height={200} />
                 </div>
 
                 {/* Cumulative goals trend */}
                 <div className="bg-white rounded-lg border border-gray-200 p-4">
-                  <h3 className="text-sm font-semibold text-gray-700 mb-2">
-                    Cumulative Goals
-                  </h3>
+                  <h3 className="text-sm font-semibold text-gray-700 mb-2">Cumulative Goals</h3>
                   <CumulativeGoalsChart
                     matches={data.matches_list}
                     track={[
-                      { team: teamName, color: "#22c55e", label: "Goals For" },
-                      { team: teamName, color: "#ef4444", label: "Goals Against", against: true },
+                      { team: teamName, color: '#22c55e', label: 'Goals For' },
+                      { team: teamName, color: '#ef4444', label: 'Goals Against', against: true },
                     ]}
                     height={200}
                   />
@@ -392,15 +389,11 @@ export function YearMatchesClient({ teamName, year }: Props) {
           {filtered.length === 0 ? (
             <p className="text-sm text-gray-400">
               {anyFilterActive
-                ? "No matches match the current filters."
-                : "No matches found for this year."}
+                ? 'No matches match the current filters.'
+                : 'No matches found for this year.'}
             </p>
           ) : (
-            <MatchTable
-              matches={filtered}
-              highlightTeam={teamName}
-              showNeutral
-            />
+            <MatchTable matches={filtered} highlightTeam={teamName} showNeutral />
           )}
         </>
       ) : null}

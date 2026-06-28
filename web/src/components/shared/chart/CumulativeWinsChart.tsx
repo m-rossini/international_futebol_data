@@ -62,7 +62,7 @@ export function CumulativeWinsChart({ matches, team1, team2, height = 240, width
     }
 
     return rows;
-  }, [matches, team1, team2]);
+  }, [matches, team1]);
 
   if (matches.length === 0) {
     return <div className="text-center text-xs text-gray-400 py-2">No match data available</div>;

@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { useEffect, useRef } from "react";
-import { usePathname, useSearchParams } from "next/navigation";
-import { startTrace, endTrace } from "@/lib/observability";
+import { useEffect, useRef } from 'react';
+import { usePathname, useSearchParams } from 'next/navigation';
+import { startTrace, endTrace } from '@/lib/observability';
 
 /**
  * Tracks page views via OpenObserve.
@@ -16,7 +16,7 @@ export function PageViewTracker() {
   const hasStarted = useRef(false);
 
   useEffect(() => {
-    const path = pathname + (searchParams.toString() ? `?${searchParams.toString()}` : "");
+    const path = pathname + (searchParams.toString() ? `?${searchParams.toString()}` : '');
     if (path === prevPath.current) return;
 
     // End previous trace if one exists

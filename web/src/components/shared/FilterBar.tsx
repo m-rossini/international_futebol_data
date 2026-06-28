@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import { useEffect, useState, useCallback, useRef } from "react";
-import { useSearchParams, useRouter, usePathname } from "next/navigation";
-import { AutocompleteInput } from "./AutocompleteInput";
-import { CountryFlag } from "./CountryFlag";
-import { logApiCall, logUserAction } from "@/lib/observability";
-import type { Defaults } from "@/lib/useDefaults";
+import { useEffect, useState, useCallback, useRef } from 'react';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
+import { AutocompleteInput } from './AutocompleteInput';
+import { CountryFlag } from './CountryFlag';
+import { logApiCall, logUserAction } from '@/lib/observability';
+import type { Defaults } from '@/lib/useDefaults';
 
 interface FilterOptions {
   teams: string[];
@@ -19,7 +19,7 @@ interface Props {
   children?: React.ReactNode;
 }
 
-const ALL_FIELDS: Required<Props["fields"]> = {
+const ALL_FIELDS: Required<Props['fields']> = {
   teams: true,
   tournaments: true,
   countries: true,
@@ -34,36 +34,40 @@ export function FilterBar({ fields, injectDefaults = true, children }: Props) {
   const pathname = usePathname();
   const sp = useSearchParams();
 
-  const [options, setOptions] = useState<FilterOptions>(FETCHED.get("filters") || { teams: [], tournaments: [], countries: [] });
+  const [options, setOptions] = useState<FilterOptions>(
+    FETCHED.get('filters') || { teams: [], tournaments: [], countries: [] },
+  );
 
   useEffect(() => {
-    if (FETCHED.has("filters")) return;
+    if (FETCHED.has('filters')) return;
     let cancelled = false;
     const t0 = performance.now();
-    fetch("/api/proxy/filters")
+    fetch('/api/proxy/filters')
       .then((r) => {
         const duration = performance.now() - t0;
-        logApiCall("/filters", duration, r.status, { page: "filter_bar" });
+        logApiCall('/filters', duration, r.status, { page: 'filter_bar' });
         return r.json();
       })
       .then((data: FilterOptions) => {
         if (!cancelled) {
-          FETCHED.set("filters", data);
+          FETCHED.set('filters', data);
           setOptions(data);
         }
       })
       .catch((err) => {
         const duration = performance.now() - t0;
-        logApiCall("/filters", duration, 0, { page: "filter_bar", error: String(err) });
+        logApiCall('/filters', duration, 0, { page: 'filter_bar', error: String(err) });
       });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  const teams = sp.get("teams")?.split(",").filter(Boolean) || [];
-  const tournaments = sp.get("tournaments")?.split(",").filter(Boolean) || [];
-  const countries = sp.get("countries")?.split(",").filter(Boolean) || [];
-  const dateFrom = sp.get("date_from") || "";
-  const dateTo = sp.get("date_to") || "";
+  const teams = sp.get('teams')?.split(',').filter(Boolean) || [];
+  const tournaments = sp.get('tournaments')?.split(',').filter(Boolean) || [];
+  const countries = sp.get('countries')?.split(',').filter(Boolean) || [];
+  const dateFrom = sp.get('date_from') || '';
+  const dateTo = sp.get('date_to') || '';
 
   // Inject saved defaults into URL params on first render (when param is empty)
   const injectedRef = useRef(false);
@@ -72,20 +76,22 @@ export function FilterBar({ fields, injectDefaults = true, children }: Props) {
     if (injectedRef.current) return;
     let defaults: Defaults | null = null;
     try {
-      const raw = localStorage.getItem("football-defaults");
+      const raw = localStorage.getItem('football-defaults');
       if (raw) defaults = JSON.parse(raw);
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
     if (!defaults) return;
 
     const params = new URLSearchParams(sp.toString());
     let changed = false;
 
-    if (defaults.defaultTeam && !params.has("teams") && cfg.teams) {
-      params.set("teams", defaults.defaultTeam);
+    if (defaults.defaultTeam && !params.has('teams') && cfg.teams) {
+      params.set('teams', defaults.defaultTeam);
       changed = true;
     }
-    if (defaults.defaultTournament && !params.has("tournaments") && cfg.tournaments) {
-      params.set("tournaments", defaults.defaultTournament);
+    if (defaults.defaultTournament && !params.has('tournaments') && cfg.tournaments) {
+      params.set('tournaments', defaults.defaultTournament);
       changed = true;
     }
 
@@ -93,12 +99,12 @@ export function FilterBar({ fields, injectDefaults = true, children }: Props) {
       injectedRef.current = true;
       router.replace(`${pathname}?${params.toString()}`);
     }
-  }, [cfg.teams, cfg.tournaments, sp, router, pathname]);
+  }, [cfg.teams, cfg.tournaments, injectDefaults, sp, router, pathname]);
 
   const push = useCallback(
     (key: string, value: string) => {
       if (value) {
-        logUserAction("filter_change", { filter_key: key, filter_value: value });
+        logUserAction('filter_change', { filter_key: key, filter_value: value });
       }
       const params = new URLSearchParams(sp.toString());
       if (value) {
@@ -108,7 +114,7 @@ export function FilterBar({ fields, injectDefaults = true, children }: Props) {
       }
       router.replace(`${pathname}?${params.toString()}`);
     },
-    [router, pathname, sp]
+    [router, pathname, sp],
   );
 
   const visible = Boolean(cfg.teams || cfg.tournaments || cfg.countries || cfg.dates || children);
@@ -122,7 +128,7 @@ export function FilterBar({ fields, injectDefaults = true, children }: Props) {
           <AutocompleteInput
             options={options.teams}
             selected={teams}
-            onChange={(sel) => push("teams", sel.join(","))}
+            onChange={(sel) => push('teams', sel.join(','))}
             placeholder="All teams"
           />
         </div>
@@ -133,7 +139,7 @@ export function FilterBar({ fields, injectDefaults = true, children }: Props) {
           <AutocompleteInput
             options={options.tournaments}
             selected={tournaments}
-            onChange={(sel) => push("tournaments", sel.join(","))}
+            onChange={(sel) => push('tournaments', sel.join(','))}
             placeholder="All tournaments"
           />
         </div>
@@ -144,7 +150,7 @@ export function FilterBar({ fields, injectDefaults = true, children }: Props) {
           <AutocompleteInput
             options={options.countries}
             selected={countries}
-            onChange={(sel) => push("countries", sel.join(","))}
+            onChange={(sel) => push('countries', sel.join(','))}
             placeholder="All countries"
             renderItem={(c) => (
               <span className="inline-flex items-center gap-1.5">
@@ -162,7 +168,7 @@ export function FilterBar({ fields, injectDefaults = true, children }: Props) {
             <input
               type="date"
               value={dateFrom}
-              onChange={(e) => push("date_from", e.target.value)}
+              onChange={(e) => push('date_from', e.target.value)}
               className="border border-gray-300 rounded-lg px-2 py-1.5 text-sm bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-200 outline-none"
             />
           </div>
@@ -171,7 +177,7 @@ export function FilterBar({ fields, injectDefaults = true, children }: Props) {
             <input
               type="date"
               value={dateTo}
-              onChange={(e) => push("date_to", e.target.value)}
+              onChange={(e) => push('date_to', e.target.value)}
               className="border border-gray-300 rounded-lg px-2 py-1.5 text-sm bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-200 outline-none"
             />
           </div>

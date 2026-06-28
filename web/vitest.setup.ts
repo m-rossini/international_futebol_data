@@ -1,4 +1,4 @@
-import "@testing-library/jest-dom/vitest";
+import '@testing-library/jest-dom/vitest';
 
 // jsdom does not implement ResizeObserver — required by Recharts' ResponsiveContainer
 class MockResizeObserver {
@@ -11,7 +11,15 @@ class MockResizeObserver {
     if (this.callback) {
       const rect = target.getBoundingClientRect();
       this.callback(
-        [{ contentRect: rect, target, borderBoxSize: [], contentBoxSize: [], devicePixelContentBoxSize: [] }],
+        [
+          {
+            contentRect: rect,
+            target,
+            borderBoxSize: [],
+            contentBoxSize: [],
+            devicePixelContentBoxSize: [],
+          },
+        ],
         this as unknown as ResizeObserver,
       );
     }

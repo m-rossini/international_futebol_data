@@ -1,29 +1,25 @@
-"use client";
+'use client';
 
-import { useEffect, useState, useMemo, useCallback } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
-import { DataTable, type Column } from "@/components/shared/DataTable";
-import { FilterBar } from "@/components/shared/FilterBar";
-import { CountryFlag } from "@/components/shared/CountryFlag";
-import { YearlyChart } from "@/components/shared/chart/YearlyChart";
-import { CumulativeGoalsChart } from "@/components/shared/chart/CumulativeGoalsChart";
-import { MatchLadderChart } from "@/components/shared/chart/MatchLadderChart";
-import { BiggestWinsCard } from "@/components/shared/BiggestWinsCard";
-import { MatchTable } from "@/components/shared/MatchTable";
-import {
-  StatsBar,
-  buildMatchStats,
-  buildGoalStats,
-} from "@/components/shared/StatsBar";
-import { logApiCall, logUserAction } from "@/lib/observability";
-import type { TeamDetail, YearlyRow } from "@/lib/types";
+import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { ArrowLeft } from 'lucide-react';
+import { DataTable, type Column } from '@/components/shared/DataTable';
+import { FilterBar } from '@/components/shared/FilterBar';
+import { CountryFlag } from '@/components/shared/CountryFlag';
+import { YearlyChart } from '@/components/shared/chart/YearlyChart';
+import { CumulativeGoalsChart } from '@/components/shared/chart/CumulativeGoalsChart';
+import { MatchLadderChart } from '@/components/shared/chart/MatchLadderChart';
+import { BiggestWinsCard } from '@/components/shared/BiggestWinsCard';
+import { MatchTable } from '@/components/shared/MatchTable';
+import { StatsBar, buildMatchStats, buildGoalStats } from '@/components/shared/StatsBar';
+import { logApiCall, logUserAction } from '@/lib/observability';
+import type { TeamDetail, YearlyRow } from '@/lib/types';
 
-const API = "/api/proxy";
+const API = '/api/proxy';
 
 function buildQs(params: URLSearchParams): string {
   const q = new URLSearchParams();
-  for (const key of ["tournaments", "countries", "date_from", "date_to"]) {
+  for (const key of ['tournaments', 'countries', 'date_from', 'date_to']) {
     const v = params.get(key);
     if (v) q.set(key, v);
   }
@@ -31,50 +27,48 @@ function buildQs(params: URLSearchParams): string {
 }
 
 function winRateColor(rate: number): string {
-  if (rate >= 60) return "text-green-600 font-semibold";
-  if (rate >= 45) return "text-amber-600 font-semibold";
-  return "text-red-500 font-semibold";
+  if (rate >= 60) return 'text-green-600 font-semibold';
+  if (rate >= 45) return 'text-amber-600 font-semibold';
+  return 'text-red-500 font-semibold';
 }
 
 const yearlyColumns: Column<YearlyRow>[] = [
-  { key: "year", header: "Year", sortable: true },
+  { key: 'year', header: 'Year', sortable: true },
   {
-    key: "matches_played",
-    header: "Matches",
+    key: 'matches_played',
+    header: 'Matches',
     sortable: true,
     render: (r) => r.matches_played.toLocaleString(),
   },
   {
-    key: "wins",
-    header: "Wins",
+    key: 'wins',
+    header: 'Wins',
     sortable: true,
     render: (r) => r.wins.toLocaleString(),
   },
   {
-    key: "losses",
-    header: "Losses",
+    key: 'losses',
+    header: 'Losses',
     sortable: true,
     render: (r) => r.losses.toLocaleString(),
   },
   {
-    key: "draws",
-    header: "Draws",
+    key: 'draws',
+    header: 'Draws',
     sortable: true,
     render: (r) => r.draws.toLocaleString(),
   },
   {
-    key: "points",
-    header: "Pts",
+    key: 'points',
+    header: 'Pts',
     sortable: true,
     render: (r) => (
-      <span className="font-bold text-gray-900">
-        {(r.wins * 3 + r.draws).toLocaleString()}
-      </span>
+      <span className="font-bold text-gray-900">{(r.wins * 3 + r.draws).toLocaleString()}</span>
     ),
   },
   {
-    key: "win_rate",
-    header: "Win Rate",
+    key: 'win_rate',
+    header: 'Win Rate',
     sortable: true,
     render: (r) => {
       const rate = r.matches_played > 0 ? (r.wins / r.matches_played) * 100 : 0;
@@ -87,25 +81,22 @@ const yearlyColumns: Column<YearlyRow>[] = [
     },
   },
   {
-    key: "goals_for",
-    header: "GF",
+    key: 'goals_for',
+    header: 'GF',
     sortable: true,
     render: (r) => r.goals_for.toLocaleString(),
   },
   {
-    key: "goals_against",
-    header: "GA",
+    key: 'goals_against',
+    header: 'GA',
     sortable: true,
     render: (r) => r.goals_against.toLocaleString(),
   },
   {
-    key: "gf_ga_ratio",
-    header: "GF/GA",
+    key: 'gf_ga_ratio',
+    header: 'GF/GA',
     sortable: true,
-    render: (r) =>
-      r.goals_against > 0
-        ? (r.goals_for / r.goals_against).toFixed(2)
-        : "—",
+    render: (r) => (r.goals_against > 0 ? (r.goals_for / r.goals_against).toFixed(2) : '—'),
     compare: (a, b) => {
       const ra = a.goals_against > 0 ? a.goals_for / a.goals_against : 0;
       const rb = b.goals_against > 0 ? b.goals_for / b.goals_against : 0;
@@ -136,15 +127,15 @@ export function TeamDetailClient({ teamName }: Props) {
       setLoading(true);
       const t0 = performance.now();
       try {
-        const url = `${API}/team/${encodeURIComponent(teamName)}${qs ? "?" + qs : ""}`;
+        const url = `${API}/team/${encodeURIComponent(teamName)}${qs ? '?' + qs : ''}`;
         const res = await fetch(url);
         const duration = performance.now() - t0;
-        logApiCall("/team/:name", duration, res.status, { team: teamName, query: qs || undefined });
+        logApiCall('/team/:name', duration, res.status, { team: teamName, query: qs || undefined });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data: TeamDetail = await res.json();
         if (!cancelled) {
           if (data.error) {
-            setError(data.message || "Team not found");
+            setError(data.message || 'Team not found');
           } else {
             setDetail(data);
           }
@@ -152,9 +143,12 @@ export function TeamDetailClient({ teamName }: Props) {
         }
       } catch (err) {
         const duration = performance.now() - t0;
-        logApiCall("/team/:name", duration, 0, { team: teamName, error: err instanceof Error ? err.message : String(err) });
+        logApiCall('/team/:name', duration, 0, {
+          team: teamName,
+          error: err instanceof Error ? err.message : String(err),
+        });
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : "Failed to load team data");
+          setError(err instanceof Error ? err.message : 'Failed to load team data');
           setLoading(false);
         }
       }
@@ -167,20 +161,18 @@ export function TeamDetailClient({ teamName }: Props) {
   }, [teamName, qs]);
 
   const handleBack = useCallback(() => {
-    logUserAction("back_to_teams", { from_team: teamName });
+    logUserAction('back_to_teams', { from_team: teamName });
     const params = new URLSearchParams(sp.toString());
     const q = params.toString();
-    router.push(`/teams${q ? `?${q}` : ""}`);
+    router.push(`/teams${q ? `?${q}` : ''}`);
   }, [router, sp, teamName]);
 
   const handleYearClick = useCallback(
     (row: YearlyRow) => {
-      logUserAction("select_year", { team: teamName, year: row.year });
+      logUserAction('select_year', { team: teamName, year: row.year });
       const params = new URLSearchParams(sp.toString());
       const q = params.toString();
-      router.push(
-        `/teams/${encodeURIComponent(teamName)}/${row.year}${q ? `?${q}` : ""}`,
-      );
+      router.push(`/teams/${encodeURIComponent(teamName)}/${row.year}${q ? `?${q}` : ''}`);
     },
     [router, sp, teamName],
   );
@@ -233,9 +225,7 @@ export function TeamDetailClient({ teamName }: Props) {
           {/* Goal stats */}
           {detail.goals_for_stats && detail.goals_against_stats && (
             <div className="mb-6">
-              <h2 className="text-lg font-semibold text-gray-800 mb-3">
-                Goal Statistics
-              </h2>
+              <h2 className="text-lg font-semibold text-gray-800 mb-3">Goal Statistics</h2>
               <StatsBar
                 items={buildGoalStats(
                   detail.goals_for_stats.sum,
@@ -250,15 +240,11 @@ export function TeamDetailClient({ teamName }: Props) {
 
           {/* Yearly chart + Cumulative goals */}
           <div className="mb-6">
-            <h2 className="text-lg font-semibold text-gray-800 mb-3">
-              Charts
-            </h2>
+            <h2 className="text-lg font-semibold text-gray-800 mb-3">Charts</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Yearly W/L/D chart */}
               <div className="bg-white rounded-lg border border-gray-200 p-4">
-                <h3 className="text-sm font-semibold text-gray-700 mb-2">
-                  Matches per Year
-                </h3>
+                <h3 className="text-sm font-semibold text-gray-700 mb-2">Matches per Year</h3>
                 <YearlyChart
                   data={detail.yearly.map((r) => ({
                     year: r.year,
@@ -271,14 +257,12 @@ export function TeamDetailClient({ teamName }: Props) {
 
               {/* Cumulative goals trend */}
               <div className="bg-white rounded-lg border border-gray-200 p-4">
-                <h3 className="text-sm font-semibold text-gray-700 mb-2">
-                  Cumulative Goals
-                </h3>
+                <h3 className="text-sm font-semibold text-gray-700 mb-2">Cumulative Goals</h3>
                 <CumulativeGoalsChart
                   matches={filteredMatches}
                   track={[
-                    { team: teamName, color: "#22c55e", label: "Goals For" },
-                    { team: teamName, color: "#ef4444", label: "Goals Against", against: true },
+                    { team: teamName, color: '#22c55e', label: 'Goals For' },
+                    { team: teamName, color: '#ef4444', label: 'Goals Against', against: true },
                   ]}
                 />
               </div>
@@ -288,16 +272,10 @@ export function TeamDetailClient({ teamName }: Props) {
           {/* W/D/L ladder (match-by-match) */}
           {filteredMatches.length >= 2 && (
             <div className="mb-6">
-              <h2 className="text-lg font-semibold text-gray-800 mb-3">
-                W/D/L Ladder
-              </h2>
+              <h2 className="text-lg font-semibold text-gray-800 mb-3">W/D/L Ladder</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="bg-white rounded-lg border border-gray-200 p-4">
-                  <MatchLadderChart
-                    matches={filteredMatches}
-                    team={teamName}
-                    height={200}
-                  />
+                  <MatchLadderChart matches={filteredMatches} team={teamName} height={200} />
                 </div>
               </div>
             </div>
@@ -310,11 +288,7 @@ export function TeamDetailClient({ teamName }: Props) {
                 Biggest Wins &amp; Worst Defeats
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <BiggestWinsCard
-                  team={teamName}
-                  wins={detail.biggest_wins}
-                  label="Biggest wins"
-                />
+                <BiggestWinsCard team={teamName} wins={detail.biggest_wins} label="Biggest wins" />
                 <BiggestWinsCard
                   team={teamName}
                   wins={detail.worst_defeats}
@@ -327,9 +301,7 @@ export function TeamDetailClient({ teamName }: Props) {
           {/* Yearly breakdown + All matches */}
           <div className="mb-6">
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg font-semibold text-gray-800">
-                Yearly Breakdown
-              </h2>
+              <h2 className="text-lg font-semibold text-gray-800">Yearly Breakdown</h2>
               <label className="flex items-center gap-1.5 cursor-pointer">
                 <input
                   type="checkbox"
@@ -345,26 +317,18 @@ export function TeamDetailClient({ teamName }: Props) {
                 columns={yearlyColumns}
                 data={detail.yearly}
                 keyField="year"
-                defaultSort={{ key: "year", dir: "desc" }}
+                defaultSort={{ key: 'year', dir: 'desc' }}
                 onRowClick={handleYearClick}
               />
             ) : (
-              <p className="text-sm text-gray-400">
-                No yearly data available
-              </p>
+              <p className="text-sm text-gray-400">No yearly data available</p>
             )}
             {detail.matches_list.length > 0 && (
               <div className="mt-4">
                 {filteredMatches.length > 0 ? (
-                  <MatchTable
-                    matches={filteredMatches}
-                    highlightTeam={teamName}
-                    showNeutral
-                  />
+                  <MatchTable matches={filteredMatches} highlightTeam={teamName} showNeutral />
                 ) : (
-                  <p className="text-sm text-gray-400">
-                    No matches match the current filter.
-                  </p>
+                  <p className="text-sm text-gray-400">No matches match the current filter.</p>
                 )}
               </div>
             )}

@@ -1,16 +1,16 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Users, Swords, Flag, TrendingUp, Clock, Zap } from "lucide-react";
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { Users, Swords, Flag, TrendingUp, Clock, Zap } from 'lucide-react';
 
 const navItems = [
-  { href: "/teams", label: "Teams", icon: Users },
-  { href: "/head-to-head", label: "Head to Head", icon: Swords },
-  { href: "/flag-report", label: "Flag Report", icon: Flag },
-  { href: "/elo-ranking", label: "ELO Rankings", icon: TrendingUp },
-  { href: "/decade-leaders", label: "Decade Leaders", icon: Clock },
-  { href: "/predict-match", label: "Predictions", icon: Zap },
+  { href: '/teams', label: 'Teams', icon: Users },
+  { href: '/head-to-head', label: 'Head to Head', icon: Swords },
+  { href: '/flag-report', label: 'Flag Report', icon: Flag },
+  { href: '/elo-ranking', label: 'ELO Rankings', icon: TrendingUp },
+  { href: '/decade-leaders', label: 'Decade Leaders', icon: Clock },
+  { href: '/predict-match', label: 'Predictions', icon: Zap },
 ];
 
 export function Sidebar() {
@@ -33,8 +33,8 @@ export function Sidebar() {
               href={item.href}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
                 isActive
-                  ? "bg-blue-50 text-blue-700 font-semibold"
-                  : "text-gray-500 hover:bg-gray-50"
+                  ? 'bg-blue-50 text-blue-700 font-semibold'
+                  : 'text-gray-500 hover:bg-gray-50'
               }`}
             >
               <item.icon size={18} />

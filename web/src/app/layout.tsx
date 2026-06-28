@@ -1,11 +1,11 @@
-import type { Metadata } from "next";
-import "./globals.css";
-import { Sidebar } from "@/components/layout/Sidebar";
-import { PageViewTracker } from "@/components/shared/PageViewTracker";
-import { WebVitalsTracker } from "@/components/shared/WebVitalsTracker";
+import type { Metadata } from 'next';
+import './globals.css';
+import { Sidebar } from '@/components/layout/Sidebar';
+import { PageViewTracker } from '@/components/shared/PageViewTracker';
+import { WebVitalsTracker } from '@/components/shared/WebVitalsTracker';
 
 export const metadata: Metadata = {
-  title: "International Football Stats",
+  title: 'International Football Stats',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

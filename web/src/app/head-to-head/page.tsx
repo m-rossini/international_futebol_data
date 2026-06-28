@@ -1,5 +1,5 @@
-import { Suspense } from "react";
-import { HeadToHeadClient } from "./head-to-head-client";
+import { Suspense } from 'react';
+import { HeadToHeadClient } from './head-to-head-client';
 
 export default function HeadToHeadPage() {
   return (

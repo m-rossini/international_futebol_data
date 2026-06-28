@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { getAllMappedNames } from "@/lib/countryFlags";
-import { CountryFlag } from "@/components/shared/CountryFlag";
-import { logApiCall } from "@/lib/observability";
+import { useEffect, useState } from 'react';
+import { getAllMappedNames } from '@/lib/countryFlags';
+import { CountryFlag } from '@/components/shared/CountryFlag';
+import { logApiCall } from '@/lib/observability';
 
-const API = "/api/proxy";
+const API = '/api/proxy';
 
 export function FlagReportClient() {
   const [teams, setTeams] = useState<string[]>([]);
@@ -21,7 +21,7 @@ export function FlagReportClient() {
       try {
         const res = await fetch(`${API}/filters`);
         const duration = performance.now() - t0;
-        logApiCall("/filters", duration, res.status, { page: "flag_report" });
+        logApiCall('/filters', duration, res.status, { page: 'flag_report' });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         if (!cancelled) {
@@ -31,9 +31,12 @@ export function FlagReportClient() {
         }
       } catch (err) {
         const duration = performance.now() - t0;
-        logApiCall("/filters", duration, 0, { page: "flag_report", error: err instanceof Error ? err.message : String(err) });
+        logApiCall('/filters', duration, 0, {
+          page: 'flag_report',
+          error: err instanceof Error ? err.message : String(err),
+        });
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : "Failed to load");
+          setError(err instanceof Error ? err.message : 'Failed to load');
           setLoading(false);
         }
       }
@@ -47,9 +50,7 @@ export function FlagReportClient() {
 
   const mapped = getAllMappedNames();
 
-  const teamsWithoutFlag = teams
-    .filter((t) => !mapped.has(t))
-    .sort((a, b) => a.localeCompare(b));
+  const teamsWithoutFlag = teams.filter((t) => !mapped.has(t)).sort((a, b) => a.localeCompare(b));
 
   const countriesWithoutFlag = countries
     .filter((c) => !mapped.has(c))
@@ -65,29 +66,19 @@ export function FlagReportClient() {
   }
 
   if (error) {
-    return (
-      <p className="p-8 text-sm text-red-500">
-        Error loading report: {error}
-      </p>
-    );
+    return <p className="p-8 text-sm text-red-500">Error loading report: {error}</p>;
   }
 
   return (
     <div className="p-8">
       <h1 className="text-2xl font-bold text-gray-800 mb-2">Flag Coverage Report</h1>
       <p className="text-sm text-gray-500 mb-6">
-        Shows which teams and countries from the dataset do not have a flag
-        mapped in the system.
+        Shows which teams and countries from the dataset do not have a flag mapped in the system.
       </p>
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-        <SummaryCard
-          label="Teams"
-          total={totalTeams}
-          covered={teamsWithFlag}
-          color="green"
-        />
+        <SummaryCard label="Teams" total={totalTeams} covered={teamsWithFlag} color="green" />
         <SummaryCard
           label="Countries"
           total={totalCountries}
@@ -203,22 +194,24 @@ function SummaryCard({
   label: string;
   total: number;
   covered: number;
-  color: "green" | "blue" | "red";
+  color: 'green' | 'blue' | 'red';
   invert?: boolean;
 }) {
   const value = invert ? total - covered : covered;
-  const pct = total > 0 ? ((value / total) * 100).toFixed(1) : "0.0";
+  const pct = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0';
   const colors: Record<string, string> = {
-    green: "text-green-600 bg-green-50 border-green-200",
-    blue: "text-blue-600 bg-blue-50 border-blue-200",
-    red: "text-red-600 bg-red-50 border-red-200",
+    green: 'text-green-600 bg-green-50 border-green-200',
+    blue: 'text-blue-600 bg-blue-50 border-blue-200',
+    red: 'text-red-600 bg-red-50 border-red-200',
   };
 
   return (
     <div className={`rounded-lg border px-4 py-3 ${colors[color]}`}>
       <p className="text-xs font-medium opacity-70">{label}</p>
       <p className="text-2xl font-bold">{value.toLocaleString()}</p>
-      <p className="text-xs opacity-60">{pct}% of {total}</p>
+      <p className="text-xs opacity-60">
+        {pct}% of {total}
+      </p>
     </div>
   );
 }

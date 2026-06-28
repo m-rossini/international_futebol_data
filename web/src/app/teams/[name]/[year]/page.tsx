@@ -1,16 +1,12 @@
-import { Suspense } from "react";
-import { YearMatchesClient } from "./year-matches-client";
+import { Suspense } from 'react';
+import { YearMatchesClient } from './year-matches-client';
 
 interface Params {
   name: string;
   year: string;
 }
 
-export default async function YearMatchesPage({
-  params,
-}: {
-  params: Promise<Params>;
-}) {
+export default async function YearMatchesPage({ params }: { params: Promise<Params> }) {
   const { name, year } = await params;
   const teamName = decodeURIComponent(name);
   const yearNum = Number(year);

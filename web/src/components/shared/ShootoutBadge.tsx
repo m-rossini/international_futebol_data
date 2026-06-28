@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 /** Small badge to indicate a match ended in a penalty shootout. */
 export function ShootoutBadge() {

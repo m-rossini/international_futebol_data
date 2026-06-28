@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { useState, useRef, useEffect, useCallback } from "react";
-import { X, ChevronDown } from "lucide-react";
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { X, ChevronDown } from 'lucide-react';
 
 interface Props {
   options: string[];
@@ -17,20 +17,18 @@ export function AutocompleteInput({
   options,
   selected,
   onChange,
-  placeholder = "Select...",
+  placeholder = 'Select...',
   multi = true,
   renderItem,
 }: Props) {
   const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState('');
   const [highlight, setHighlight] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const filtered = options.filter(
-    (o) =>
-      !selected.includes(o) &&
-      o.toLowerCase().includes(query.toLowerCase())
+    (o) => !selected.includes(o) && o.toLowerCase().includes(query.toLowerCase()),
   );
 
   const addItem = useCallback(
@@ -41,32 +39,32 @@ export function AutocompleteInput({
         onChange([item]);
         setOpen(false);
       }
-      setQuery("");
+      setQuery('');
       setHighlight(0);
     },
-    [multi, selected, onChange]
+    [multi, selected, onChange],
   );
 
   const removeItem = useCallback(
     (item: string) => {
       onChange(selected.filter((s) => s !== item));
     },
-    [selected, onChange]
+    [selected, onChange],
   );
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (!open || filtered.length === 0) return;
 
-    if (e.key === "ArrowDown") {
+    if (e.key === 'ArrowDown') {
       e.preventDefault();
       setHighlight((h) => Math.min(h + 1, filtered.length - 1));
-    } else if (e.key === "ArrowUp") {
+    } else if (e.key === 'ArrowUp') {
       e.preventDefault();
       setHighlight((h) => Math.max(h - 1, 0));
-    } else if (e.key === "Enter" && filtered[highlight]) {
+    } else if (e.key === 'Enter' && filtered[highlight]) {
       e.preventDefault();
       addItem(filtered[highlight]);
-    } else if (e.key === "Escape") {
+    } else if (e.key === 'Escape') {
       setOpen(false);
     }
   };
@@ -77,8 +75,8 @@ export function AutocompleteInput({
         setOpen(false);
       }
     }
-    document.addEventListener("mousedown", onClickOutside);
-    return () => document.removeEventListener("mousedown", onClickOutside);
+    document.addEventListener('mousedown', onClickOutside);
+    return () => document.removeEventListener('mousedown', onClickOutside);
   }, []);
 
   return (
@@ -112,7 +110,7 @@ export function AutocompleteInput({
           ref={inputRef}
           type="text"
           className="flex-1 min-w-[80px] outline-none text-sm bg-transparent py-0.5"
-          placeholder={selected.length === 0 ? placeholder : ""}
+          placeholder={selected.length === 0 ? placeholder : ''}
           value={query}
           onChange={(e) => {
             setQuery(e.target.value);
@@ -131,9 +129,7 @@ export function AutocompleteInput({
             <li
               key={item}
               className={`px-3 py-1.5 text-sm cursor-pointer ${
-                i === highlight
-                  ? "bg-blue-50 text-blue-700"
-                  : "text-gray-700 hover:bg-gray-50"
+                i === highlight ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50'
               }`}
               onMouseEnter={() => setHighlight(i)}
               onClick={() => addItem(item)}

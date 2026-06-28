@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 /**
  * A single stat card shown inside the StatsBar grid.
@@ -7,7 +7,7 @@
 export interface StatItem {
   label: string;
   value: string;
-  accent?: "green" | "amber" | "red" | "blue" | "neutral";
+  accent?: 'green' | 'amber' | 'red' | 'blue' | 'neutral';
 }
 
 // ---------------------------------------------------------------------------
@@ -25,25 +25,24 @@ export function buildMatchStats(
   points?: number, // 3‑pts‑per‑win system
 ): StatItem[] {
   const items: StatItem[] = [
-    { label: "Matches", value: total.toLocaleString() },
-    { label: "Wins", value: wins.toLocaleString() },
-    { label: "Losses", value: losses.toLocaleString() },
-    { label: "Draws", value: draws.toLocaleString() },
+    { label: 'Matches', value: total.toLocaleString() },
+    { label: 'Wins', value: wins.toLocaleString() },
+    { label: 'Losses', value: losses.toLocaleString() },
+    { label: 'Draws', value: draws.toLocaleString() },
   ];
 
   if (points !== undefined) {
     items.push({
-      label: "Points",
+      label: 'Points',
       value: points.toLocaleString(),
-      accent: "blue",
+      accent: 'blue',
     });
   }
 
   if (winRate !== undefined) {
-    const accent =
-      winRate >= 60 ? "green" : winRate >= 45 ? "amber" : "red";
+    const accent = winRate >= 60 ? 'green' : winRate >= 45 ? 'amber' : 'red';
     items.push({
-      label: "Win Rate",
+      label: 'Win Rate',
       value: `${winRate.toFixed(1)}%`,
       accent,
     });
@@ -61,15 +60,15 @@ export function buildGoalStats(
   avgDiff?: number, // average goal difference per match
 ): StatItem[] {
   return [
-    { label: "Goals For", value: goalsFor.toLocaleString() },
-    { label: "Goals Against", value: goalsAgainst.toLocaleString() },
+    { label: 'Goals For', value: goalsFor.toLocaleString() },
+    { label: 'Goals Against', value: goalsAgainst.toLocaleString() },
     {
-      label: "Goal Diff",
+      label: 'Goal Diff',
       value: (goalsFor - goalsAgainst).toLocaleString(),
     },
-    { label: "GF Avg", value: avgFor?.toFixed(2) ?? "—" },
-    { label: "GA Avg", value: avgAgainst?.toFixed(2) ?? "—" },
-    { label: "GD Avg", value: avgDiff?.toFixed(2) ?? "—" },
+    { label: 'GF Avg', value: avgFor?.toFixed(2) ?? '—' },
+    { label: 'GA Avg', value: avgAgainst?.toFixed(2) ?? '—' },
+    { label: 'GD Avg', value: avgDiff?.toFixed(2) ?? '—' },
   ];
 }
 
@@ -88,16 +87,15 @@ export function buildH2HStats(
   const t1WinRate = totalMatches > 0 ? (team1Wins / totalMatches) * 100 : 0;
   const t2WinRate = totalMatches > 0 ? (team2Wins / totalMatches) * 100 : 0;
 
-  const winRateAccent = (r: number) =>
-    r >= 60 ? "green" : r >= 45 ? "amber" : "red";
+  const winRateAccent = (r: number) => (r >= 60 ? 'green' : r >= 45 ? 'amber' : 'red');
 
   return [
-    { label: "Matches", value: totalMatches.toLocaleString() },
+    { label: 'Matches', value: totalMatches.toLocaleString() },
     { label: `${team1} Wins`, value: team1Wins.toLocaleString() },
-    { label: "Draws", value: draws.toLocaleString() },
+    { label: 'Draws', value: draws.toLocaleString() },
     { label: `${team2} Wins`, value: team2Wins.toLocaleString() },
-    { label: `${team1} Goals`, value: team1Goals.toLocaleString(), accent: "blue" },
-    { label: `${team2} Goals`, value: team2Goals.toLocaleString(), accent: "red" },
+    { label: `${team1} Goals`, value: team1Goals.toLocaleString(), accent: 'blue' },
+    { label: `${team2} Goals`, value: team2Goals.toLocaleString(), accent: 'red' },
     {
       label: `${team1} Win%`,
       value: `${t1WinRate.toFixed(1)}%`,
@@ -111,7 +109,7 @@ export function buildH2HStats(
     ...(avgGoalsPerMatch !== undefined && avgGoalsPerMatch > 0
       ? [
           {
-            label: "Avg Goals/Match",
+            label: 'Avg Goals/Match',
             value: avgGoalsPerMatch.toFixed(1),
           } as StatItem,
         ]
@@ -128,11 +126,11 @@ interface Props {
 }
 
 const ACCENT_CLASSES: Record<string, string> = {
-  green: "text-green-600 font-semibold",
-  amber: "text-amber-600 font-semibold",
-  red: "text-red-500 font-semibold",
-  blue: "text-blue-600 font-semibold",
-  neutral: "text-gray-800",
+  green: 'text-green-600 font-semibold',
+  amber: 'text-amber-600 font-semibold',
+  red: 'text-red-500 font-semibold',
+  blue: 'text-blue-600 font-semibold',
+  neutral: 'text-gray-800',
 };
 
 export function StatsBar({ items }: Props) {
@@ -149,11 +147,7 @@ export function StatsBar({ items }: Props) {
           className="bg-white rounded-lg border border-gray-200 px-4 py-3 flex flex-col gap-0.5"
         >
           <span className="text-xs font-medium text-gray-500">{item.label}</span>
-          <span
-            className={`text-xl font-bold ${
-              ACCENT_CLASSES[item.accent ?? "neutral"]
-            }`}
-          >
+          <span className={`text-xl font-bold ${ACCENT_CLASSES[item.accent ?? 'neutral']}`}>
             {item.value}
           </span>
         </div>

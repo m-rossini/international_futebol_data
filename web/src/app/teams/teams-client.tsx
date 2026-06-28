@@ -1,25 +1,25 @@
-"use client";
+'use client';
 
-import { useEffect, useState, useMemo, useCallback } from "react";
-import { useSearchParams, useRouter, usePathname } from "next/navigation";
-import { DataTable, type Column } from "@/components/shared/DataTable";
-import { FilterBar } from "@/components/shared/FilterBar";
-import { CountryFlag } from "@/components/shared/CountryFlag";
-import { logApiCall, logUserAction } from "@/lib/observability";
-import type { TeamItem } from "@/lib/types";
+import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
+import { DataTable, type Column } from '@/components/shared/DataTable';
+import { FilterBar } from '@/components/shared/FilterBar';
+import { CountryFlag } from '@/components/shared/CountryFlag';
+import { logApiCall, logUserAction } from '@/lib/observability';
+import type { TeamItem } from '@/lib/types';
 
-const API = "/api/proxy";
+const API = '/api/proxy';
 
 function winRateColor(rate: number): string {
-  if (rate >= 60) return "text-green-600 font-semibold";
-  if (rate >= 45) return "text-amber-600 font-semibold";
-  return "text-red-500 font-semibold";
+  if (rate >= 60) return 'text-green-600 font-semibold';
+  if (rate >= 45) return 'text-amber-600 font-semibold';
+  return 'text-red-500 font-semibold';
 }
 
 const columns: Column<TeamItem>[] = [
   {
-    key: "team",
-    header: "Team",
+    key: 'team',
+    header: 'Team',
     sortable: true,
     render: (row) => (
       <span className="inline-flex items-center gap-1.5">
@@ -29,73 +29,62 @@ const columns: Column<TeamItem>[] = [
     ),
   },
   {
-    key: "matches_played",
-    header: "Matches",
+    key: 'matches_played',
+    header: 'Matches',
     sortable: true,
     render: (row) => row.matches_played.toLocaleString(),
   },
   {
-    key: "wins",
-    header: "Wins",
+    key: 'wins',
+    header: 'Wins',
     sortable: true,
     render: (row) => row.wins.toLocaleString(),
   },
   {
-    key: "losses",
-    header: "Losses",
+    key: 'losses',
+    header: 'Losses',
     sortable: true,
     render: (row) => row.losses.toLocaleString(),
   },
   {
-    key: "draws",
-    header: "Draws",
+    key: 'draws',
+    header: 'Draws',
     sortable: true,
     render: (row) => row.draws.toLocaleString(),
   },
   {
-    key: "points",
-    header: "Pts",
+    key: 'points',
+    header: 'Pts',
     sortable: true,
-    render: (row) => (
-      <span className="font-bold text-gray-900">
-        {row.points.toLocaleString()}
-      </span>
-    ),
+    render: (row) => <span className="font-bold text-gray-900">{row.points.toLocaleString()}</span>,
   },
   {
-    key: "win_rate",
-    header: "Win Rate",
+    key: 'win_rate',
+    header: 'Win Rate',
     sortable: true,
-    render: (row) => (
-      <span className={winRateColor(row.win_rate)}>
-        {row.win_rate.toFixed(1)}%
-      </span>
-    ),
+    render: (row) => <span className={winRateColor(row.win_rate)}>{row.win_rate.toFixed(1)}%</span>,
   },
   {
-    key: "goals_for",
-    header: "GF",
+    key: 'goals_for',
+    header: 'GF',
     sortable: true,
     render: (row) => row.goals_for.toLocaleString(),
   },
   {
-    key: "goals_against",
-    header: "GA",
+    key: 'goals_against',
+    header: 'GA',
     sortable: true,
     render: (row) => row.goals_against.toLocaleString(),
   },
   {
-    key: "gf_ga_ratio",
-    header: "GF/GA",
+    key: 'gf_ga_ratio',
+    header: 'GF/GA',
     sortable: true,
-    render: (row) =>
-      row.goals_against > 0
-        ? row.gf_ga_ratio.toFixed(2)
-        : "—",
+    render: (row) => (row.goals_against > 0 ? row.gf_ga_ratio.toFixed(2) : '—'),
   },
   {
-    key: "unique_countries",
-    header: "Countries",
+    key: 'unique_countries',
+    header: 'Countries',
     sortable: true,
     render: (row) => row.unique_countries.toLocaleString(),
   },
@@ -103,7 +92,7 @@ const columns: Column<TeamItem>[] = [
 
 function buildQs(params: URLSearchParams): string {
   const q = new URLSearchParams();
-  for (const key of ["tournaments", "countries", "date_from", "date_to"]) {
+  for (const key of ['tournaments', 'countries', 'date_from', 'date_to']) {
     const v = params.get(key);
     if (v) q.set(key, v);
   }
@@ -127,10 +116,10 @@ export function TeamsClient() {
       setLoading(true);
       const t0 = performance.now();
       try {
-        const url = `${API}/teams${qs ? "?" + qs : ""}`;
+        const url = `${API}/teams${qs ? '?' + qs : ''}`;
         const res = await fetch(url);
         const duration = performance.now() - t0;
-        logApiCall("/teams", duration, res.status, { query: qs || undefined });
+        logApiCall('/teams', duration, res.status, { query: qs || undefined });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data: TeamItem[] = (await res.json()).map((t: TeamItem) => ({
           ...t,
@@ -142,9 +131,12 @@ export function TeamsClient() {
         }
       } catch (err) {
         const duration = performance.now() - t0;
-        logApiCall("/teams", duration, 0, { query: qs || undefined, error: err instanceof Error ? err.message : String(err) });
+        logApiCall('/teams', duration, 0, {
+          query: qs || undefined,
+          error: err instanceof Error ? err.message : String(err),
+        });
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : "Failed to load teams");
+          setError(err instanceof Error ? err.message : 'Failed to load teams');
           setLoading(false);
         }
       }
@@ -156,27 +148,24 @@ export function TeamsClient() {
     };
   }, [qs]);
 
-  const teamFilter = useMemo(
-    () => sp.get("teams")?.split(",").filter(Boolean) || [],
-    [sp]
-  );
+  const teamFilter = useMemo(() => sp.get('teams')?.split(',').filter(Boolean) || [], [sp]);
   const minMatches = useMemo(() => {
-    const v = sp.get("min_matches");
+    const v = sp.get('min_matches');
     return v ? Math.max(0, parseInt(v, 10) || 0) : 0;
   }, [sp]);
 
   const setMinMatches = useCallback(
     (value: number) => {
-      logUserAction("set_min_matches", { page: "teams", min_matches: value });
+      logUserAction('set_min_matches', { page: 'teams', min_matches: value });
       const params = new URLSearchParams(sp.toString());
       if (value > 0) {
-        params.set("min_matches", String(value));
+        params.set('min_matches', String(value));
       } else {
-        params.delete("min_matches");
+        params.delete('min_matches');
       }
       router.replace(`${pathname}?${params.toString()}`);
     },
-    [router, pathname, sp]
+    [router, pathname, sp],
   );
 
   const filteredTeams = useMemo(() => {
@@ -194,36 +183,36 @@ export function TeamsClient() {
     return result;
   }, [teams, teamFilter, minMatches]);
 
-  const sortKey = useMemo(() => sp.get("sort") || null, [sp]);
+  const sortKey = useMemo(() => sp.get('sort') || null, [sp]);
   const sortDir = useMemo(() => {
-    const d = sp.get("dir");
-    return d === "asc" || d === "desc" ? d : null;
+    const d = sp.get('dir');
+    return d === 'asc' || d === 'desc' ? d : null;
   }, [sp]);
 
   const handleSortChange = useCallback(
-    (key: string | null, dir: "asc" | "desc" | null) => {
-      logUserAction("sort_teams", { page: "teams", sort_key: key, sort_dir: dir });
+    (key: string | null, dir: 'asc' | 'desc' | null) => {
+      logUserAction('sort_teams', { page: 'teams', sort_key: key, sort_dir: dir });
       const params = new URLSearchParams(sp.toString());
       if (key && dir) {
-        params.set("sort", key);
-        params.set("dir", dir);
+        params.set('sort', key);
+        params.set('dir', dir);
       } else {
-        params.delete("sort");
-        params.delete("dir");
+        params.delete('sort');
+        params.delete('dir');
       }
       router.replace(`${pathname}?${params.toString()}`);
     },
-    [router, pathname, sp]
+    [router, pathname, sp],
   );
 
   const handleRowClick = useCallback(
     (row: TeamItem) => {
-      logUserAction("select_team", { page: "teams", team: row.team });
+      logUserAction('select_team', { page: 'teams', team: row.team });
       const params = new URLSearchParams(sp.toString());
       const qs = params.toString();
-      router.push(`/teams/${encodeURIComponent(row.team)}${qs ? `?${qs}` : ""}`);
+      router.push(`/teams/${encodeURIComponent(row.team)}${qs ? `?${qs}` : ''}`);
     },
-    [router, sp]
+    [router, sp],
   );
 
   return (
@@ -235,7 +224,7 @@ export function TeamsClient() {
           <input
             type="number"
             min={0}
-            value={minMatches || ""}
+            value={minMatches || ''}
             onChange={(e) => setMinMatches(Number(e.target.value))}
             placeholder="0"
             className="border border-gray-300 rounded-lg px-2 py-1.5 text-sm bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-200 outline-none"
@@ -251,7 +240,7 @@ export function TeamsClient() {
           columns={columns}
           data={filteredTeams}
           keyField="team"
-          defaultSort={{ key: "matches_played", dir: "desc" }}
+          defaultSort={{ key: 'matches_played', dir: 'desc' }}
           sortKey={sortKey}
           sortDir={sortDir}
           onSortChange={handleSortChange}
