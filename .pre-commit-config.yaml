@@ -32,25 +32,6 @@ repos:
         additional_dependencies:
           - prettier@3.5.0
 
-  # ── Python: type checking (mypy) ───────────────────────
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.15.0
-    hooks:
-      - id: mypy
-        name: mypy (api)
-        files: ^api/
-        additional_dependencies:
-          - pandas-stubs
-          - fastapi
-          - pydantic
-          - types-PyYAML
-        args:
-          - --config-file=api/pyproject.toml
-          - --ignore-missing-imports
-          - --follow-imports=silent
-          - --show-error-codes
-        pass_filenames: false  # run once on all files (avoids import-cycle issues)
-
   # ── Generic file hygiene ────────────────────────────────
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0

@@ -3,11 +3,15 @@
 import logging
 
 from fastapi import APIRouter, HTTPException, Query
-from fastapi.responses import RedirectResponse
 
 from football_stats.routers.dependencies import load_version, require_data, state
 from football_stats.stats.elo import clear_elo_cache
-from football_stats.stats.models import FilterOptionsResponse, HealthResponse, ReloadResponse, VersionResponse
+from football_stats.stats.models import (
+    FilterOptionsResponse,
+    HealthResponse,
+    ReloadResponse,
+    VersionResponse,
+)
 
 logger = logging.getLogger("stats.server.meta")
 
@@ -16,7 +20,9 @@ router = APIRouter(tags=["Meta"])
 
 @router.post("/reload", response_model=ReloadResponse)
 async def reload_endpoint(
-    force_elo_recalc: bool = Query(False, description="Clear ELO cache and force recalculation from matches"),
+    force_elo_recalc: bool = Query(
+        False, description="Clear ELO cache and force recalculation from matches"
+    ),
 ):
     """Reload all CSV data and config file.
 
@@ -29,7 +35,11 @@ async def reload_endpoint(
         logger.info("ELO cache cleared: %s", cleared)
     try:
         info = state.reload()
-        logger.info("Reload complete — %d matches, %d scorers", info["matches_loaded"], info["goalscorers_loaded"])
+        logger.info(
+            "Reload complete — %d matches, %d scorers",
+            info["matches_loaded"],
+            info["goalscorers_loaded"],
+        )
         return {"message": "Data reloaded successfully", **info}
     except Exception as e:
         logger.error("Reload failed: %s", e)
@@ -71,5 +81,39 @@ async def filter_options():
 
 @router.get("/", include_in_schema=False)
 async def root():
-    """Redirect to the interactive API docs."""
-    return RedirectResponse(url="/docs")
+    """API root — returns service metadata and links to resources."""
+    require_data()
+    results = state.results
+    filter_params = {
+        "tournaments": sorted(results["tournament"].dropna().unique().tolist()),
+        "countries": sorted(results["country"].dropna().unique().tolist()),
+        "cities": sorted(results["city"].dropna().unique().tolist()),
+        "teams": sorted(
+            set(results["home_team"].dropna().unique().tolist())
+            | set(results["away_team"].dropna().unique().tolist())
+        ),
+    }
+    return {
+        "service": "International Football Stats",
+        "status": "running",
+        "version": load_version(),
+        "endpoints": {
+            "docs": "/docs",
+            "health": "/health",
+            "version": "/version",
+            "filters": "/filters",
+            "summary": "/summary",
+            "teams": "/teams",
+            "head_to_head": "/head_to_head",
+            "top_scorers": "/top_scorers",
+            "tournaments": "/tournaments",
+            "countries": "/countries",
+            "cities": "/cities",
+            "biggest_wins": "/biggest_wins",
+            "goals_per_year": "/goals_per_year",
+            "elo_ranking": "/elo-ranking/current",
+            "reload": "/reload",
+        },
+        "data_loaded": state.is_loaded,
+        "filter_params": filter_params,
+    }

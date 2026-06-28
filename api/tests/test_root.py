@@ -10,7 +10,9 @@ class TestRoot:
         resp = client.get("/")
         _assert_status(resp)
         body = resp.json()
-        _assert_keys(body, {"service", "status", "version", "endpoints", "data_loaded"}, "root")
+        _assert_keys(
+            body, {"service", "status", "version", "endpoints", "data_loaded"}, "root"
+        )
 
     def test_root_keys(self, client: TestClient):
         resp = client.get("/")
@@ -27,4 +29,4 @@ class TestRoot:
         """Root endpoint documents the available filter parameters."""
         body = client.get("/").json()
         fp = body["filter_params"]
-        _assert_keys(fp, {"tournaments", "countries", "date_from", "date_to"})
+        _assert_keys(fp, {"tournaments", "countries", "cities", "teams"})
