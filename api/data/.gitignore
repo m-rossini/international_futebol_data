@@ -14,3 +14,4 @@ former_names.csv
 
 # Ignore generated cache files
 *.pkl
+*_hash.txt
