@@ -3,6 +3,7 @@
 import logging
 
 from fastapi import APIRouter, HTTPException, Query
+from fastapi.responses import RedirectResponse
 
 from football_stats.routers.dependencies import load_version, require_data, state
 from football_stats.stats.elo import clear_elo_cache
@@ -81,39 +82,5 @@ async def filter_options():
 
 @router.get("/", include_in_schema=False)
 async def root():
-    """API root — returns service metadata and links to resources."""
-    require_data()
-    results = state.results
-    filter_params = {
-        "tournaments": sorted(results["tournament"].dropna().unique().tolist()),
-        "countries": sorted(results["country"].dropna().unique().tolist()),
-        "cities": sorted(results["city"].dropna().unique().tolist()),
-        "teams": sorted(
-            set(results["home_team"].dropna().unique().tolist())
-            | set(results["away_team"].dropna().unique().tolist())
-        ),
-    }
-    return {
-        "service": "International Football Stats",
-        "status": "running",
-        "version": load_version(),
-        "endpoints": {
-            "docs": "/docs",
-            "health": "/health",
-            "version": "/version",
-            "filters": "/filters",
-            "summary": "/summary",
-            "teams": "/teams",
-            "head_to_head": "/head_to_head",
-            "top_scorers": "/top_scorers",
-            "tournaments": "/tournaments",
-            "countries": "/countries",
-            "cities": "/cities",
-            "biggest_wins": "/biggest_wins",
-            "goals_per_year": "/goals_per_year",
-            "elo_ranking": "/elo-ranking/current",
-            "reload": "/reload",
-        },
-        "data_loaded": state.is_loaded,
-        "filter_params": filter_params,
-    }
+    """Redirect to the interactive API docs."""
+    return RedirectResponse(url="/docs")
