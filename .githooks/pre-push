@@ -1,0 +1,32 @@
+#!/bin/sh
+# ── Pre-push hook ─────────────────────────────────────────
+# Runs API tests via Docker Compose before pushing.
+# Fast if the Docker image is already built.
+#
+# Skip with:   git push --no-verify
+# Install via: pre-commit install --hook-type pre-push
+# Or manual:   ln -sf ../../.githooks/pre-push .git/hooks/pre-push
+
+set -e
+
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+NC='\033[0m'
+
+echo "=== Pre-push: running API tests ==="
+cd "$(git rev-parse --show-toplevel)"
+
+if ! command -v docker >/dev/null 2>&1; then
+  echo "${RED}Docker not found — skipping tests.${NC}"
+  exit 0
+fi
+
+# Quick build check — if image is missing, build it first
+if ! docker image inspect international-futebol-data:dev >/dev/null 2>&1; then
+  echo "Building API image (first time)…"
+  make api-build
+fi
+
+make api-test 2>&1
+
+echo "${GREEN}=== Pre-push: all tests passed ===${NC}"

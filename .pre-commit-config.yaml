@@ -1,0 +1,60 @@
+# ── Pre-commit hooks ─────────────────────────────────────
+# Install:  pip install pre-commit && pre-commit install
+# Run all:  pre-commit run --all-files
+# Skip:     SKIP=ruff git commit -m "..."
+
+default_language_version:
+  python: python3.14
+
+repos:
+  # ── Python: lint + format (ruff) ────────────────────────
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.11.0
+    hooks:
+      - id: ruff
+        name: ruff lint (api)
+        types_or: [python, pyi]
+        args: [--fix, --output-format=concise]
+        files: ^api/
+      - id: ruff-format
+        name: ruff format (api)
+        types_or: [python, pyi]
+        files: ^api/
+
+  # ── Python: type checking (mypy) ───────────────────────
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.15.0
+    hooks:
+      - id: mypy
+        name: mypy (api)
+        files: ^api/
+        additional_dependencies:
+          - pandas-stubs
+          - fastapi
+          - pydantic
+          - types-PyYAML
+        args:
+          - --config-file=api/pyproject.toml
+          - --ignore-missing-imports
+          - --follow-imports=silent
+          - --show-error-codes
+        pass_filenames: false  # run once on all files (avoids import-cycle issues)
+
+  # ── Generic file hygiene ────────────────────────────────
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
+        exclude: \.patch$|\.diff$
+      - id: end-of-file-fixer
+        exclude: \.patch$|\.diff$|\.pkl$|\.csv$
+      - id: check-yaml
+        args: [--allow-multiple-documents]
+        exclude: ^dashboards/
+      - id: check-added-large-files
+        args: [--maxkb=500]
+      - id: check-ast
+        files: ^api/
+      - id: check-json
+        exclude: ^dashboards/|node_modules/

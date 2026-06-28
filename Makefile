@@ -21,7 +21,7 @@ export DATA_VOLUME
         api-test api-test-cov api-mcp \
         web-build web-up web-down web-run web-shell web-logs \
         web-test web-test-cov \
-        up down test
+        up down test install-hooks
 
 # ═══════════════════════════════════════════════════════════
 #  Help
@@ -35,6 +35,7 @@ help:
 	@echo "    make up             Start api + web"
 	@echo "    make down           Stop all"
 	@echo "    make test           Run api + web test suites"
+	@echo "    make install-hooks  Install git hooks (pre-commit + pre-push)"
 	@echo ""
 	@echo "  API (dev container — attach VS Code)"
 	@echo "    make api-build      Build image"
@@ -164,6 +165,23 @@ web-test-cov: web-build
 		-v /app/node_modules \
 		$(IMG_WEB):dev \
 		sh -c "pnpm vitest run --coverage"
+
+# ═══════════════════════════════════════════════════════════
+#  Git hooks
+# ═══════════════════════════════════════════════════════════
+install-hooks:
+	@echo "Installing git hooks…"
+	@command -v pre-commit >/dev/null 2>&1 || (echo "Installing pre-commit…" && pip install pre-commit 2>/dev/null || uv tool install pre-commit 2>/dev/null || true)
+	@if command -v pre-commit >/dev/null 2>&1; then \
+		pre-commit install --hook-type pre-commit --hook-type pre-push 2>/dev/null; \
+		ln -sf ../../.githooks/pre-push .git/hooks/pre-push 2>/dev/null; \
+		echo "  ✓ pre-commit hooks installed"; \
+		echo "  ✓ pre-push hook installed"; \
+	else \
+		echo "  ! pre-commit not available — install manually:"; \
+		echo "    pip install pre-commit && pre-commit install"; \
+		ln -sf ../../.githooks/pre-push .git/hooks/pre-push 2>/dev/null && echo "  ✓ pre-push hook installed"; \
+	fi
 
 # ═══════════════════════════════════════════════════════════
 #  Full stack (docker compose)
