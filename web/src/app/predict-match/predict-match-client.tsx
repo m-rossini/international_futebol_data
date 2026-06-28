@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { AutocompleteInput } from '@/components/shared/AutocompleteInput';
+import { CountryFlag } from '@/components/shared/CountryFlag';
 
 const API = '/api/proxy';
 
@@ -163,8 +164,12 @@ export default function PredictMatchClient() {
           {prediction && !error && (
             <div className="mt-6 border-t border-gray-100 pt-6">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold text-gray-900">
-                  {prediction.home_team} vs {prediction.away_team}
+                <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                  <CountryFlag countryName={prediction.home_team} size={20} />
+                  {prediction.home_team}
+                  <span className="text-gray-400 font-normal">vs</span>
+                  <CountryFlag countryName={prediction.away_team} size={20} />
+                  {prediction.away_team}
                 </h3>
                 <span className="text-xs text-gray-400">
                   ELO: {prediction.home_elo} vs {prediction.away_elo}
@@ -249,8 +254,12 @@ export default function PredictMatchClient() {
                   className="p-4 rounded-lg border border-gray-100 hover:border-gray-200 transition-colors"
                 >
                   <div className="flex justify-between items-start mb-2">
-                    <div className="text-sm font-semibold text-gray-900">
-                      {m.home_team} vs {m.away_team}
+                    <div className="text-sm font-semibold text-gray-900 flex items-center gap-1.5">
+                      <CountryFlag countryName={m.home_team} size={14} />
+                      {m.home_team}
+                      <span className="text-gray-400 font-normal">vs</span>
+                      <CountryFlag countryName={m.away_team} size={14} />
+                      {m.away_team}
                     </div>
                     <div className="text-xs text-gray-400">{m.date}</div>
                   </div>
@@ -326,8 +335,12 @@ export default function PredictMatchClient() {
           {prediction && (
             <div className="mt-6 border-t border-gray-100 pt-6">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold text-gray-900">
-                  {prediction.home_team} vs {prediction.away_team}
+                <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                  <CountryFlag countryName={prediction.home_team} size={20} />
+                  {prediction.home_team}
+                  <span className="text-gray-400 font-normal">vs</span>
+                  <CountryFlag countryName={prediction.away_team} size={20} />
+                  {prediction.away_team}
                 </h3>
                 <span className="text-xs text-gray-400">
                   ELO: {prediction.home_elo} vs {prediction.away_elo}

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Trophy, Medal, BarChart3, Calendar, Clock, Loader2 } from 'lucide-react';
+import { CountryFlag } from '@/components/shared/CountryFlag';
 
 const API = '/api/proxy';
 
@@ -235,8 +236,9 @@ export function DecadeLeadersClient() {
                           <td className="py-3">
                             <Link
                               href={`/team-ranking-comparison?team=${encodeURIComponent(team.team)}`}
-                              className="text-sm font-medium text-gray-800 hover:text-violet-600 transition-colors"
+                              className="text-sm font-medium text-gray-800 hover:text-violet-600 transition-colors flex items-center gap-2"
                             >
+                              <CountryFlag countryName={team.team} size={16} />
                               {team.team}
                             </Link>
                           </td>

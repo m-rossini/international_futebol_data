@@ -415,7 +415,7 @@ export function EloRankingClient() {
         {history && !histLoading && (
           <div className="p-5 space-y-4">
             <div className="flex items-center gap-4 text-sm">
-              <CountryFlag country={history.team} size={24} />
+              <CountryFlag countryName={history.team} size={24} />
               <span className="font-semibold text-gray-800">{history.team}</span>
               <span className="text-xs bg-violet-50 text-violet-700 px-2 py-0.5 rounded-full font-medium">
                 ELO {history.current_elo.toFixed(0)}
