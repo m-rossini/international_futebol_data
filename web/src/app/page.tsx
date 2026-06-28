@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
-import { Users, Swords, Trophy, Check, RotateCcw, BarChart3, TrendingUp, ArrowUpDown, LineChart, Zap } from "lucide-react";
+import { Users, Swords, Trophy, Check, RotateCcw, TrendingUp, Clock, Zap } from "lucide-react";
 import { AutocompleteInput } from "@/components/shared/AutocompleteInput";
 import { useDefaults } from "@/lib/useDefaults";
 import { logUserAction, logApiCall } from "@/lib/observability";
@@ -201,14 +201,6 @@ export default function HomePage() {
           <span className="text-xs text-gray-400 text-center">Compare two teams head-to-head</span>
         </Link>
         <Link
-          href="/fifa-ranking"
-          className="flex flex-col items-center gap-2 p-5 bg-white rounded-xl border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all"
-        >
-          <BarChart3 size={24} className="text-amber-500" />
-          <span className="text-sm font-semibold text-gray-700">FIFA Rankings</span>
-          <span className="text-xs text-gray-400 text-center">Current rankings and historical trends</span>
-        </Link>
-        <Link
           href="/elo-ranking"
           className="flex flex-col items-center gap-2 p-5 bg-white rounded-xl border border-gray-200 hover:border-violet-300 hover:shadow-md transition-all"
         >
@@ -217,20 +209,12 @@ export default function HomePage() {
           <span className="text-xs text-gray-400 text-center">ELO ratings calculated from match results</span>
         </Link>
         <Link
-          href="/ranking-comparison"
-          className="flex flex-col items-center gap-2 p-5 bg-white rounded-xl border border-gray-200 hover:border-indigo-300 hover:shadow-md transition-all"
+          href="/decade-leaders"
+          className="flex flex-col items-center gap-2 p-5 bg-white rounded-xl border border-gray-200 hover:border-amber-300 hover:shadow-md transition-all"
         >
-          <ArrowUpDown size={24} className="text-indigo-500" />
-          <span className="text-sm font-semibold text-gray-700">FIFA vs ELO</span>
-          <span className="text-xs text-gray-400 text-center">Compare both rankings side by side</span>
-        </Link>
-        <Link
-          href="/team-ranking-comparison"
-          className="flex flex-col items-center gap-2 p-5 bg-white rounded-xl border border-gray-200 hover:border-purple-300 hover:shadow-md transition-all"
-        >
-          <LineChart size={24} className="text-purple-500" />
-          <span className="text-sm font-semibold text-gray-700">Team Timeline</span>
-          <span className="text-xs text-gray-400 text-center">FIFA vs ELO history for one team</span>
+          <Clock size={24} className="text-amber-500" />
+          <span className="text-sm font-semibold text-gray-700">Decade Leaders</span>
+          <span className="text-xs text-gray-400 text-center">Which teams dominated each era?</span>
         </Link>
         <Link
           href="/predict-match"

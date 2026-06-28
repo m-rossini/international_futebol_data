@@ -35,7 +35,6 @@ class DataState:
         self.goalscorers = None
         self.shootouts = None
         self.former_names = None
-        self.fifa_ranking = None
         self.elo_ratings = None
         self.config = {}
 
@@ -49,7 +48,6 @@ class DataState:
         self.goalscorers = _drop_future_rows(data["goalscorers"], "goalscorers")
         self.shootouts = _drop_future_rows(data["shootouts"], "shootouts")
         self.former_names = data["former_names"]  # no date column for matches
-        self.fifa_ranking = _drop_future_rows(data["fifa_ranking"], "fifa_ranking")
 
         # Calculate ELO ratings from historical match results
         if self.results is not None and not self.results.empty:
@@ -73,12 +71,11 @@ class DataState:
             "goalscorers_loaded": len(self.goalscorers),
             "shootouts_loaded": len(self.shootouts),
             "former_names_loaded": len(self.former_names),
-            "fifa_ranking_loaded": len(self.fifa_ranking),
             "elo_ratings_loaded": len(self.elo_ratings) if self.elo_ratings is not None else 0,
         }
         logger.info(
             "Data reloaded: %(matches_loaded)d matches, %(goalscorers_loaded)d scorers, "
-            "%(fifa_ranking_loaded)d rankings, %(elo_ratings_loaded)d ELO rows",
+            "%(elo_ratings_loaded)d ELO rows",
             summary,
         )
         return summary

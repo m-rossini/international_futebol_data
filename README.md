@@ -11,7 +11,6 @@ A full‑stack application for exploring international football (soccer) match s
 ### Data
 
 - **Match results, goalscorers, shootouts, and former country names** sourced from [International Football Results from 1872 to 2025](https://www.kaggle.com/datasets/martj42/international-football-results-from-1872-to-2017) by **Martijn J. van der Ploeg** ([@martj42](https://github.com/martj42)), updated with recent matches.
-- **FIFA Men's World Rankings (1993–present)** sourced from the [fifa_ranking](https://github.com/tadhgfitzgerald/fifa_ranking) dataset by **tadhgfitzgerald**, a historical archive of official FIFA/Coca-Cola World Rankings with ~57,800 rows covering ~200 countries per monthly snapshot.
 - **ELO ratings** are calculated on-the-fly from the match results dataset using the standard ELO formula (K=60, home advantage +100, 1872–present). Results are cached to disk for fast reloads. See [`api/football_stats/stats/elo.py`](api/football_stats/stats/elo.py).
 
 ### Flags
@@ -46,7 +45,7 @@ make test
 
 ### Dataset
 
-The API expects five CSV files in `api/data/`:
+The API expects four CSV files in `api/data/`:
 
 | File | Rows | Description |
 |---|---|---|
@@ -54,7 +53,6 @@ The API expects five CSV files in `api/data/`:
 | `goalscorers.csv` | ~47,784 | Scorers per match: date, teams, player |
 | `shootouts.csv` | ~678 | Penalty shootout winners |
 | `former_names.csv` | 37 | Historical country name mappings |
-| `fifa_ranking.csv` | ~57,800 | FIFA Men's World Rankings (1993–present) |
 
 Additionally, **ELO ratings** (~49,400 rows, 336 teams) are calculated from the match results on first load and cached in `api/data/elo_ratings.pkl` for subsequent reloads.
 
@@ -83,10 +81,7 @@ The FastAPI `app` is configured with `title="International Football Stats"`, `ve
 │          ├─ /                    Dashboard       │
 │          ├─ /teams               500+ team list  │
 │          ├─ /head-to-head        Team comparison │
-│          ├─ /fifa-ranking        FIFA Rankings   │
 │          ├─ /elo-ranking         ELO Ratings     │
-│          ├─ /ranking-comparison  FIFA vs ELO     │
-│          ├─ /team-ranking-comparison  Timeline   │
 │          └─ /flag-report         Missing flags   │
 │              │                                   │
 │              ▼  /api/proxy  (Next.js rewrite)    │
@@ -103,14 +98,9 @@ The FastAPI `app` is configured with `title="International Football Stats"`, `ve
 │    ├─ GET  /countries, /country/:name            │
 │    ├─ GET  /cities, /city/:name                  │
 │    ├─ GET  /biggest_wins, /goals_per_year        │
-│    ├─ GET  /fifa-ranking/current                 │
-│    ├─ GET  /fifa-ranking/history/{country}       │
-│    ├─ GET  /fifa-ranking/snapshots               │
 │    ├─ GET  /elo-ranking/current                  │
 │    ├─ GET  /elo-ranking/history/{team}           │
 │    ├─ GET  /elo-ranking/summary                  │
-│    ├─ GET  /ranking-comparison                   │
-│    ├─ GET  /ranking-comparison/{team}            │
 │    └─ POST /reload                               │
 │                                                   │
 │  OpenObserve  :7580 (UI) / :7581 (ingest)         │
@@ -180,14 +170,9 @@ Run it after `make up` — dashboards appear immediately in the OpenObserve UI u
 | `GET` | `/city/{name}` | Single city detail |
 | `GET` | `/biggest_wins?top_n=10` | Matches with largest goal margins |
 | `GET` | `/goals_per_year?sort_by=goals` | Yearly goal/match breakdown |
-| `GET` | `/fifa-ranking/current?top_n=50` | Current FIFA World Ranking (latest snapshot) |
-| `GET` | `/fifa-ranking/history/{country}` | Historical FIFA ranking for a specific country |
-| `GET` | `/fifa-ranking/snapshots` | List all available FIFA ranking snapshot dates |
 | `GET` | `/elo-ranking/current?top_n=50` | Current ELO ratings (calculated from match results) |
 | `GET` | `/elo-ranking/history/{team}` | Historical ELO rating for a specific team |
 | `GET` | `/elo-ranking/summary` | ELO summary statistics (min, max, mean, median, top 10) |
-| `GET` | `/ranking-comparison?top_n=30` | Compare FIFA World Rankings vs ELO ratings side by side |
-| `GET` | `/ranking-comparison/{team}` | FIFA vs ELO timeline for a specific team |
 
 #### Common filter parameters
 
@@ -216,29 +201,23 @@ Filter semantics: **OR** within each parameter, **AND** across parameters — e.
 │   ├── football_stats/       Source code (server, routers, stats engine)
 │   │   ├── stats/
 │   │   │   ├── elo.py        ELO rating calculation engine (with disk cache)
-│   │   │   ├── loader.py     Dataset loading (results, FIFA ranking, etc.)
+│   │   │   ├── loader.py     Dataset loading (results, ELO, etc.)
 │   │   │   ├── state.py      Global application state
 │   │   │   └── ...
 │   │   ├── routers/
-│   │   │   ├── rankings.py   FIFA + ELO + comparative endpoints
+│   │   │   ├── rankings.py   ELO + comparative endpoints
 │   │   │   └── ...
 │   ├── tests/
-│   │   ├── test_fifa_ranking.py     13 tests
 │   │   ├── test_elo_ranking.py      15 tests
-│   │   ├── test_ranking_comparison.py 13 tests
 │   │   └── ...
-│   ├── data/                 Dataset directory (5 CSV files + ELO cache)
-│   │   ├── fifa_ranking.csv  FIFA Men's World Rankings (57,793 rows)
-│   │   ├── .gitignore        Tracks fifa_ranking.csv, ignores originals
+│   ├── data/                 Dataset directory (4 CSV files + ELO cache)
+│   │   ├── .gitignore        Tracks CSVs, ignores originals
 │   │   └── ...
 │   ├── Dockerfile
 │   └── pyproject.toml
 └── web/                      Next.js frontend
     ├── src/app/
-    │   ├── fifa-ranking/           FIFA Rankings page
     │   ├── elo-ranking/            ELO Ratings page
-    │   ├── ranking-comparison/     FIFA vs ELO side-by-side page
-    │   └── team-ranking-comparison/ Team timeline comparison page
     ├── src/components/
     │   ├── shared/DownloadButton.tsx  CSV export component
     │   └── ...

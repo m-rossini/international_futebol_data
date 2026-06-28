@@ -543,7 +543,6 @@ class ReloadResponse(BaseModel):
     goalscorers_loaded: int
     shootouts_loaded: int
     former_names_loaded: int
-    fifa_ranking_loaded: int
     elo_ratings_loaded: int = 0
 
 

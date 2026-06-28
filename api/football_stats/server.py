@@ -39,12 +39,11 @@ async def lifespan(application: FastAPI):
     logger.info("Starting server — loading data...")
     info = state.reload()
     logger.info(
-        "Data loaded: %d matches, %d goalscorers, %d shootouts, %d former names, %d fifa rankings, %d elo rows",
+        "Data loaded: %d matches, %d goalscorers, %d shootouts, %d former names, %d elo rows",
         info["matches_loaded"],
         info["goalscorers_loaded"],
         info["shootouts_loaded"],
         info["former_names_loaded"],
-        info["fifa_ranking_loaded"],
         info["elo_ratings_loaded"],
     )
     yield

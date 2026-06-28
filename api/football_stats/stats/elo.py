@@ -269,6 +269,81 @@ def get_latest_elo(elo_history: pd.DataFrame, top_n: int = 50) -> pd.DataFrame:
     return latest.head(top_n)
 
 
+def get_decade_leaders(
+    elo_history: pd.DataFrame,
+    decades: list[str] | None = None,
+    top_n: int = 5,
+) -> list[dict]:
+    """Get top teams by average ELO rating for each decade.
+
+    Parameters
+    ----------
+    elo_history : pd.DataFrame
+        Output from ``calculate_elo_ratings``.
+    decades : list[str] | None
+        List of decade labels (e.g. '1990s', '2000s'). Auto-detected if None.
+    top_n : int
+        Number of top teams per decade.
+
+    Returns
+    -------
+    list[dict]
+        Each dict: {decade, year_range, teams: [{team, avg_elo, peak_elo, match_count}]}
+    """
+    if elo_history.empty:
+        return []
+
+    # Extract decade from date
+    df = elo_history.copy()
+    df["year"] = pd.to_datetime(df["date"]).dt.year
+    df["decade"] = (df["year"] // 10 * 10).astype(str) + "s"
+
+    # Filter to requested decades or auto-detect
+    if decades:
+        df = df[df["decade"].isin(decades)]
+    else:
+        # Filter to decades with enough data
+        dec_counts = df.groupby("decade")["team"].nunique()
+        decades_with_data = dec_counts[dec_counts >= 10].index.tolist()
+        df = df[df["decade"].isin(decades_with_data)]
+
+    results = []
+    for decade, grp in sorted(df.groupby("decade")):
+        # Average ELO per team in this decade
+        team_stats = grp.groupby("team").agg(
+            avg_elo=("elo_rating_new", "mean"),
+            peak_elo=("elo_rating_new", "max"),
+            match_count=("date", "count"),
+        ).reset_index()
+
+        team_stats = team_stats.sort_values("avg_elo", ascending=False).head(top_n)
+
+        year_start = int(decade.replace("s", ""))
+        year_end = year_start + 9
+
+        results.append({
+            "decade": decade,
+            "year_range": f"{year_start}–{year_end}",
+            "leader": {
+                "team": team_stats.iloc[0]["team"],
+                "avg_elo": round(team_stats.iloc[0]["avg_elo"], 1),
+                "peak_elo": round(team_stats.iloc[0]["peak_elo"], 1),
+                "match_count": int(team_stats.iloc[0]["match_count"]),
+            },
+            "teams": [
+                {
+                    "team": row["team"],
+                    "avg_elo": round(row["avg_elo"], 1),
+                    "peak_elo": round(row["peak_elo"], 1),
+                    "match_count": int(row["match_count"]),
+                }
+                for _, row in team_stats.iterrows()
+            ],
+        })
+
+    return results
+
+
 def get_team_elo_history(
     elo_history: pd.DataFrame, team: str
 ) -> pd.DataFrame:

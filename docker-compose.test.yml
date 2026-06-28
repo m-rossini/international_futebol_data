@@ -7,7 +7,8 @@ services:
     container_name: futebol-api-test
     volumes:
       - ./api:/app
-      - /home/perez/projetos/international_results:/data:ro
+      # Set DATA_VOLUME in .env to point to your CSV directory
+      - ${DATA_VOLUME}:/data:ro
     environment:
       - DATA_DIR=/data
       - FORCE_COLOR=1

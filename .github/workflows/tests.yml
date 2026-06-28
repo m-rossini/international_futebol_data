@@ -36,21 +36,8 @@ jobs:
     - name: Download test data
       run: |
         mkdir -p data
-        python -c "
-import pandas as pd
-# Download small test datasets
-urls = {
-    'results.csv': 'https://raw.githubusercontent.com/tadhgfitzgerald/fifa_ranking/master/results.csv',
-    'fifa_ranking.csv': 'https://raw.githubusercontent.com/martj42/international_results/main/results.csv',
-}
-# Use smaller subsets for CI
-results = pd.read_csv('https://raw.githubusercontent.com/martj42/international_results/main/results.csv')
-results.sample(n=1000, random_state=42).to_csv('data/results.csv', index=False)
-"
-
-    - name: Download FIFA ranking data
-      run: |
-        curl -sL 'https://raw.githubusercontent.com/tadhgfitzgerald/fifa_ranking/master/fifa_ranking.csv' | head -2000 > data/fifa_ranking.csv
+        # Use smaller subsets for CI
+        curl -sL 'https://raw.githubusercontent.com/martj42/international_results/main/results.csv' | head -1000 > data/results.csv
 
     - name: Run tests
       run: |

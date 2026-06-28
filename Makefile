@@ -7,10 +7,12 @@ PORT_API   = 7531
 PORT_WEB   = 7500
 PART      ?= patch
 
-# Resolve data directory — set DATA_DIR env var to the directory containing
-# results.csv, goalscorers.csv, shootouts.csv, former_names.csv.
-# In Docker, the data dir is mounted at /data and exposed via DATA_DIR=/data.
-# Example: export DATA_DIR=/path/to/csv/files
+# Data volume — set DATA_VOLUME env var (or write it in .env) to the directory
+# containing results.csv, goalscorers.csv, shootouts.csv, former_names.csv.
+# In Docker, this is mounted at /data and the API receives DATA_DIR=/data.
+# Example: export DATA_VOLUME=/path/to/csv/files
+-include .env
+export DATA_VOLUME
 
 
 # ── Phony targets ─────────────────────────────────────────
@@ -69,7 +71,7 @@ api-up: api-down
 		-p 5678:5678 \
 		-e DATA_DIR=/data \
 		-v $(CURDIR)/api:/app \
-		-v $(DATA_DIR):/data:ro \
+		-v $(DATA_VOLUME):/data:ro \
 		--entrypoint /bin/sh \
 		$(IMG_API):dev \
 		-c "sleep infinity"
@@ -93,7 +95,7 @@ api-test: api-build
 		-e DATA_DIR=/data \
 		-e FORCE_COLOR=1 \
 		-v $(CURDIR)/api:/app \
-		-v $(DATA_DIR):/data:ro \
+		-v $(DATA_VOLUME):/data:ro \
 		$(IMG_API):dev \
 		sh -c "uv sync && PYTHONPATH=football_stats uv run pytest tests/ -v --color=yes"
 
@@ -102,7 +104,7 @@ api-test-cov: api-build
 		-e DATA_DIR=/data \
 		-e FORCE_COLOR=1 \
 		-v $(CURDIR)/api:/app \
-		-v $(DATA_DIR):/data:ro \
+		-v $(DATA_VOLUME):/data:ro \
 		$(IMG_API):dev \
 		sh -c "uv sync && PYTHONPATH=football_stats uv run pytest tests/ -v --color=yes --cov=football_stats --cov-report=term-missing"
 
@@ -111,7 +113,7 @@ api-mcp: api-build
 		-p 7532:7532 \
 		-e DATA_DIR=/data \
 		-v $(CURDIR)/api:/app \
-		-v $(DATA_DIR):/data:ro \
+		-v $(DATA_VOLUME):/data:ro \
 		$(IMG_API):dev \
 		uv run python football_stats/mcp_server.py --transport sse --port 7532
 

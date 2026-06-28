@@ -10,7 +10,8 @@ services:
       - "5678:5678"
     volumes:
       - ./api:/app
-      - /home/perez/projetos/international_results:/data:ro
+      # Set DATA_VOLUME in .env to point to your CSV directory
+      - ${DATA_VOLUME}:/data:ro
     environment:
       - DATA_DIR=/data
       - OTEL_SERVICE_NAME=futebol-api
