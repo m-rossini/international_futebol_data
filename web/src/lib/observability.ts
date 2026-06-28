@@ -564,7 +564,7 @@ export function startSpan(
 /**
  * End a span.
  */
-export function endSpan(spanId: string, name: string, context?: Record<string, unknown>) {
+function endSpan(spanId: string, name: string, context?: Record<string, unknown>) {
   if (!currentTrace) return;
   const now = performance.now();
   const t0 = pendingSpanStarts.get(spanId) ?? now;
@@ -617,7 +617,7 @@ function nowInNano(): number {
  * Run a callback wrapped in a child span.
  * Automatically creates and ends the span with timing.
  */
-export function withSpan<T>(
+function withSpan<T>(
   name: string,
   fn: () => T,
   kind: string = 'INTERNAL',
@@ -637,7 +637,7 @@ export function withSpan<T>(
  * Run an async callback wrapped in a child span.
  * Automatically creates and ends the span with timing.
  */
-export async function withAsyncSpan<T>(
+async function withAsyncSpan<T>(
   name: string,
   fn: () => Promise<T>,
   kind: string = 'INTERNAL',

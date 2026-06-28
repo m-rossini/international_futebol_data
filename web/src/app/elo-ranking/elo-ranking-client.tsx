@@ -344,7 +344,7 @@ export function EloRankingClient() {
                     <td className="px-4 py-3 font-semibold text-gray-800">{entry.ranking}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
-                        <CountryFlag country={entry.team} size={16} />
+                        <CountryFlag countryName={entry.team} size={16} />
                         <span className="font-medium text-gray-700">{entry.team}</span>
                       </div>
                     </td>
