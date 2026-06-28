@@ -45,8 +45,11 @@ class DataState:
         logger.info("Reloading data from CSV files...")
         data = load_all_data()
 
-        # Strip future rows from any dataset with a date column
-        self.results = _drop_future_rows(data["results"], "results")
+        # Keep all results (including future matches) so upcoming predictions work.
+        # Future matches have NA scores and are correctly skipped by ELO calculation.
+        self.results = data["results"]
+
+        # Drop future rows from goalscorers and shootouts (require actual scores)
         self.goalscorers = _drop_future_rows(data["goalscorers"], "goalscorers")
         self.shootouts = _drop_future_rows(data["shootouts"], "shootouts")
         self.former_names = data["former_names"]  # no date column for matches

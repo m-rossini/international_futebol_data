@@ -45,7 +45,7 @@ export default function PredictMatchClient() {
   const [loading, setLoading] = useState(false);
   const [upcomingLoading, setUpcomingLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [mode, setMode] = useState<'single' | 'upcoming' | 'h2h'>('single');
+  const [mode, setMode] = useState<'single' | 'upcoming'>('single');
 
   // Fetch team names
   useEffect(() => {
@@ -95,7 +95,6 @@ export default function PredictMatchClient() {
         {[
           { key: 'single', label: 'Predict Match' },
           { key: 'upcoming', label: 'Upcoming' },
-          { key: 'h2h', label: 'Head to Head' },
         ].map((tab) => (
           <button
             key={tab.key}
@@ -282,98 +281,6 @@ export default function PredictMatchClient() {
                   </div>
                 </div>
               ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Head to head */}
-      {mode === 'h2h' && (
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <p className="text-sm text-gray-500 mb-4">
-            Predict outcome with query parameters instead of path-based teams.
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Home Team</label>
-              <AutocompleteInput
-                options={teams}
-                selected={homeTeam}
-                onChange={setHomeTeam}
-                multi={false}
-                placeholder="Search home team..."
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Away Team</label>
-              <AutocompleteInput
-                options={teams}
-                selected={awayTeam}
-                onChange={setAwayTeam}
-                multi={false}
-                placeholder="Search away team..."
-              />
-            </div>
-          </div>
-          <label className="flex items-center gap-2 cursor-pointer mb-4">
-            <input
-              type="checkbox"
-              checked={neutral}
-              onChange={(e) => setNeutral(e.target.checked)}
-              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-            />
-            <span className="text-sm text-gray-600">Neutral venue</span>
-          </label>
-          <button
-            onClick={handlePredict}
-            disabled={!homeTeam[0] || !awayTeam[0] || loading}
-            className="px-6 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            {loading ? 'Predicting...' : 'Predict Outcome'}
-          </button>
-
-          {prediction && (
-            <div className="mt-6 border-t border-gray-100 pt-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                  <CountryFlag countryName={prediction.home_team} size={20} />
-                  {prediction.home_team}
-                  <span className="text-gray-400 font-normal">vs</span>
-                  <CountryFlag countryName={prediction.away_team} size={20} />
-                  {prediction.away_team}
-                </h3>
-                <span className="text-xs text-gray-400">
-                  ELO: {prediction.home_elo} vs {prediction.away_elo}
-                </span>
-              </div>
-              <div className="grid grid-cols-3 gap-4 mb-4">
-                <div className="text-center">
-                  <div className="text-sm font-semibold text-green-700 mb-1">Home Win</div>
-                  <div className="text-2xl font-bold text-green-600">
-                    {(prediction.home_win_probability * 100).toFixed(1)}%
-                  </div>
-                </div>
-                <div className="text-center">
-                  <div className="text-sm font-semibold text-gray-600 mb-1">Draw</div>
-                  <div className="text-2xl font-bold text-gray-500">
-                    {(prediction.draw_probability * 100).toFixed(1)}%
-                  </div>
-                </div>
-                <div className="text-center">
-                  <div className="text-sm font-semibold text-red-700 mb-1">Away Win</div>
-                  <div className="text-2xl font-bold text-red-600">
-                    {(prediction.away_win_probability * 100).toFixed(1)}%
-                  </div>
-                </div>
-              </div>
-              <div className="text-center">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold bg-blue-50 text-blue-700 border border-blue-200">
-                  Predicted: {prediction.prediction.toUpperCase()}
-                  <span className="text-xs text-blue-400 font-normal">
-                    ({(prediction.confidence * 100).toFixed(1)}% confidence)
-                  </span>
-                </span>
-              </div>
             </div>
           )}
         </div>
