@@ -6,6 +6,19 @@ A full‑stack application for exploring international football (soccer) match s
 
 ---
 
+## Attributions
+
+### Data
+
+- **Match results, goalscorers, shootouts, and former country names** sourced from [International Football Results from 1872 to 2025](https://www.kaggle.com/datasets/martj42/international-football-results-from-1872-to-2017) by **Martijn J. van der Ploeg** ([@martj42](https://github.com/martj42)), updated with recent matches.
+
+### Flags
+
+- **ISO country code flags** (235 SVGs in `web/public/flags/`) sourced from [flag-icons](https://github.com/lipis/flag-icons) by **Panayiotis Lipiridis** ([@lipis](https://github.com/lipis)).
+- **Regional, historical, and non-ISO flags** (92 SVGs in `web/public/flags/`) sourced from [Flags of the World](https://www.fotw.info/) and various open‑domain SVG flag projects — created and adapted by the community.
+
+---
+
 ## Quick Start
 
 ```bash
@@ -29,11 +42,34 @@ make test
 - Docker & Docker Compose
 - (optional) `make`
 
-The API expects a `results.csv` dataset. Mount your data directory in `docker-compose.yml` via the `api` service volume.
+### Dataset
+
+The API expects four CSV files in `api/data/`:
+
+| File | Rows | Description |
+|---|---|---|
+| `results.csv` | ~49,478 | Match results: date, teams, score, tournament, location |
+| `goalscorers.csv` | ~47,784 | Scorers per match: date, teams, player |
+| `shootouts.csv` | ~678 | Penalty shootout winners |
+| `former_names.csv` | 37 | Historical country name mappings |
+
+Mount your data directory in `docker-compose.yml` via the `api` service volume.
 
 ---
 
-## Architecture
+## API & Interactive Documentation
+
+Since FastAPI auto‑generates an OpenAPI 3.1 spec from the source code, the most accurate API reference is always the live docs:
+
+| URL | Description |
+|---|---|
+| `http://localhost:7531/docs` | Swagger UI — interactive endpoint explorer |
+| `http://localhost:7531/redoc` | ReDoc — browsable reference |
+| `http://localhost:7531/openapi.json` | Raw OpenAPI 3.1 schema |
+
+The FastAPI `app` is configured with `title="International Football Stats"`, `version="1.0.0"`, and full Pydantic response models for every endpoint, so the auto‑generated docs include request parameters, response schemas, and example values — no manual upkeep needed.
+
+### Architecture
 
 ```
 ┌─────────────────────────────────────────────────┐
@@ -41,32 +77,31 @@ The API expects a `results.csv` dataset. Mount your data directory in `docker-co
 │    └─► Next.js App Router (React 19 / TS)       │
 │          ├─ /              Dashboard            │
 │          ├─ /teams         500+ team list        │
-│          ├─ /tournaments   Tournament browser    │
-│          ├─ /countries     Country browser       │
-│          ├─ /cities        City browser          │
-│          ├─ /rankings      Leaders by stat       │
 │          ├─ /head-to-head  Team comparison       │
-│          ├─ /top-scorers   Player leaderboard    │
-│          ├─ /biggest-wins  Largest goal margins  │
-│          └─ /goals-per-year  Yearly trends       │
+│          └─ /flag-report   Missing flag tracker  │
 │              │                                   │
 │              ▼  /api/proxy  (Next.js rewrite)    │
 │                                                   │
 │  FastAPI  :7531                                  │
-│    ├─ GET  /health                               │
+│    ├─ GET  /              Redirect→ /docs        │
+│    ├─ GET  /health, /version                     │
+│    ├─ GET  /filters                              │
 │    ├─ GET  /summary                              │
+│    ├─ GET  /teams                                │
 │    ├─ GET  /team/:name                           │
+│    ├─ GET  /team/:name/matches/:year             │
 │    ├─ GET  /head_to_head                         │
 │    ├─ GET  /top_scorers                          │
 │    ├─ GET  /most/:stat                           │
 │    ├─ GET  /tournaments, /tournament/:name       │
+│    ├─ GET  /tournament/:name/season/:year        │
 │    ├─ GET  /countries, /country/:name            │
 │    ├─ GET  /cities, /city/:name                  │
 │    ├─ GET  /biggest_wins                         │
 │    ├─ GET  /goals_per_year                       │
 │    └─ POST /reload                               │
 │                                                   │
-│  OpenObserve  :5080 (UI) / :5081 (ingest)        │
+│  OpenObserve  :7580 (UI) / :7581 (ingest)         │
 │    ├─ OTLP traces (API auto-instrumentation)     │
 │    └─ JSON logs (web client-side events)         │
 └─────────────────────────────────────────────────┘
@@ -80,7 +115,7 @@ The stack includes [OpenObserve](https://openobserve.com) for performance monito
 - **Web analytics** — Client-side page views, API call durations, and errors are batched and sent to OpenObserve's JSON ingestion API.
 - **Dashboards** — Pre-built dashboards for application overview, API performance, user experience, and user activity.
 
-OpenObserve UI is available at **http://localhost:5080** (credentials: `admin@futebol.local` / `Futebol@123`).
+OpenObserve UI is available at **http://localhost:7580** (credentials: `admin@futebol.local` / `Futebol@123`).
 
 ### Dashboards
 
@@ -110,20 +145,45 @@ Run it after `make up` — dashboards appear immediately in the OpenObserve UI u
 
 ### Key Endpoints
 
-| Endpoint | Description |
-|---|---|
-| `/summary` | Global stats (matches, goals, home advantage) |
-| `/team/{name}` | Per‑team stats with goal distributions |
-| `/head_to_head?team1=&team2=` | Head‑to‑head comparison |
-| `/most/{stat}` | Rankings: `wins`, `losses`, `draws`, `goals_for`, `goals_against`, `win_rate`, `matches_played` |
-| `/tournaments` | Tournament list with editions and stats |
-| `/countries` | Country list with match/team counts |
-| `/cities` | City list with match counts |
-| `/top_scorers?top_n=20` | Player goal leaderboard |
-| `/biggest_wins?top_n=10` | Matches with largest goal margins |
-| `/goals_per_year?sort_by=goals` | Yearly goal/match breakdown |
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/` | Redirects to Swagger UI (`/docs`) |
+| `GET` | `/health` | Health check for container probes |
+| `GET` | `/version` | Current application version |
+| `GET` | `/filters` | Distinct values for UI dropdowns (teams, tournaments, countries, cities) |
+| `POST` | `/reload` | Reload all data from disk |
+| `GET` | `/summary` | Global stats (matches, goals, home advantage) |
+| `GET` | `/teams` | Full team list with aggregate stats |
+| `GET` | `/team/{name}` | Per‑team stats with goal distributions |
+| `GET` | `/team/{name}/matches/{year}` | Team matches for a specific year |
+| `GET` | `/head_to_head?team1=&team2=` | Head‑to‑head comparison |
+| `GET` | `/top_scorers?top_n=20` | Player goal leaderboard (no filter support) |
+| `GET` | `/most/{stat}` | Rankings by `wins`, `losses`, `draws`, `goals_for`, `goals_against`, `win_rate`, `loss_rate`, `matches`, `country`, `city` |
+| `GET` | `/tournaments` | Tournament list with editions and stats |
+| `GET` | `/tournament/{name}` | Single tournament detail with yearly breakdown |
+| `GET` | `/tournament/{name}/season/{year}` | Single edition of a tournament |
+| `GET` | `/countries` | Country list with match/team counts |
+| `GET` | `/country/{name}` | Single country detail |
+| `GET` | `/cities` | City list with match counts |
+| `GET` | `/city/{name}` | Single city detail |
+| `GET` | `/biggest_wins?top_n=10` | Matches with largest goal margins |
+| `GET` | `/goals_per_year?sort_by=goals` | Yearly goal/match breakdown |
 
-All list endpoints support optional filters: `?tournaments=WC&countries=Brazil&date_from=2000-01-01&date_to=2020-12-31`
+#### Common filter parameters
+
+All endpoints except `/health`, `/version`, `/filters`, `/top_scorers`, and `/reload` accept the same reusable filter query params:
+
+| Parameter | Type | Description |
+|---|---|---|
+| `teams` | `list[str]` (repeatable) | Filter by team name |
+| `tournaments` | `list[str]` (repeatable) | Filter by tournament name |
+| `countries` | `list[str]` (repeatable) | Filter by host country |
+| `date_from` | `str` (YYYY-MM-DD) | Start date (inclusive) |
+| `date_to` | `str` (YYYY-MM-DD) | End date (inclusive) |
+
+**Example:** `?tournaments=FIFA+World+Cup&countries=Brazil&date_from=2000-01-01&date_to=2020-12-31`
+
+Filter semantics: **OR** within each parameter, **AND** across parameters — e.g., `tournaments=Friendly&countries=Germany,Italy` returns friendlies *that were hosted in Germany or Italy*.
 
 ---
 
@@ -135,14 +195,14 @@ All list endpoints support optional filters: `?tournaments=WC&countries=Brazil&d
 ├── api/                      FastAPI backend
 │   ├── football_stats/       Source code (server, routers, stats engine)
 │   ├── tests/                Pytest test suite
-│   ├── data/                 Symlink to real dataset
+│   ├── data/                 Dataset directory (4 CSV files)
 │   ├── Dockerfile
 │   └── pyproject.toml
 └── web/                      Next.js frontend
     ├── src/app/              Pages (App Router)
     ├── src/components/       Shared UI components
     ├── src/lib/              API client, types, utilities
-    ├── public/               Static assets
+    ├── public/flags/         327 flag SVGs (ISO + regional)
     ├── Dockerfile
     └── package.json
 ├── dashboards/               OpenObserve dashboard definitions (JSON)
