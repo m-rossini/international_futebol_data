@@ -2,11 +2,12 @@
 
 import logging
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import RedirectResponse
 
-from .dependencies import load_version, require_data, state
-from stats.models import FilterOptionsResponse, HealthResponse, ReloadResponse, VersionResponse
+from football_stats.routers.dependencies import load_version, require_data, state
+from football_stats.stats.elo import clear_elo_cache
+from football_stats.stats.models import FilterOptionsResponse, HealthResponse, ReloadResponse, VersionResponse
 
 logger = logging.getLogger("stats.server.meta")
 
@@ -14,9 +15,18 @@ router = APIRouter(tags=["Meta"])
 
 
 @router.post("/reload", response_model=ReloadResponse)
-async def reload_endpoint():
-    """Reload all CSV data and config file."""
-    logger.info("Reload requested")
+async def reload_endpoint(
+    force_elo_recalc: bool = Query(False, description="Clear ELO cache and force recalculation from matches"),
+):
+    """Reload all CSV data and config file.
+
+    Use ``?force_elo_recalc=true`` to delete the cached ELO ratings and
+    recompute them from the match results on next calculation.
+    """
+    logger.info("Reload requested (force_elo_recalc=%s)", force_elo_recalc)
+    if force_elo_recalc:
+        cleared = clear_elo_cache()
+        logger.info("ELO cache cleared: %s", cleared)
     try:
         info = state.reload()
         logger.info("Reload complete — %d matches, %d scorers", info["matches_loaded"], info["goalscorers_loaded"])

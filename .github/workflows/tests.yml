@@ -1,0 +1,62 @@
+name: Run Tests
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - 'api/**'
+      - '.github/workflows/tests.yml'
+  pull_request:
+    branches: [main, master]
+    paths:
+      - 'api/**'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: api
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Download test data
+      run: |
+        mkdir -p data
+        python -c "
+import pandas as pd
+# Download small test datasets
+urls = {
+    'results.csv': 'https://raw.githubusercontent.com/tadhgfitzgerald/fifa_ranking/master/results.csv',
+    'fifa_ranking.csv': 'https://raw.githubusercontent.com/martj42/international_results/main/results.csv',
+}
+# Use smaller subsets for CI
+results = pd.read_csv('https://raw.githubusercontent.com/martj42/international_results/main/results.csv')
+results.sample(n=1000, random_state=42).to_csv('data/results.csv', index=False)
+"
+
+    - name: Download FIFA ranking data
+      run: |
+        curl -sL 'https://raw.githubusercontent.com/tadhgfitzgerald/fifa_ranking/master/fifa_ranking.csv' | head -2000 > data/fifa_ranking.csv
+
+    - name: Run tests
+      run: |
+        python -m pytest tests/ -v --tb=short 2>&1 | head -100
+
+    - name: Run tests (full output on failure)
+      if: failure()
+      run: |
+        python -m pytest tests/ -v --tb=long 2>&1 | tail -50

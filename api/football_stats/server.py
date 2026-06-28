@@ -18,16 +18,16 @@ from contextlib import asynccontextmanager
 import uvicorn
 from fastapi import FastAPI, Request
 
-from stats.log import logger
+from football_stats.stats.log import logger
 
-from routers.dependencies import state
-from routers.meta import router as meta_router
-from routers.teams import router as teams_router
-from routers.matches import router as matches_router
-from routers.rankings import router as rankings_router
-from routers.tournaments import router as tournaments_router
-from routers.cities import router as cities_router
-from routers.countries import router as countries_router
+from football_stats.routers.dependencies import state
+from football_stats.routers.meta import router as meta_router
+from football_stats.routers.teams import router as teams_router
+from football_stats.routers.matches import router as matches_router
+from football_stats.routers.rankings import router as rankings_router
+from football_stats.routers.tournaments import router as tournaments_router
+from football_stats.routers.cities import router as cities_router
+from football_stats.routers.countries import router as countries_router
 
 
 # ---------------------------------------------------------------------------
@@ -38,11 +38,13 @@ async def lifespan(application: FastAPI):
     logger.info("Starting server — loading data...")
     info = state.reload()
     logger.info(
-        "Data loaded: %d matches, %d goalscorers, %d shootouts, %d former names",
+        "Data loaded: %d matches, %d goalscorers, %d shootouts, %d former names, %d fifa rankings, %d elo rows",
         info["matches_loaded"],
         info["goalscorers_loaded"],
         info["shootouts_loaded"],
         info["former_names_loaded"],
+        info["fifa_ranking_loaded"],
+        info["elo_ratings_loaded"],
     )
     yield
     logger.info("Server shutting down")
@@ -82,7 +84,7 @@ async def log_requests(request: Request, call_next):
 app.include_router(meta_router)        # /, /health, /version, /reload
 app.include_router(teams_router)       # /team/{name}, /head_to_head, /top_scorers
 app.include_router(matches_router)     # /summary, /biggest_wins, /goals_per_year
-app.include_router(rankings_router)    # /most/{stat}
+app.include_router(rankings_router)    # /most/{stat}, /fifa-ranking/*, /elo-ranking/*
 app.include_router(tournaments_router) # /tournaments, /tournament/{name}
 app.include_router(cities_router)      # /cities, /city/{name}
 app.include_router(countries_router)   # /countries, /country/{name}

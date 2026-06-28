@@ -8,10 +8,16 @@ logger = get_logger("loader")
 
 
 def _data_path(filename: str) -> str:
-    """Resolve the full path to a CSV file, following symlinks."""
-    path = os.path.join(
-        os.path.dirname(__file__), "..", "..", "data", filename
+    """Resolve the full path to a CSV file.
+
+    The data directory is determined by the ``DATA_DIR`` environment variable.
+    If unset, falls back to ``api/data/`` relative to this file (for local dev
+    without container orchestration).
+    """
+    data_dir = os.environ.get("DATA_DIR") or os.path.join(
+        os.path.dirname(__file__), "..", "..", "data"
     )
+    path = os.path.join(data_dir, filename)
     resolved = os.path.realpath(path)
     logger.debug("Resolved path for %s: %s", filename, resolved)
     return resolved
@@ -24,6 +30,7 @@ _DATASETS = [
     {"key": "goalscorers",   "file": "goalscorers.csv",   "parse_dates": ["date"]},
     {"key": "shootouts",     "file": "shootouts.csv",     "parse_dates": ["date"]},
     {"key": "former_names",  "file": "former_names.csv",  "parse_dates": ["start_date", "end_date"]},
+    {"key": "fifa_ranking",  "file": "fifa_ranking.csv",  "parse_dates": ["rank_date"]},
 ]
 
 

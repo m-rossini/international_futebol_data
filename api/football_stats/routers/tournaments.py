@@ -4,8 +4,8 @@ import logging
 
 from fastapi import APIRouter, Depends
 
-from .dependencies import FilterParamsDep, engine, require_data
-from stats.models import TournamentListItem
+from football_stats.routers.dependencies import FilterParamsDep, engine, require_data
+from football_stats.stats.models import TournamentListItem
 
 logger = logging.getLogger("stats.server.tournaments")
 

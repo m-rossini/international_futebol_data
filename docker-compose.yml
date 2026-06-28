@@ -10,8 +10,9 @@ services:
       - "5678:5678"
     volumes:
       - ./api:/app
-      - /home/perez/projetos/international_results:/home/perez/projetos/international_results:ro
+      - /home/perez/projetos/international_results:/data:ro
     environment:
+      - DATA_DIR=/data
       - OTEL_SERVICE_NAME=futebol-api
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://openobserve:5080/api/default
       - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf

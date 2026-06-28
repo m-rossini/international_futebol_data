@@ -9,9 +9,9 @@ from typing import Optional
 
 from fastapi import HTTPException, Query
 
-from stats.state import DataState
-from stats.engine import QueryEngine
-from stats.filters import FilterParams
+from football_stats.stats.state import DataState
+from football_stats.stats.engine import QueryEngine
+from football_stats.stats.filters import FilterParams
 
 # ---------------------------------------------------------------------------
 #  Shared state & engine (created once, imported by all routers)

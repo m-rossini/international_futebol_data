@@ -1,0 +1,16 @@
+# Data files live outside the repo.
+# Set DATA_DIR environment variable to point to the directory containing:
+#   results.csv  goalscorers.csv  shootouts.csv  former_names.csv
+# In Docker Compose, DATA_DIR=/data and the CSVs are mounted read-only.
+
+# Ignore original CSVs (provided externally)
+results.csv
+goalscorers.csv
+shootouts.csv
+former_names.csv
+
+# Track FIFA ranking dataset (downloaded from public repo)
+!fifa_ranking.csv
+
+# Ignore generated cache files
+*.pkl

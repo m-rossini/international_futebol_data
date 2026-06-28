@@ -7,8 +7,9 @@ services:
     container_name: futebol-api-test
     volumes:
       - ./api:/app
-      - /home/perez/projetos/international_results:/home/perez/projetos/international_results:ro
+      - /home/perez/projetos/international_results:/data:ro
     environment:
+      - DATA_DIR=/data
       - FORCE_COLOR=1
     command:
       - sh
