@@ -18,11 +18,12 @@ const API = '/api/proxy';
 
 let cachedTeams: string[] | null = null;
 async function fetchTeams(): Promise<string[]> {
-  if (cachedTeams) return cachedTeams;
+  const cached = cachedTeams;
+  if (cached) return cached;
   const res = await fetch(`${API}/filters`);
   const data = await res.json();
   cachedTeams = data.teams || [];
-  return cachedTeams;
+  return cachedTeams ?? [];
 }
 
 function buildQs(params: URLSearchParams, team1: string, team2: string): string {

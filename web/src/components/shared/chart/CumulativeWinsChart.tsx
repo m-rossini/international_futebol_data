@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useMemo } from "react";
+import { useMemo } from 'react';
 import {
   Line,
   XAxis,
@@ -10,7 +10,7 @@ import {
   ResponsiveContainer,
   Area,
   ComposedChart,
-} from "recharts";
+} from 'recharts';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -37,13 +37,7 @@ interface Props {
 // Component
 // ---------------------------------------------------------------------------
 
-export function CumulativeWinsChart({
-  matches,
-  team1,
-  team2,
-  height = 240,
-  width,
-}: Props) {
+export function CumulativeWinsChart({ matches, team1, team2, height = 240, width }: Props) {
   const chartData = useMemo(() => {
     if (matches.length === 0) return [];
 
@@ -71,11 +65,7 @@ export function CumulativeWinsChart({
   }, [matches, team1, team2]);
 
   if (matches.length === 0) {
-    return (
-      <div className="text-center text-xs text-gray-400 py-2">
-        No match data available
-      </div>
-    );
+    return <div className="text-center text-xs text-gray-400 py-2">No match data available</div>;
   }
 
   const lineChart = (
@@ -101,43 +91,31 @@ export function CumulativeWinsChart({
       <XAxis
         dataKey="matchIndex"
         type="number"
-        domain={["dataMin", "dataMax"]}
-        tick={{ fontSize: 10, fill: "#9ca3af" }}
+        domain={['dataMin', 'dataMax']}
+        tick={{ fontSize: 10, fill: '#9ca3af' }}
         tickLine={false}
-        axisLine={{ stroke: "#e5e7eb" }}
-        tickFormatter={() => ""}
+        axisLine={{ stroke: '#e5e7eb' }}
+        tickFormatter={() => ''}
       />
 
       <YAxis
-        tick={{ fontSize: 10, fill: "#9ca3af" }}
+        tick={{ fontSize: 10, fill: '#9ca3af' }}
         tickLine={false}
-        axisLine={{ stroke: "#e5e7eb" }}
+        axisLine={{ stroke: '#e5e7eb' }}
         allowDecimals={false}
       />
 
       <Tooltip
         contentStyle={{ fontSize: 11, borderRadius: 6 }}
-        labelFormatter={(_val: number, payload: { payload: Record<string, unknown> }[]) => {
+        labelFormatter={(_val: number, payload: { payload?: Record<string, unknown> }[]) => {
           const p = payload[0]?.payload;
           const d = p?.date as string | undefined;
-          return d ? d.slice(0, 10) : "";
+          return d ? d.slice(0, 10) : '';
         }}
       />
 
-      <Area
-        type="monotone"
-        dataKey="t1"
-        fill="url(#cwT1Grad)"
-        stroke="none"
-        fillOpacity={1}
-      />
-      <Area
-        type="monotone"
-        dataKey="t2"
-        fill="url(#cwT2Grad)"
-        stroke="none"
-        fillOpacity={1}
-      />
+      <Area type="monotone" dataKey="t1" fill="url(#cwT1Grad)" stroke="none" fillOpacity={1} />
+      <Area type="monotone" dataKey="t2" fill="url(#cwT2Grad)" stroke="none" fillOpacity={1} />
 
       <Line
         type="monotone"
@@ -169,11 +147,17 @@ export function CumulativeWinsChart({
       )}
       <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 pt-1.5">
         <span className="inline-flex items-center gap-1.5 text-xs text-gray-600">
-          <span className="inline-block rounded-sm" style={{ width: 14, height: 3, backgroundColor: "#3b82f6" }} />
+          <span
+            className="inline-block rounded-sm"
+            style={{ width: 14, height: 3, backgroundColor: '#3b82f6' }}
+          />
           {team1}
         </span>
         <span className="inline-flex items-center gap-1.5 text-xs text-gray-600">
-          <span className="inline-block rounded-sm" style={{ width: 14, height: 3, backgroundColor: "#ef4444" }} />
+          <span
+            className="inline-block rounded-sm"
+            style={{ width: 14, height: 3, backgroundColor: '#ef4444' }}
+          />
           {team2}
         </span>
       </div>

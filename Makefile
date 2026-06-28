@@ -21,7 +21,7 @@ export DATA_VOLUME
         api-test api-test-cov api-mcp \
         web-build web-up web-down web-run web-shell web-logs \
         web-test web-test-cov \
-        up down test install-hooks
+        up down test test-cov install-hooks
 
 # ═══════════════════════════════════════════════════════════
 #  Help
@@ -35,6 +35,7 @@ help:
 	@echo "    make up             Start api + web"
 	@echo "    make down           Stop all"
 	@echo "    make test           Run api + web test suites"
+	@echo "    make test-cov       Run api + web test suites with coverage"
 	@echo "    make install-hooks  Install git hooks (pre-commit + pre-push)"
 	@echo ""
 	@echo "  API (dev container — attach VS Code)"
@@ -195,3 +196,7 @@ down:
 test:
 	$(MAKE) api-test
 	$(MAKE) web-test
+
+test-cov:
+	$(MAKE) api-test-cov
+	$(MAKE) web-test-cov

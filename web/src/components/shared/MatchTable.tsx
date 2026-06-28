@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { useMemo } from "react";
-import { DataTable, type Column } from "@/components/shared/DataTable";
-import { CountryFlag } from "@/components/shared/CountryFlag";
-import { ShootoutBadge } from "@/components/shared/ShootoutBadge";
-import type { MatchItem } from "@/lib/types";
+import { useMemo } from 'react';
+import { DataTable, type Column } from '@/components/shared/DataTable';
+import { CountryFlag } from '@/components/shared/CountryFlag';
+import { ShootoutBadge } from '@/components/shared/ShootoutBadge';
+import type { MatchItem } from '@/lib/types';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -12,11 +12,11 @@ import type { MatchItem } from "@/lib/types";
 
 /** Consistent date formatting: "24 Nov 2022" */
 function fmtDate(raw: string): string {
-  const d = new Date(raw.slice(0, 10) + "T00:00:00");
-  return d.toLocaleDateString("en-GB", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
+  const d = new Date(raw.slice(0, 10) + 'T00:00:00');
+  return d.toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
   });
 }
 
@@ -24,17 +24,17 @@ function fmtDate(raw: string): string {
 function homeCls(m: MatchItem, highlightTeam?: string): string {
   if (highlightTeam) {
     // YearMatches / team‑centric mode: bold if it's "our" team
-    return m.home_team === highlightTeam ? "font-semibold" : "";
+    return m.home_team === highlightTeam ? 'font-semibold' : '';
   }
   // H2H mode: bold the winner
-  return m.home_score > m.away_score ? "font-semibold" : "";
+  return m.home_score > m.away_score ? 'font-semibold' : '';
 }
 
 function awayCls(m: MatchItem, highlightTeam?: string): string {
   if (highlightTeam) {
-    return m.away_team === highlightTeam ? "font-semibold" : "";
+    return m.away_team === highlightTeam ? 'font-semibold' : '';
   }
-  return m.away_score > m.home_score ? "font-semibold" : "";
+  return m.away_score > m.home_score ? 'font-semibold' : '';
 }
 
 // ---------------------------------------------------------------------------
@@ -73,18 +73,23 @@ export function MatchTable({ matches, highlightTeam, showNeutral = false, headin
 
   const columns = useMemo<Column<Row>[]>(() => {
     const cols: Column<Row>[] = [
-      { key: "date", header: "Date", sortable: true, render: (r) => fmtDate(r.date) },
-      { key: "tournament", header: "Tournament", sortable: true },
-      { key: "city", header: "City", sortable: true },
-      { key: "country", header: "Country", sortable: true, render: (r) => (
-        <span className="inline-flex items-center gap-1.5">
-          <CountryFlag countryName={r.country} size={14} />
-          {r.country}
-        </span>
-      ) },
+      { key: 'date', header: 'Date', sortable: true, render: (r) => fmtDate(r.date) },
+      { key: 'tournament', header: 'Tournament', sortable: true },
+      { key: 'city', header: 'City', sortable: true },
       {
-        key: "home_team",
-        header: "Home",
+        key: 'country',
+        header: 'Country',
+        sortable: true,
+        render: (r) => (
+          <span className="inline-flex items-center gap-1.5">
+            <CountryFlag countryName={r.country ?? ''} size={14} />
+            {r.country ?? '—'}
+          </span>
+        ),
+      },
+      {
+        key: 'home_team',
+        header: 'Home',
         sortable: true,
         render: (r) => (
           <span className={`inline-flex items-center gap-1.5 ${homeCls(r, hTeam)}`}>
@@ -94,8 +99,8 @@ export function MatchTable({ matches, highlightTeam, showNeutral = false, headin
         ),
       },
       {
-        key: "score",
-        header: "Score",
+        key: 'score',
+        header: 'Score',
         render: (r) => (
           <span className="font-mono tabular-nums inline-flex items-center gap-1">
             {r.home_score} – {r.away_score}
@@ -104,8 +109,8 @@ export function MatchTable({ matches, highlightTeam, showNeutral = false, headin
         ),
       },
       {
-        key: "away_team",
-        header: "Away",
+        key: 'away_team',
+        header: 'Away',
         sortable: true,
         render: (r) => (
           <span className={`inline-flex items-center gap-1.5 ${awayCls(r, hTeam)}`}>
@@ -118,9 +123,9 @@ export function MatchTable({ matches, highlightTeam, showNeutral = false, headin
 
     if (showNeutral) {
       cols.push({
-        key: "neutral",
-        header: "Neutral",
-        render: (r) => (r.neutral ? "Yes" : "No"),
+        key: 'neutral',
+        header: 'Neutral',
+        render: (r) => (r.neutral ? 'Yes' : 'No'),
       });
     }
 
@@ -131,14 +136,12 @@ export function MatchTable({ matches, highlightTeam, showNeutral = false, headin
 
   return (
     <>
-      {heading && (
-        <h2 className="text-lg font-semibold text-gray-800 mb-3">{heading}</h2>
-      )}
+      {heading && <h2 className="text-lg font-semibold text-gray-800 mb-3">{heading}</h2>}
       <DataTable
         columns={columns}
         data={rows}
         keyField="_key"
-        defaultSort={{ key: "date", dir: "desc" }}
+        defaultSort={{ key: 'date', dir: 'desc' }}
       />
     </>
   );

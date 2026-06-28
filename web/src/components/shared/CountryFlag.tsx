@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { getCountryCode, FLAG_BASE_URL } from "@/lib/countryFlags";
+import { useState } from 'react';
+import { getCountryCode, FLAG_BASE_URL } from '@/lib/countryFlags';
 
 interface Props {
   countryName: string;
@@ -32,7 +32,7 @@ function Placeholder({ size, className }: { size: number; className: string }) {
   );
 }
 
-export function CountryFlag({ countryName, size = 16, className = "" }: Props) {
+export function CountryFlag({ countryName, size = 16, className = '' }: Props) {
   const [broken, setBroken] = useState(false);
 
   const code = getCountryCode(countryName);
@@ -42,6 +42,7 @@ export function CountryFlag({ countryName, size = 16, className = "" }: Props) {
   }
 
   return (
+    // eslint-disable-next-line @next/next/no-img-element
     <img
       src={`${FLAG_BASE_URL}/${code}.svg`}
       alt={countryName}

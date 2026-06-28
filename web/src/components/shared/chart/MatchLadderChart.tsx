@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useMemo } from "react";
+import { useMemo } from 'react';
 import {
   Line,
   XAxis,
@@ -11,8 +11,8 @@ import {
   Area,
   ComposedChart,
   ReferenceLine,
-} from "recharts";
-import type { MatchItem } from "@/lib/types";
+} from 'recharts';
+import type { MatchItem } from '@/lib/types';
 
 // ---------------------------------------------------------------------------
 // Props
@@ -30,7 +30,7 @@ interface Props {
 // Helpers
 // ---------------------------------------------------------------------------
 
-const LINE_COLOR = "#22c55e";
+const LINE_COLOR = '#22c55e';
 const MAX_BUCKETS = 40;
 
 function matchResult(m: MatchItem, team: string): 1 | 0 | -1 {
@@ -110,37 +110,31 @@ export function MatchLadderChart({ matches, team, height = 240, width }: Props) 
       <XAxis
         dataKey="bucketIndex"
         type="number"
-        domain={["dataMin", "dataMax"]}
-        tick={{ fontSize: 10, fill: "#9ca3af" }}
+        domain={['dataMin', 'dataMax']}
+        tick={{ fontSize: 10, fill: '#9ca3af' }}
         tickLine={false}
-        axisLine={{ stroke: "#e5e7eb" }}
-        tickFormatter={() => ""}
+        axisLine={{ stroke: '#e5e7eb' }}
+        tickFormatter={() => ''}
       />
 
       <YAxis
-        tick={{ fontSize: 10, fill: "#9ca3af" }}
+        tick={{ fontSize: 10, fill: '#9ca3af' }}
         tickLine={false}
-        axisLine={{ stroke: "#e5e7eb" }}
+        axisLine={{ stroke: '#e5e7eb' }}
         allowDecimals={false}
         tickFormatter={(v: number) => (v > 0 ? `+${v}` : String(v))}
       />
 
       <Tooltip
         contentStyle={{ fontSize: 11, borderRadius: 6 }}
-        labelFormatter={(_val: number, payload: { payload: Record<string, unknown> }[]) => {
+        labelFormatter={(_val: number, payload: { payload?: Record<string, unknown> }[]) => {
           const p = payload[0]?.payload;
-          return (p?.label as string) ?? "";
+          return (p?.label as string) ?? '';
         }}
-        formatter={(value: number) => [value > 0 ? `+${value}` : value, "Net"]}
+        formatter={(value: number) => [value > 0 ? `+${value}` : value, 'Net']}
       />
 
-      <Area
-        type="stepAfter"
-        dataKey="net"
-        fill="url(#ladderGrad)"
-        stroke="none"
-        fillOpacity={1}
-      />
+      <Area type="stepAfter" dataKey="net" fill="url(#ladderGrad)" stroke="none" fillOpacity={1} />
 
       <Line
         type="stepAfter"
@@ -164,7 +158,10 @@ export function MatchLadderChart({ matches, team, height = 240, width }: Props) 
       )}
       <div className="flex flex-wrap justify-center gap-x-4 gap-y-1 pt-1.5">
         <span className="inline-flex items-center gap-1.5 text-xs text-gray-600">
-          <span className="inline-block rounded-sm" style={{ width: 14, height: 3, backgroundColor: LINE_COLOR }} />
+          <span
+            className="inline-block rounded-sm"
+            style={{ width: 14, height: 3, backgroundColor: LINE_COLOR }}
+          />
           W/D/L Net
         </span>
       </div>

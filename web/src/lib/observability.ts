@@ -24,11 +24,11 @@ function getConfig(): OOConfig | null {
     //
     // When endpoint is empty, we use a same-origin relative path
     // (proxied by Next.js rewrites) to avoid CORS preflight issues.
-    const endpoint = (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_OO_ENDPOINT) ?? '';
-    const org = (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_OO_ORG) ?? '';
-    const stream = (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_OO_STREAM) ?? '';
+    const endpoint = (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_OO_ENDPOINT) || '';
+    const org = (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_OO_ORG) || '';
+    const stream = (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_OO_STREAM) || '';
     const basicAuth =
-      (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_OO_BASIC_AUTH) ?? '';
+      (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_OO_BASIC_AUTH) || '';
 
     if (!org || !stream || !basicAuth) return null;
 

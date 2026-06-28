@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useMemo } from "react";
+import { useMemo } from 'react';
 import {
   LineChart,
   Line,
@@ -9,7 +9,7 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-} from "recharts";
+} from 'recharts';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -50,12 +50,7 @@ function yearFromDate(raw: string): number {
 // Component
 // ---------------------------------------------------------------------------
 
-export function CumulativeGoalsChart({
-  matches,
-  track,
-  height = 240,
-  width,
-}: Props) {
+export function CumulativeGoalsChart({ matches, track, height = 240, width }: Props) {
   // Transform matches into chart data array
   const chartData = useMemo(() => {
     if (matches.length === 0 || track.length === 0) return [];
@@ -78,8 +73,16 @@ export function CumulativeGoalsChart({
         const isHome = m.home_team === t.team;
         const isAway = m.away_team === t.team;
         const goals = t.against
-          ? isHome ? m.away_score : isAway ? m.home_score : 0
-          : isHome ? m.home_score : isAway ? m.away_score : 0;
+          ? isHome
+            ? m.away_score
+            : isAway
+              ? m.home_score
+              : 0
+          : isHome
+            ? m.home_score
+            : isAway
+              ? m.away_score
+              : 0;
         cum[s] += goals;
       }
 
@@ -95,14 +98,10 @@ export function CumulativeGoalsChart({
   }, [matches, track]);
 
   if (matches.length === 0) {
-    return (
-      <div className="text-center text-xs text-gray-400 py-2">
-        No match data available
-      </div>
-    );
+    return <div className="text-center text-xs text-gray-400 py-2">No match data available</div>;
   }
 
-  const ariaLabel = `Cumulative goals: ${track.map((t) => t.label ?? t.team).join(" vs ")}`;
+  const ariaLabel = `Cumulative goals: ${track.map((t) => t.label ?? t.team).join(' vs ')}`;
   const lineChart = (
     <LineChart
       width={width}
@@ -115,27 +114,27 @@ export function CumulativeGoalsChart({
       <XAxis
         dataKey="matchIndex"
         type="number"
-        domain={["dataMin", "dataMax"]}
-        tick={{ fontSize: 10, fill: "#9ca3af" }}
+        domain={['dataMin', 'dataMax']}
+        tick={{ fontSize: 10, fill: '#9ca3af' }}
         tickLine={false}
-        axisLine={{ stroke: "#e5e7eb" }}
-        tickFormatter={() => ""}
+        axisLine={{ stroke: '#e5e7eb' }}
+        tickFormatter={() => ''}
       />
 
       <YAxis
-        tick={{ fontSize: 10, fill: "#9ca3af" }}
+        tick={{ fontSize: 10, fill: '#9ca3af' }}
         tickLine={false}
-        axisLine={{ stroke: "#e5e7eb" }}
+        axisLine={{ stroke: '#e5e7eb' }}
         allowDecimals={false}
       />
 
       <Tooltip
         contentStyle={{ fontSize: 11, borderRadius: 6 }}
-        labelFormatter={(_val: number, payload: { payload: Record<string, unknown> }[]) => {
+        labelFormatter={(_val: number, payload: { payload?: Record<string, unknown> }[]) => {
           const p = payload[0]?.payload;
           const d = p?.date as string | undefined;
           const y = p?.year as number | undefined;
-          return d ? d.slice(0, 10) : `Year: ${y ?? "?"}`;
+          return d ? d.slice(0, 10) : `Year: ${y ?? '?'}`;
         }}
       />
 
