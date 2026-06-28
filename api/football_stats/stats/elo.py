@@ -17,7 +17,6 @@ import hashlib
 import os
 
 import pandas as pd
-import numpy as np
 
 from .log import get_logger
 
@@ -202,23 +201,25 @@ def calculate_elo_ratings(
         elo_dict[home] += elo_change
         elo_dict[away] -= elo_change  # opponent's change is symmetric
 
-        records.append({
-            "date": match_date,
-            "team": home,
-            "opponent": away,
-            "elo_rating": old_home,
-            "elo_rating_new": elo_dict[home],
-            "opponent_elo": old_away,
-            "opponent_elo_new": elo_dict[away],
-            "home_score": home_score,
-            "away_score": away_score,
-            "tournament": tournament,
-            "is_neutral": is_neutral,
-            "home_advantage_applied": home_adv_applied,
-            "expected_score": round(expected_home, 4),
-            "actual_result": actual_home,
-            "rating_change": round(elo_change, 2),
-        })
+        records.append(
+            {
+                "date": match_date,
+                "team": home,
+                "opponent": away,
+                "elo_rating": old_home,
+                "elo_rating_new": elo_dict[home],
+                "opponent_elo": old_away,
+                "opponent_elo_new": elo_dict[away],
+                "home_score": home_score,
+                "away_score": away_score,
+                "tournament": tournament,
+                "is_neutral": is_neutral,
+                "home_advantage_applied": home_adv_applied,
+                "expected_score": round(expected_home, 4),
+                "actual_result": actual_home,
+                "rating_change": round(elo_change, 2),
+            }
+        )
 
         if (idx + 1) % 10000 == 0:
             logger.info("ELO calculation: %d / %d matches processed", idx + 1, total)
@@ -310,43 +311,78 @@ def get_decade_leaders(
     results = []
     for decade, grp in sorted(df.groupby("decade")):
         # Average ELO per team in this decade
-        team_stats = grp.groupby("team").agg(
-            avg_elo=("elo_rating_new", "mean"),
-            peak_elo=("elo_rating_new", "max"),
-            match_count=("date", "count"),
-        ).reset_index()
+        team_stats = (
+            grp.groupby("team")
+            .agg(
+                avg_elo=("elo_rating_new", "mean"),
+                peak_elo=("elo_rating_new", "max"),
+                match_count=("date", "count"),
+            )
+            .reset_index()
+        )
 
         team_stats = team_stats.sort_values("avg_elo", ascending=False).head(top_n)
 
         year_start = int(decade.replace("s", ""))
         year_end = year_start + 9
 
-        results.append({
-            "decade": decade,
-            "year_range": f"{year_start}–{year_end}",
-            "leader": {
-                "team": team_stats.iloc[0]["team"],
-                "avg_elo": round(team_stats.iloc[0]["avg_elo"], 1),
-                "peak_elo": round(team_stats.iloc[0]["peak_elo"], 1),
-                "match_count": int(team_stats.iloc[0]["match_count"]),
-            },
-            "teams": [
-                {
-                    "team": row["team"],
-                    "avg_elo": round(row["avg_elo"], 1),
-                    "peak_elo": round(row["peak_elo"], 1),
-                    "match_count": int(row["match_count"]),
-                }
-                for _, row in team_stats.iterrows()
-            ],
-        })
+        results.append(
+            {
+                "decade": decade,
+                "year_range": f"{year_start}–{year_end}",
+                "leader": {
+                    "team": team_stats.iloc[0]["team"],
+                    "avg_elo": round(team_stats.iloc[0]["avg_elo"], 1),
+                    "peak_elo": round(team_stats.iloc[0]["peak_elo"], 1),
+                    "match_count": int(team_stats.iloc[0]["match_count"]),
+                },
+                "teams": [
+                    {
+                        "team": row["team"],
+                        "avg_elo": round(row["avg_elo"], 1),
+                        "peak_elo": round(row["peak_elo"], 1),
+                        "match_count": int(row["match_count"]),
+                    }
+                    for _, row in team_stats.iterrows()
+                ],
+            }
+        )
 
     return results
 
 
-def get_team_elo_history(
-    elo_history: pd.DataFrame, team: str
-) -> pd.DataFrame:
+def get_elo_by_date(elo_history: pd.DataFrame, target_date: str) -> pd.DataFrame:
+    """Get all ELO rows for a specific date.
+
+    Returns every team that played a match on ``target_date``, with their
+    post-match ELO rating. If no matches occurred that day, returns an
+    empty DataFrame.
+
+    Parameters
+    ----------
+    elo_history : pd.DataFrame
+        Output from ``calculate_elo_ratings``.
+    target_date : str
+        Date in ``YYYY-MM-DD`` format.
+
+    Returns
+    -------
+    pd.DataFrame
+        Rows matching that exact date, sorted by elo_rating_new descending.
+    """
+    if elo_history.empty:
+        return pd.DataFrame()
+
+    df = elo_history[
+        elo_history["date"].dt.date == pd.Timestamp(target_date).date()
+    ].copy()
+    if df.empty:
+        return df
+
+    return df.sort_values("elo_rating_new", ascending=False).reset_index(drop=True)
+
+
+def get_team_elo_history(elo_history: pd.DataFrame, team: str) -> pd.DataFrame:
     """Get ELO history for a specific team.
 
     Parameters
@@ -361,7 +397,7 @@ def get_team_elo_history(
     pd.DataFrame
         Filtered history sorted by date.
     """
-    mask = (elo_history["team"].str.lower() == team.lower())
+    mask = elo_history["team"].str.lower() == team.lower()
     team_df = elo_history[mask].copy()
     if team_df.empty:
         return team_df

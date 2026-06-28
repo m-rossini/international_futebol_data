@@ -5,7 +5,13 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
-from football_stats.routers.dependencies import FilterParamsDep, MostStat, engine, require_data, state
+from football_stats.routers.dependencies import (
+    FilterParamsDep,
+    MostStat,
+    engine,
+    require_data,
+    state,
+)
 from football_stats.stats.models import TeamRankingResponse
 
 logger = logging.getLogger("stats.server.rankings")
@@ -29,9 +35,12 @@ async def most_endpoint(
 #  ELO World Rankings (calculated from match results)
 # =========================================================================
 
+
 @router.get("/elo-ranking/current")
 async def elo_ranking_current(
-    top_n: int = Query(50, ge=1, le=211, description="Number of top-ranked teams to return"),
+    top_n: int = Query(
+        50, ge=1, le=211, description="Number of top-ranked teams to return"
+    ),
 ):
     """Current ELO World Rankings (calculated from historical match results)."""
     require_data()
@@ -40,6 +49,7 @@ async def elo_ranking_current(
 
     # Get latest ELO for each team
     from football_stats.stats.elo import get_latest_elo
+
     latest = get_latest_elo(state.elo_ratings, top_n=top_n)
 
     if latest.empty:
@@ -65,6 +75,7 @@ async def elo_ranking_history(
         raise HTTPException(503, "ELO ratings not calculated yet.")
 
     from football_stats.stats.elo import get_team_elo_history
+
     df = get_team_elo_history(state.elo_ratings, team)
 
     if df.empty:
@@ -91,7 +102,9 @@ async def elo_ranking_history(
 @router.get("/elo-ranking/decade-leaders")
 async def elo_decade_leaders(
     top_n: int = Query(5, ge=1, le=10, description="Number of top teams per decade"),
-    decade: Optional[str] = Query(None, description="Filter to specific decade (e.g. '2000s')"),
+    decade: Optional[str] = Query(
+        None, description="Filter to specific decade (e.g. '2000s')"
+    ),
 ):
     """Top teams by average ELO rating per decade. Shows which teams dominated each era."""
     require_data()
@@ -99,6 +112,7 @@ async def elo_decade_leaders(
         raise HTTPException(503, "ELO ratings not calculated yet.")
 
     from football_stats.stats.elo import get_decade_leaders
+
     decades = [decade] if decade else None
     result = get_decade_leaders(state.elo_ratings, decades=decades, top_n=top_n)
 
@@ -119,6 +133,7 @@ async def elo_ranking_summary():
         raise HTTPException(503, "ELO ratings not calculated yet.")
 
     from football_stats.stats.elo import get_latest_elo
+
     latest = get_latest_elo(state.elo_ratings, top_n=300)
 
     return {
@@ -133,4 +148,29 @@ async def elo_ranking_summary():
             "to": str(state.elo_ratings["date"].max().date()),
         },
         "top_10": latest.head(10).to_dict(orient="records"),
+    }
+
+
+@router.get("/elo-ranking/at-date")
+async def elo_ranking_at_date(
+    date: str = Query(..., description="Date in YYYY-MM-DD format"),
+):
+    """ELO ratings for a specific date.
+
+    Returns every team that played a match on that exact date, with their
+    post-match ELO rating. If no matches occurred that day, returns an
+    empty list.
+    """
+    require_data()
+    if state.elo_ratings is None:
+        raise HTTPException(503, "ELO ratings not calculated yet.")
+
+    from football_stats.stats.elo import get_elo_by_date
+
+    df = get_elo_by_date(state.elo_ratings, date)
+
+    return {
+        "date": date,
+        "total_entries": len(df),
+        "entries": df.to_dict(orient="records"),
     }

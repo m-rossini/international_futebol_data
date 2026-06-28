@@ -70,7 +70,7 @@ Before implementing:
 2. Gather context from MCP tools.
 3. Inspect relevant code.
 4. Produce an implementation plan.
-5. Implement incrementally.
+5. Implement incrementally AFTER asking if you coudl proceed
 6. Validate changes.
 
 ---
@@ -146,6 +146,8 @@ Do not:
 - Change unrelated code.
 - Introduce new dependencies without justification.
 - Disable tests to make builds pass.
+- Never Fix Tests by Changing production code, ALWAYS give the options and I decide which one to take
+- Never implement without asking me before
 - NEVER DOWNLOAD SOFTWARE
 - NEVER PUSH TO GIT, EVEN WHEN I ASK. NEVER.
 - NEVER ACCESS FILES OUTSIDE THE BOUNDARIES OF CURRENT DIRECTORY.
