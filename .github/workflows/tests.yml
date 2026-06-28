@@ -3,17 +3,16 @@ name: CI
 on:
   push:
     branches: [main, master]
-    paths:
-      - 'api/**'
-      - '.github/workflows/tests.yml'
-      - '.pre-commit-config.yaml'
+    paths-ignore:
+      - 'dashboards/**'
+      - 'scripts/**'
+      - '**.md'
   pull_request:
     branches: [main, master]
-    paths:
-      - 'api/**'
 
 jobs:
-  lint:
+  # ── API: lint + format ─────────────────────────────────
+  api-lint:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -41,7 +40,8 @@ jobs:
       - name: Check formatting with ruff
         run: uv run ruff format --check
 
-  test:
+  # ── API: tests ─────────────────────────────────────────
+  api-test:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -76,3 +76,55 @@ jobs:
       - name: Run tests (full output on failure)
         if: failure()
         run: uv run pytest tests/ -v --tb=long 2>&1 | tail -50
+
+  # ── Web: lint + typecheck + format ─────────────────────
+  web-lint:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint with ESLint
+        run: npm run lint
+
+      - name: TypeScript type check
+        run: npm run typecheck
+
+      - name: Check formatting with Prettier
+        run: npm run format:check
+
+  # ── Web: tests ─────────────────────────────────────────
+  web-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test -- --reporter=verbose
