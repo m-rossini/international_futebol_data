@@ -74,6 +74,12 @@ class QueryEngine:
         """Return ``self._state.results`` filtered by the given parameters."""
         return apply_filters(self._state.results, filters)
 
+    def _enriched_filtered(self, filters: Optional[FilterParams]) -> pd.DataFrame:
+        """Return the cached enriched DataFrame, optionally filtered."""
+        if filters is None:
+            return self._state.enriched
+        return apply_filters(self._state.enriched, filters)
+
     def summary(self, filters: Optional[FilterParams] = None) -> dict:
         logger.debug("Computing summary")
         r = self._filtered_results(filters)
@@ -87,6 +93,8 @@ class QueryEngine:
     def teams(self, filters: Optional[FilterParams] = None) -> list:
         """Return all teams with full aggregate stats."""
         logger.debug("Teams list requested")
+        if filters is None:
+            return self._state.cache_teams_list
         return teams_list(self._filtered_results(filters))
 
     def team(self, team_name: str, filters: Optional[FilterParams] = None) -> dict:
@@ -98,7 +106,7 @@ class QueryEngine:
                 "error": True,
                 "message": f"Team '{team_name}' not found in the data.",
             }
-        r = self._filtered_results(filters)
+        r = self._enriched_filtered(filters)
         result = team_win_rate(r, canonical)
         result["yearly"] = team_yearly(r, canonical)
         result["matches_list"] = team_matches_all(r, canonical)
@@ -121,7 +129,7 @@ class QueryEngine:
                 "error": True,
                 "message": f"Team '{team_name}' not found in the data.",
             }
-        r = self._filtered_results(filters)
+        r = self._enriched_filtered(filters)
         matches = team_matches_by_year(r, canonical, year)
         mark_shootouts(matches, build_shootout_lookup(self._state.shootouts))
         return {
@@ -140,7 +148,7 @@ class QueryEngine:
             t2 = self._resolve_team_name(team2)
         except ValueError as e:
             return {"error": True, "message": str(e)}
-        result = team_vs_team(self._filtered_results(filters), t1, t2)
+        result = team_vs_team(self._enriched_filtered(filters), t1, t2)
         # Mark shootouts in match list and biggest wins
         sl = build_shootout_lookup(self._state.shootouts)
         mark_shootouts(result.get("matches_list", []), sl)
@@ -170,13 +178,15 @@ class QueryEngine:
     def tournaments(self, filters: Optional[FilterParams] = None) -> list:
         """List all tournaments with comprehensive aggregate stats."""
         logger.debug("Tournaments list requested")
+        if filters is None:
+            return self._state.cache_tournaments_list
         return tournaments_list(self._filtered_results(filters))
 
     def tournament(self, name: str, filters: Optional[FilterParams] = None) -> dict:
         """Comprehensive stats for a specific tournament."""
         logger.debug("Tournament info requested: %s", name)
         try:
-            return tournament_info(self._filtered_results(filters), name)
+            return tournament_info(self._enriched_filtered(filters), name)
         except ValueError as e:
             return {"error": True, "message": str(e)}
 
@@ -186,7 +196,9 @@ class QueryEngine:
         """Detailed stats for a specific tournament edition (season)."""
         logger.debug("Season info requested: %s / %d", tournament_name, year)
         try:
-            result = season_info(self._filtered_results(filters), tournament_name, year)
+            result = season_info(
+                self._enriched_filtered(filters), tournament_name, year
+            )
             mark_shootouts(
                 result.get("matches_list", []),
                 build_shootout_lookup(self._state.shootouts),
@@ -202,13 +214,15 @@ class QueryEngine:
     def cities(self, filters: Optional[FilterParams] = None) -> list:
         """List all cities with comprehensive stats."""
         logger.debug("Cities list requested")
+        if filters is None:
+            return self._state.cache_cities_list
         return cities_list(self._filtered_results(filters))
 
     def city(self, name: str, filters: Optional[FilterParams] = None) -> dict:
         """Comprehensive stats for a specific city."""
         logger.debug("City info requested: %s", name)
         try:
-            return city_info(self._filtered_results(filters), name)
+            return city_info(self._enriched_filtered(filters), name)
         except ValueError as e:
             return {"error": True, "message": str(e)}
 
@@ -219,13 +233,15 @@ class QueryEngine:
     def countries(self, filters: Optional[FilterParams] = None) -> list:
         """List all countries with comprehensive stats."""
         logger.debug("Countries list requested")
+        if filters is None:
+            return self._state.cache_countries_list
         return countries_list(self._filtered_results(filters))
 
     def country(self, name: str, filters: Optional[FilterParams] = None) -> dict:
         """Comprehensive stats for a specific country."""
         logger.debug("Country info requested: %s", name)
         try:
-            return country_info(self._filtered_results(filters), name)
+            return country_info(self._enriched_filtered(filters), name)
         except ValueError as e:
             return {"error": True, "message": str(e)}
 
@@ -237,7 +253,7 @@ class QueryEngine:
         self, top_n: int = 10, filters: Optional[FilterParams] = None
     ) -> list:
         logger.debug("Top %d biggest wins requested", top_n)
-        return biggest_wins(self._filtered_results(filters), top_n)
+        return biggest_wins(self._enriched_filtered(filters), top_n)
 
     def goals_per_year(
         self,
@@ -247,5 +263,5 @@ class QueryEngine:
     ) -> list:
         logger.debug("Goals per year requested (sort_by=%s, order=%s)", sort_by, order)
         return goals_per_year(
-            self._filtered_results(filters), sort_by=sort_by, order=order
+            self._enriched_filtered(filters), sort_by=sort_by, order=order
         )
