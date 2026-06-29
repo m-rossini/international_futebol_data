@@ -1,4 +1,4 @@
-# Plan: 002-precompute-list-dataframes
+# Plan: 002-precompute-list-dataframes — COMPLETE
 
 ## Goal
 
@@ -120,3 +120,16 @@ GET /team/{name} (detail)
 GET /tournaments (no filters)
   └── Return self.cache_tournaments_list (instant)
 ```
+
+## Implementation Notes
+
+### Commits
+1. `30b5759` — `feat: add precomputed DataFrame cache with disk persistence`
+2. `306f616` — `feat: update query engine to use cached DataFrames`
+3. `7b1ac2a` — `fix: handle read-only filesystem for disk cache`
+
+### Key design decisions
+- **Read-only filesystem**: Docker mounts `/data` as `:ro`. Cache gracefully falls back to in-memory only with a warning log.
+- **Staleness detection**: Uses CSV file sizes only (not content hashes) for speed.
+- **Detail endpoints**: Use `_enriched_filtered()` which returns the cached enriched DataFrame (avoids re-enriching). List endpoints with filters still compute from raw data.
+- **Cache files stored in**: `api/data/precomputed/` (same directory as CSVs)
