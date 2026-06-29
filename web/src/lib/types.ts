@@ -93,6 +93,21 @@ export interface TeamMatchesByYear {
   message?: string;
 }
 
+export interface TournamentListItem {
+  tournament: string;
+  first_year: number;
+  last_year: number;
+  editions: number;
+  matches: number;
+  total_goals: number;
+  home_wins: number;
+  away_wins: number;
+  draws: number;
+  avg_goals: number;
+  unique_teams: number;
+  seasons: string[];
+}
+
 export interface HeadToHeadResult {
   team1: string;
   team2: string;
