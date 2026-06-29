@@ -51,6 +51,12 @@ const columns: Column<TournamentListItem>[] = [
     sortable: true,
     render: (row) => row.total_goals.toLocaleString(),
   },
+  {
+    key: 'avg_goals',
+    header: 'Goals/Match',
+    sortable: true,
+    render: (row) => row.avg_goals.toFixed(2),
+  },
 ];
 
 export function TournamentsClient() {
