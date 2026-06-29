@@ -136,44 +136,52 @@ class DataState:
             return False
 
     def _load_from_disk_cache(self) -> None:
-        """Load precomputed DataFrames from disk cache."""
-        logger.info("Loading precomputed caches from disk …")
-        with open(_CACHE_ENRICHED, "rb") as f:
-            self._cache_enriched = pickle.load(f)
-        with open(_CACHE_TEAMS, "rb") as f:
-            self._cache_teams_list = pickle.load(f)
-        with open(_CACHE_TOURNAMENTS, "rb") as f:
-            self._cache_tournaments_list = pickle.load(f)
-        with open(_CACHE_COUNTRIES, "rb") as f:
-            self._cache_countries_list = pickle.load(f)
-        with open(_CACHE_CITIES, "rb") as f:
-            self._cache_cities_list = pickle.load(f)
-        logger.info(
-            "Disk cache loaded: %d teams, %d tournaments, %d countries, %d cities",
-            len(self._cache_teams_list),
-            len(self._cache_tournaments_list),
-            len(self._cache_countries_list),
-            len(self._cache_cities_list),
-        )
+        """Load precomputed DataFrames from disk cache. Returns False on failure."""
+        try:
+            logger.info("Loading precomputed caches from disk …")
+            with open(_CACHE_ENRICHED, "rb") as f:
+                self._cache_enriched = pickle.load(f)
+            with open(_CACHE_TEAMS, "rb") as f:
+                self._cache_teams_list = pickle.load(f)
+            with open(_CACHE_TOURNAMENTS, "rb") as f:
+                self._cache_tournaments_list = pickle.load(f)
+            with open(_CACHE_COUNTRIES, "rb") as f:
+                self._cache_countries_list = pickle.load(f)
+            with open(_CACHE_CITIES, "rb") as f:
+                self._cache_cities_list = pickle.load(f)
+            logger.info(
+                "Disk cache loaded: %d teams, %d tournaments, %d countries, %d cities",
+                len(self._cache_teams_list),
+                len(self._cache_tournaments_list),
+                len(self._cache_countries_list),
+                len(self._cache_cities_list),
+            )
+            return True
+        except (OSError, pickle.UnpicklingError, KeyError) as e:
+            logger.warning("Failed to load disk cache, will recompute: %s", e)
+            return False
 
     def _save_to_disk_cache(self) -> None:
-        """Save precomputed DataFrames to disk cache."""
-        os.makedirs(_CACHE_DIR, exist_ok=True)
+        """Save precomputed DataFrames to disk cache. Silently skips if read-only."""
+        try:
+            os.makedirs(_CACHE_DIR, exist_ok=True)
 
-        with open(_CACHE_ENRICHED, "wb") as f:
-            pickle.dump(self._cache_enriched, f)
-        with open(_CACHE_TEAMS, "wb") as f:
-            pickle.dump(self._cache_teams_list, f)
-        with open(_CACHE_TOURNAMENTS, "wb") as f:
-            pickle.dump(self._cache_tournaments_list, f)
-        with open(_CACHE_COUNTRIES, "wb") as f:
-            pickle.dump(self._cache_countries_list, f)
-        with open(_CACHE_CITIES, "wb") as f:
-            pickle.dump(self._cache_cities_list, f)
-        with open(_CACHE_META, "w") as f:
-            json.dump(self._get_csv_sizes(), f)
+            with open(_CACHE_ENRICHED, "wb") as f:
+                pickle.dump(self._cache_enriched, f)
+            with open(_CACHE_TEAMS, "wb") as f:
+                pickle.dump(self._cache_teams_list, f)
+            with open(_CACHE_TOURNAMENTS, "wb") as f:
+                pickle.dump(self._cache_tournaments_list, f)
+            with open(_CACHE_COUNTRIES, "wb") as f:
+                pickle.dump(self._cache_countries_list, f)
+            with open(_CACHE_CITIES, "wb") as f:
+                pickle.dump(self._cache_cities_list, f)
+            with open(_CACHE_META, "w") as f:
+                json.dump(self._get_csv_sizes(), f)
 
-        logger.info("Precomputed caches saved to disk.")
+            logger.info("Precomputed caches saved to disk.")
+        except OSError as e:
+            logger.warning("Could not save precomputed caches to disk: %s", e)
 
     def _compute_caches(self) -> None:
         """Compute all precomputed list DataFrames from raw results."""
@@ -230,7 +238,9 @@ class DataState:
         # Load or compute precomputed list caches
         if self.results is not None and not self.results.empty:
             if self._cache_is_valid():
-                self._load_from_disk_cache()
+                if not self._load_from_disk_cache():
+                    self._compute_caches()
+                    self._save_to_disk_cache()
             else:
                 self._compute_caches()
                 self._save_to_disk_cache()
