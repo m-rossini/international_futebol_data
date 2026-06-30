@@ -32,6 +32,17 @@ class FilterParams:
     date_from: Optional[str] = field(default=None)
     date_to: Optional[str] = field(default=None)
 
+    @property
+    def is_empty(self) -> bool:
+        """Return True if all filter fields are None (no filtering applied)."""
+        return (
+            self.teams is None
+            and self.tournaments is None
+            and self.countries is None
+            and self.date_from is None
+            and self.date_to is None
+        )
+
 
 def apply_filters(df: pd.DataFrame, filters: Optional[FilterParams]) -> pd.DataFrame:
     """Apply ``filters`` to the results DataFrame.

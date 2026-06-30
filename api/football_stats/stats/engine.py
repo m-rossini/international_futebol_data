@@ -76,9 +76,13 @@ class QueryEngine:
 
     def _enriched_filtered(self, filters: Optional[FilterParams]) -> pd.DataFrame:
         """Return the cached enriched DataFrame, optionally filtered."""
-        if filters is None:
+        if filters is None or filters.is_empty:
             return self._state.enriched
         return apply_filters(self._state.enriched, filters)
+
+    def _no_filters(self, filters: Optional[FilterParams]) -> bool:
+        """Return True if no filtering is applied (cache-safe)."""
+        return filters is None or filters.is_empty
 
     def summary(self, filters: Optional[FilterParams] = None) -> dict:
         logger.debug("Computing summary")
@@ -93,7 +97,7 @@ class QueryEngine:
     def teams(self, filters: Optional[FilterParams] = None) -> list:
         """Return all teams with full aggregate stats."""
         logger.debug("Teams list requested")
-        if filters is None:
+        if self._no_filters(filters):
             return self._state.cache_teams_list
         return teams_list(self._filtered_results(filters))
 
@@ -178,7 +182,7 @@ class QueryEngine:
     def tournaments(self, filters: Optional[FilterParams] = None) -> list:
         """List all tournaments with comprehensive aggregate stats."""
         logger.debug("Tournaments list requested")
-        if filters is None:
+        if self._no_filters(filters):
             return self._state.cache_tournaments_list
         return tournaments_list(self._filtered_results(filters))
 
@@ -214,7 +218,7 @@ class QueryEngine:
     def cities(self, filters: Optional[FilterParams] = None) -> list:
         """List all cities with comprehensive stats."""
         logger.debug("Cities list requested")
-        if filters is None:
+        if self._no_filters(filters):
             return self._state.cache_cities_list
         return cities_list(self._filtered_results(filters))
 
@@ -233,7 +237,7 @@ class QueryEngine:
     def countries(self, filters: Optional[FilterParams] = None) -> list:
         """List all countries with comprehensive stats."""
         logger.debug("Countries list requested")
-        if filters is None:
+        if self._no_filters(filters):
             return self._state.cache_countries_list
         return countries_list(self._filtered_results(filters))
 
