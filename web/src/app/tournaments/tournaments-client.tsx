@@ -110,7 +110,7 @@ export function TournamentsClient() {
   return (
     <div className="p-8">
       <h1 className="text-2xl font-bold text-gray-800 mb-4">Tournaments</h1>
-      <FilterBar fields={{ teams: false }} />
+      <FilterBar fields={{ teams: false }} injectDefaults={false} />
       {loading ? (
         <p className="text-sm text-gray-400">Loading...</p>
       ) : error ? (
