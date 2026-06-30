@@ -97,9 +97,9 @@ class QueryEngine:
     def teams(self, filters: Optional[FilterParams] = None) -> list:
         """Return all teams with full aggregate stats."""
         if self._no_filters(filters):
-            logger.debug("Teams list — source=cache")
+            logger.debug("Teams list", extra={"source": "cache"})
             return self._state.cache_teams_list
-        logger.debug("Teams list — source=live")
+        logger.debug("Teams list", extra={"source": "live"})
         return teams_list(self._filtered_results(filters))
 
     def team(self, team_name: str, filters: Optional[FilterParams] = None) -> dict:
@@ -183,9 +183,9 @@ class QueryEngine:
     def tournaments(self, filters: Optional[FilterParams] = None) -> list:
         """List all tournaments with comprehensive aggregate stats."""
         if self._no_filters(filters):
-            logger.debug("Tournaments list — source=cache")
+            logger.debug("Tournaments list", extra={"source": "cache"})
             return self._state.cache_tournaments_list
-        logger.debug("Tournaments list — source=live")
+        logger.debug("Tournaments list", extra={"source": "live"})
         return tournaments_list(self._filtered_results(filters))
 
     def tournament(self, name: str, filters: Optional[FilterParams] = None) -> dict:
@@ -220,9 +220,9 @@ class QueryEngine:
     def cities(self, filters: Optional[FilterParams] = None) -> list:
         """List all cities with comprehensive stats."""
         if self._no_filters(filters):
-            logger.debug("Cities list — source=cache")
+            logger.debug("Cities list", extra={"source": "cache"})
             return self._state.cache_cities_list
-        logger.debug("Cities list — source=live")
+        logger.debug("Cities list", extra={"source": "live"})
         return cities_list(self._filtered_results(filters))
 
     def city(self, name: str, filters: Optional[FilterParams] = None) -> dict:
@@ -240,9 +240,9 @@ class QueryEngine:
     def countries(self, filters: Optional[FilterParams] = None) -> list:
         """List all countries with comprehensive stats."""
         if self._no_filters(filters):
-            logger.debug("Countries list — source=cache")
+            logger.debug("Countries list", extra={"source": "cache"})
             return self._state.cache_countries_list
-        logger.debug("Countries list — source=live")
+        logger.debug("Countries list", extra={"source": "live"})
         return countries_list(self._filtered_results(filters))
 
     def country(self, name: str, filters: Optional[FilterParams] = None) -> dict:

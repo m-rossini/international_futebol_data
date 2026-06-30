@@ -37,12 +37,63 @@ _COLORS = {
 class _ColouredFormatter(logging.Formatter):
     """Log formatter that adds ANSI colour depending on log level."""
 
+    def __init__(self, *args, use_color: bool = True, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._use_color = use_color
+
     def format(self, record: logging.LogRecord) -> str:
         levelname = record.levelname
-        color = _COLORS.get(levelname, _RESET)
-        record.levelname = f"{color}{levelname}{_RESET}"
+        if self._use_color:
+            color = _COLORS.get(levelname, _RESET)
+            record.levelname = f"{color}{levelname}{_RESET}"
+        else:
+            color = ""
         msg = super().format(record)
-        return f"{color}{msg}{_RESET}"
+        # Append structured extras (source=cache, etc.)
+        extras = getattr(record, "_structured", {})
+        suffix = "".join(f" {k}={v}" for k, v in extras.items())
+        if self._use_color:
+            return f"{color}{msg}{_RESET}{suffix}"
+        return f"{msg}{suffix}"
+
+
+class _ExtrasFilter(logging.Filter):
+    """Append any extra fields passed via logger.debug(..., extra={...})."""
+
+    _SKIP = {
+        "name",
+        "msg",
+        "args",
+        "levelname",
+        "levelno",
+        "pathname",
+        "filename",
+        "module",
+        "exc_info",
+        "exc_text",
+        "stack_info",
+        "lineno",
+        "funcName",
+        "created",
+        "msecs",
+        "relativeCreated",
+        "thread",
+        "threadName",
+        "processName",
+        "process",
+        "message",
+        "asctime",
+    }
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        extras = {
+            k: v
+            for k, v in record.__dict__.items()
+            if k not in self._SKIP and not k.startswith("_")
+        }
+        if extras:
+            record._structured = extras  # type: ignore[attr-defined]
+        return True
 
 
 def _load_level_from_config() -> int:
@@ -71,19 +122,15 @@ def _setup_logger(name: str) -> logging.Logger:
     level = _load_level_from_config()
     use_color = _supports_color()
 
-    if use_color:
-        fmt = _ColouredFormatter(
-            "[%(asctime)s] %(levelname)-7s %(name)s - %(message)s",
-            datefmt="%Y-%m-%d %H:%M:%S",
-        )
-    else:
-        fmt = logging.Formatter(
-            "[%(asctime)s] %(levelname)-7s %(name)s - %(message)s",
-            datefmt="%Y-%m-%d %H:%M:%S",
-        )
+    fmt = _ColouredFormatter(
+        "[%(asctime)s] %(levelname)-7s %(name)s - %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+        use_color=use_color,
+    )
 
     handler = logging.StreamHandler(sys.stdout)
     handler.setFormatter(fmt)
+    handler.addFilter(_ExtrasFilter())
 
     logger = logging.getLogger(name)
     logger.setLevel(level)
