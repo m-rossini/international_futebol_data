@@ -1,0 +1,71 @@
+# Production compose for VPS deployment.
+# Images must be pre-loaded via: make vps-release
+# Data directory must exist at: ./data/
+
+services:
+  api:
+    image: international-futebol-data:prod
+    container_name: futebol-api
+    ports:
+      - "7531:7531"
+    volumes:
+      - ./data:/data:ro
+    environment:
+      - DATA_DIR=/data
+      - OTEL_SERVICE_NAME=futebol-api
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://openobserve:5080/api/default
+      - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+      - OTEL_EXPORTER_OTLP_HEADERS=Authorization=Basic YWRtaW5AZnV0ZWJvbC5sb2NhbDpGdXRlYm9sQDEyMw==,stream-name=api_logs
+      - OTEL_PYTHON_LOGGING_AUTO_INSTRUMENTATION_ENABLED=true
+    depends_on:
+      openobserve:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:7531/health')"]
+      interval: 3m
+      timeout: 5s
+      retries: 3
+      start_interval: 5s
+      start_period: 30s
+    restart: unless-stopped
+
+  web:
+    image: futebol-web:prod
+    container_name: futebol-web
+    ports:
+      - "7500:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://api:7531
+      - NEXT_PUBLIC_OO_ENDPOINT=
+      - NEXT_PUBLIC_OO_BASIC_AUTH=YWRtaW5AZnV0ZWJvbC5sb2NhbDpGdXRlYm9sQDEyMw==
+      - NEXT_PUBLIC_OO_ORG=default
+      - NEXT_PUBLIC_OO_STREAM=web_events
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
+  openobserve:
+    image: openobserve/openobserve:latest
+    container_name: futebol-observe
+    ports:
+      - "7580:5080"
+      - "7581:5081"
+    volumes:
+      - oo_data:/data
+    environment:
+      - ZO_ROOT_USER_EMAIL=admin@futebol.local
+      - ZO_ROOT_USER_PASSWORD=Futebol@123
+      - ZO_DATA_DIR=/data
+      - ZO_COMPACT_ENABLED=true
+      - ZO_COMPACT_INTERVAL=60
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    restart: unless-stopped
+
+volumes:
+  oo_data:

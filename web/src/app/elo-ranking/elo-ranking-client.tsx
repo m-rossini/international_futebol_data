@@ -394,9 +394,7 @@ export function EloRankingClient() {
               list="team-list"
             />
             <datalist id="team-list">
-              {current?.ranking?.map((e) => (
-                <option key={e.team} value={e.team} />
-              ))}
+              {current?.ranking?.map((e) => <option key={e.team} value={e.team} />)}
             </datalist>
           </div>
         </div>
