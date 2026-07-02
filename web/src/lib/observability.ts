@@ -19,16 +19,17 @@ interface OOConfig {
 function getConfig(): OOConfig | null {
   try {
     // NEXT_PUBLIC_* variables are inlined by Next.js at build time.
-    // We access them carefully to avoid errors in environments
-    // where process.env may not be fully available.
+    // They MUST be accessed as process.env.NEXT_PUBLIC_* (without optional
+    // chaining) so the webpack define plugin can replace them.  Using
+    // process.env?.NEXT_PUBLIC_* breaks the pattern and leaves them as
+    // undefined in the browser, silently disabling all telemetry.
     //
     // When endpoint is empty, we use a same-origin relative path
     // (proxied by Next.js rewrites) to avoid CORS preflight issues.
-    const endpoint = (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_OO_ENDPOINT) || '';
-    const org = (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_OO_ORG) || '';
-    const stream = (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_OO_STREAM) || '';
-    const basicAuth =
-      (typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_OO_BASIC_AUTH) || '';
+    const endpoint = process.env.NEXT_PUBLIC_OO_ENDPOINT || '';
+    const org = process.env.NEXT_PUBLIC_OO_ORG || '';
+    const stream = process.env.NEXT_PUBLIC_OO_STREAM || '';
+    const basicAuth = process.env.NEXT_PUBLIC_OO_BASIC_AUTH || '';
 
     if (!org || !stream || !basicAuth) return null;
 
@@ -406,7 +407,9 @@ function sendSpanBatch(spans: OtelSpan[]) {
   const body = {
     resourceSpans: [
       {
-        resource: {},
+        resource: {
+          attributes: [{ key: 'service.name', value: { stringValue: 'futebol-web' } }],
+        },
         scopeSpans: [
           {
             scope: {},

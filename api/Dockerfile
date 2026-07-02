@@ -39,14 +39,21 @@ EXPOSE 7531 5678
 # Run with debugpy for VS Code attachment
 CMD ["uv", "run", "python", "-m", "debugpy", "--listen", "0.0.0.0:5678", "football_stats/server.py", "--host", "0.0.0.0", "--port", "7531"]
 
-# Production stage
-FROM base AS production
+# Production stage — minimal image, no uv, no dev tools
+FROM python:3.14-slim-bookworm AS production
 
-# Copy the application code
+WORKDIR /app
+
+# Copy only the virtualenv from the base stage (no uv, no pip, no build tools)
+COPY --from=base /app/.venv /app/.venv
+
+# Copy application code
 COPY . .
 
-# Expose port
+# Activate the venv
+ENV PATH="/app/.venv/bin:$PATH"
+ENV PYTHONUNBUFFERED=1
+
 EXPOSE 7531
 
-# Run the application
-CMD ["uv", "run", "python", "football_stats/server.py", "--host", "0.0.0.0", "--port", "7531"]
+CMD ["python", "football_stats/server.py", "--host", "0.0.0.0", "--port", "7531"]

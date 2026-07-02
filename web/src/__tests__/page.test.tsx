@@ -43,7 +43,7 @@ describe('HomePage', () => {
     render(<HomePage />);
     expect(screen.getByText('Teams')).toBeInTheDocument();
     expect(screen.getByText('Head to Head')).toBeInTheDocument();
-    expect(screen.queryByText('Tournaments')).not.toBeInTheDocument();
+    expect(screen.getByText('Tournaments')).toBeInTheDocument();
   });
 
   it('renders the Save Preferences button', () => {

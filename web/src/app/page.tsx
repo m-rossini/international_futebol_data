@@ -202,6 +202,14 @@ export default function HomePage() {
           </span>
         </Link>
         <Link
+          href="/tournaments"
+          className="flex flex-col items-center gap-2 p-5 bg-white rounded-xl border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all"
+        >
+          <Trophy size={24} className="text-blue-600" />
+          <span className="text-sm font-semibold text-gray-700">Tournaments</span>
+          <span className="text-xs text-gray-400 text-center">Browse tournaments and seasons</span>
+        </Link>
+        <Link
           href="/head-to-head"
           className="flex flex-col items-center gap-2 p-5 bg-white rounded-xl border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all"
         >

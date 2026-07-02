@@ -14,6 +14,14 @@ PART      ?= patch
 -include .env
 export DATA_VOLUME
 
+# ── VPS deployment variables ─────────────────────────────
+VPS_HOST       ?=
+VPS_DEPLOY_DIR ?= /opt/futebol
+VPS_DATA_DIR   ?= $(VPS_DEPLOY_DIR)/data
+IMG_API_PROD   = $(IMG_API):prod
+IMG_WEB_PROD   = $(IMG_WEB):prod
+STAGING        = /tmp/futebol-vps
+
 
 # ── Phony targets ─────────────────────────────────────────
 .PHONY: help \
@@ -21,7 +29,8 @@ export DATA_VOLUME
         api-test api-test-cov api-mcp \
         web-build web-up web-down web-run web-shell web-logs \
         web-test web-test-cov \
-        up down test test-cov install-hooks
+        up down test test-cov install-hooks \
+        vps-build vps-save vps-publish vps-release vps-deploy vps-provision
 
 # ═══════════════════════════════════════════════════════════
 #  Help
@@ -58,6 +67,14 @@ help:
 	@echo "    make web-logs       Tail container logs"
 	@echo "    make web-test       Run vitest + lint (ephemeral)"
 	@echo "    make web-test-cov   Run vitest with coverage (ephemeral)"
+	@echo ""
+	@echo "  VPS DEPLOYMENT (requires VPS_HOST=user@host)"
+	@echo "    make vps-build      Build production images (slim, no dev tools)"
+	@echo "    make vps-save       Save images to tarballs in $(STAGING)/"
+	@echo "    make vps-publish    SCP images + compose + data to VPS"
+	@echo "    make vps-release    Load images on VPS via SSH"
+	@echo "    make vps-deploy     Rolling restart on VPS (stop → start → verify)"
+	@echo "    make vps-provision  Full pipeline: build → save → publish → release → deploy"
 	@echo ""
 
 # ═══════════════════════════════════════════════════════════
@@ -200,3 +217,61 @@ test:
 test-cov:
 	$(MAKE) api-test-cov
 	$(MAKE) web-test-cov
+
+# ═══════════════════════════════════════════════════════════
+#  VPS deployment
+# ═══════════════════════════════════════════════════════════
+
+vps-build:
+	@echo "Building production images…"
+	$(DOCKER) build -f api/Dockerfile --target production -t $(IMG_API_PROD) api/
+	$(DOCKER) build -f web/Dockerfile --target production -t $(IMG_WEB_PROD) web/
+	@echo "Production images built:"
+	@$(DOCKER) images --format "table {{.Repository}}:{{.Tag}}\t{{.Size}}" | grep -E "$(IMG_API_PROD)|$(IMG_WEB_PROD)"
+
+vps-save: vps-build
+	@echo "Saving images to $(STAGING)/…"
+	@mkdir -p $(STAGING)
+	$(DOCKER) save $(IMG_API_PROD) -o $(STAGING)/api.tar
+	$(DOCKER) save $(IMG_WEB_PROD) -o $(STAGING)/web.tar
+	@echo "Saved:"
+	@ls -lh $(STAGING)/*.tar
+
+vps-publish: vps-save
+	@test -n "$(VPS_HOST)" || (echo "ERROR: VPS_HOST is not set. Usage: make vps-provision VPS_HOST=user@host" && exit 1)
+	@echo "Publishing to $(VPS_HOST):$(VPS_DEPLOY_DIR)…"
+	@ssh $(VPS_HOST) "mkdir -p $(VPS_DEPLOY_DIR)/data"
+	scp $(STAGING)/api.tar $(VPS_HOST):/tmp/futebol-api.tar
+	scp $(STAGING)/web.tar $(VPS_HOST):/tmp/futebol-web.tar
+	scp docker-compose.vps.yml $(VPS_HOST):$(VPS_DEPLOY_DIR)/docker-compose.yml
+	scp .env.vps.example $(VPS_HOST):$(VPS_DEPLOY_DIR)/.env
+	@echo "Compressing data…"
+	@tar czf $(STAGING)/data.tar.gz -C "$(DATA_VOLUME)" .
+	scp $(STAGING)/data.tar.gz $(VPS_HOST):/tmp/futebol-data.tar.gz
+	@echo "Published images, compose, env, and data to $(VPS_HOST)"
+
+vps-release:
+	@test -n "$(VPS_HOST)" || (echo "ERROR: VPS_HOST is not set. Usage: make vps-provision VPS_HOST=user@host" && exit 1)
+	@echo "Loading images on $(VPS_HOST)…"
+	ssh $(VPS_HOST) "docker load < /tmp/futebol-api.tar && docker load < /tmp/futebol-web.tar"
+	@echo "Images loaded on VPS"
+
+vps-deploy:
+	@test -n "$(VPS_HOST)" || (echo "ERROR: VPS_HOST is not set. Usage: make vps-provision VPS_HOST=user@host" && exit 1)
+	@echo "Deploying on $(VPS_HOST)…"
+	@echo "  1/5 Stopping old containers…"
+	ssh $(VPS_HOST) "cd $(VPS_DEPLOY_DIR) && docker compose stop api web 2>/dev/null || true"
+	@echo "  2/5 Loading new images…"
+	ssh $(VPS_HOST) "docker load < /tmp/futebol-api.tar && docker load < /tmp/futebol-web.tar"
+	@echo "  3/5 Decompressing data…"
+	ssh $(VPS_HOST) "cd $(VPS_DEPLOY_DIR) && mkdir -p data && tar xzf /tmp/futebol-data.tar.gz -C data/ 2>/dev/null || true"
+	@echo "  4/5 Starting new containers…"
+	ssh $(VPS_HOST) "cd $(VPS_DEPLOY_DIR) && docker compose up -d --no-deps api web"
+	@echo "  5/5 Verifying…"
+	ssh $(VPS_HOST) "cd $(VPS_DEPLOY_DIR) && docker compose ps"
+	@echo "Cleaning up temp files on VPS…"
+	ssh $(VPS_HOST) "rm -f /tmp/futebol-api.tar /tmp/futebol-web.tar /tmp/futebol-data.tar.gz"
+	@echo "Deploy complete"
+
+vps-provision: vps-publish vps-release vps-deploy
+	@echo "Full VPS provision complete"

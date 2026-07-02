@@ -8,5 +8,5 @@
     "top_scorers_n": 20,
     "biggest_wins_n": 10
   },
-  "log_level": "INFO"
+  "log_level": "DEBUG"
 }
