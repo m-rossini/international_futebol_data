@@ -56,7 +56,7 @@ help:
 	@echo "    make api-logs       Tail container logs"
 	@echo "    make api-test       Run pytest (ephemeral)"
 	@echo "    make api-test-cov   Run pytest with coverage"
-	@echo "    make api-mcp        Run MCP server via SSE (ephemeral, port 7532)"
+	@echo "    make api-mcp        Run MCP server via SSE (ephemeral, port 7532, needs API running)"
 	@echo ""
 	@echo "  WEB (dev container — attach VS Code)"
 	@echo "    make web-build      Build image"
@@ -130,9 +130,8 @@ api-test-cov: api-build
 api-mcp: api-build
 	$(DOCKER) run --rm -it \
 		-p 7532:7532 \
-		-e DATA_DIR=/data \
+		-e API_BASE_URL=http://host.docker.internal:7531 \
 		-v $(CURDIR)/api:/app \
-		-v $(DATA_VOLUME):/data:ro \
 		$(IMG_API):dev \
 		uv run python football_stats/mcp_server.py --transport sse --port 7532
 
@@ -260,13 +259,13 @@ vps-deploy:
 	@test -n "$(VPS_HOST)" || (echo "ERROR: VPS_HOST is not set. Usage: make vps-provision VPS_HOST=user@host" && exit 1)
 	@echo "Deploying on $(VPS_HOST)…"
 	@echo "  1/5 Stopping old containers…"
-	ssh $(VPS_HOST) "cd $(VPS_DEPLOY_DIR) && docker compose stop api web 2>/dev/null || true"
+	ssh $(VPS_HOST) "cd $(VPS_DEPLOY_DIR) && docker compose stop api mcp web 2>/dev/null || true"
 	@echo "  2/5 Loading new images…"
 	ssh $(VPS_HOST) "docker load < /tmp/futebol-api.tar && docker load < /tmp/futebol-web.tar"
 	@echo "  3/5 Decompressing data…"
 	ssh $(VPS_HOST) "cd $(VPS_DEPLOY_DIR) && mkdir -p data && tar xzf /tmp/futebol-data.tar.gz -C data/ 2>/dev/null || true"
 	@echo "  4/5 Starting new containers…"
-	ssh $(VPS_HOST) "cd $(VPS_DEPLOY_DIR) && docker compose up -d --no-deps api web"
+	ssh $(VPS_HOST) "cd $(VPS_DEPLOY_DIR) && docker compose up -d --no-deps api mcp web"
 	@echo "  5/5 Verifying…"
 	ssh $(VPS_HOST) "cd $(VPS_DEPLOY_DIR) && docker compose ps"
 	@echo "Cleaning up temp files on VPS…"

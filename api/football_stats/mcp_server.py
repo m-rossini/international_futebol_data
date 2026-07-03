@@ -2,70 +2,82 @@
 """
 MCP Server for International Football Data Stats.
 
-Exposes 15 tools that wrap the same QueryEngine used by the REST API,
-making the dataset available to AI agents via the Model Context Protocol.
+Thin HTTP wrapper — calls the REST API on localhost:7531 instead of loading data.
+No pandas, no QueryEngine, no DataState. Just httpx.
 
 Usage:
-    uv run python football_stats/mcp_server.py                  # stdio transport
-    uv run python football_stats/mcp_server.py --transport sse --port 7532
+    python football_stats/mcp_server.py                  # stdio transport
+    python football_stats/mcp_server.py --transport sse --port 7532
 """
 
 import argparse
 import logging
+import os
 import sys
+from typing import Any
 
-from stats.state import DataState
-from stats.engine import QueryEngine
-from stats.filters import FilterParams
-
+import httpx
 from mcp.server.fastmcp import FastMCP
 
 # ---------------------------------------------------------------------------
-#  Data loading (on import / startup)
+#  Config
 # ---------------------------------------------------------------------------
+API_BASE = os.environ.get("API_BASE_URL", "http://localhost:7531")
+REQUEST_TIMEOUT = float(os.environ.get("MCP_REQUEST_TIMEOUT", "30"))
+
 logging.basicConfig(level=logging.INFO, stream=sys.stderr)
 logger = logging.getLogger("mcp_server")
 
-logger.info("Loading international football data...")
-state = DataState()
-info = state.reload()
-logger.info(
-    "Data loaded: %d matches, %d goalscorers, %d shootouts, %d former names",
-    info["matches_loaded"],
-    info["goalscorers_loaded"],
-    info["shootouts_loaded"],
-    info["former_names_loaded"],
-)
-engine = QueryEngine(state)
+# ---------------------------------------------------------------------------
+#  HTTP client
+# ---------------------------------------------------------------------------
+_client: httpx.Client | None = None
+
+
+def _get_client() -> httpx.Client:
+    global _client
+    if _client is None or _client.is_closed:
+        _client = httpx.Client(base_url=API_BASE, timeout=REQUEST_TIMEOUT)
+    return _client
+
+
+def _get(path: str, params: dict[str, Any] | None = None) -> Any:
+    """GET from the API, raise on non-200."""
+    client = _get_client()
+    resp = client.get(path, params=params)
+    resp.raise_for_status()
+    return resp.json()
+
 
 # ---------------------------------------------------------------------------
-#  Helpers
+#  Filter helper — converts comma-separated strings to repeated query params
 # ---------------------------------------------------------------------------
-
-
-def _parse_filters(
+def _filter_params(
     tournaments: str | None = None,
     countries: str | None = None,
     date_from: str | None = None,
     date_to: str | None = None,
-) -> FilterParams:
-    """Convert comma-separated string args into a FilterParams instance."""
-    return FilterParams(
-        tournaments=[t.strip() for t in tournaments.split(",") if t.strip()]
-        if tournaments
-        else None,
-        countries=[c.strip() for c in countries.split(",") if c.strip()]
-        if countries
-        else None,
-        date_from=date_from.strip() if date_from else None,
-        date_to=date_to.strip() if date_to else None,
-    )
+) -> dict[str, Any]:
+    params: dict[str, Any] = {}
+    if tournaments:
+        params["tournaments"] = tournaments
+    if countries:
+        params["countries"] = countries
+    if date_from:
+        params["date_from"] = date_from
+    if date_to:
+        params["date_to"] = date_to
+    return params
 
 
 # ---------------------------------------------------------------------------
 #  MCP server
 # ---------------------------------------------------------------------------
-mcp = FastMCP("International Football Stats")
+mcp = FastMCP(
+    "International Football Stats",
+    host="0.0.0.0",
+    port=int(os.environ.get("MCP_PORT", "7532")),
+)
 
 
 # ─── Meta ─────────────────────────────────────────────────────────────────
@@ -74,10 +86,7 @@ mcp = FastMCP("International Football Stats")
 @mcp.tool()
 def get_health() -> dict:
     """Health check — returns whether the dataset is loaded and ready."""
-    return {
-        "status": "ok" if state.is_loaded else "not_ready",
-        "data_loaded": state.is_loaded,
-    }
+    return _get("/health")
 
 
 # ─── Summary ──────────────────────────────────────────────────────────────
@@ -96,7 +105,7 @@ def get_summary(
 
     Optional filters: tournaments (comma-separated names), countries (comma-separated host countries),
     date_from / date_to (YYYY-MM-DD format)."""
-    return engine.summary(_parse_filters(tournaments, countries, date_from, date_to))
+    return _get("/summary", _filter_params(tournaments, countries, date_from, date_to))
 
 
 # ─── Teams ────────────────────────────────────────────────────────────────
@@ -114,7 +123,10 @@ def get_team_stats(
     and goal-difference stats.
 
     Optional filters: tournaments (comma-separated), date_from / date_to (YYYY-MM-DD)."""
-    return engine.team(team_name, _parse_filters(tournaments, None, date_from, date_to))
+    return _get(
+        f"/team/{team_name}",
+        _filter_params(tournaments, None, date_from, date_to),
+    )
 
 
 @mcp.tool()
@@ -132,8 +144,13 @@ def get_head_to_head(
 
     Optional filters: tournaments (comma-separated), countries (comma-separated host countries),
     date_from / date_to (YYYY-MM-DD)."""
-    return engine.head_to_head(
-        team1, team2, _parse_filters(tournaments, countries, date_from, date_to)
+    return _get(
+        "/head_to_head",
+        {
+            "team1": team1,
+            "team2": team2,
+            **_filter_params(tournaments, countries, date_from, date_to),
+        },
     )
 
 
@@ -150,21 +167,13 @@ def get_rankings(
 ) -> dict:
     """Top N teams/countries/cities ranked by a statistic.
 
-    Valid stat values:
-    - wins        — most wins
-    - losses      — most losses
-    - draws       — most draws
-    - win_rate    — highest win rate (min 10 matches)
-    - loss_rate   — highest loss rate (min 10 matches)
-    - goals_pro   — most goals scored
-    - goals_against — most goals conceded
-    - matches     — most matches played
-    - country     — most matches hosted by country
-    - city        — most matches hosted by city
+    Valid stat values: wins, losses, draws, win_rate, loss_rate, goals_pro,
+    goals_against, matches, country, city.
 
     Optional filters: tournaments (comma-separated), date_from / date_to (YYYY-MM-DD)."""
-    return engine.most(
-        stat, top_n, _parse_filters(tournaments, None, date_from, date_to)
+    return _get(
+        f"/most/{stat}",
+        {"top_n": top_n, **_filter_params(tournaments, None, date_from, date_to)},
     )
 
 
@@ -173,8 +182,8 @@ def get_rankings(
 
 @mcp.tool()
 def get_top_scorers(top_n: int = 20) -> dict:
-    """Top N goal scorers of all time with goal counts. (No tournament/country filter supported for scorers.)"""
-    return engine.top_scorers(top_n)
+    """Top N goal scorers of all time with goal counts."""
+    return _get("/top_scorers", {"top_n": top_n})
 
 
 # ─── Matches ──────────────────────────────────────────────────────────────
@@ -193,8 +202,9 @@ def get_biggest_wins(
 
     Optional filters: tournaments (comma-separated), countries (comma-separated host countries),
     date_from / date_to (YYYY-MM-DD)."""
-    return engine.biggest_wins(
-        top_n, _parse_filters(tournaments, countries, date_from, date_to)
+    return _get(
+        "/biggest_wins",
+        {"top_n": top_n, **_filter_params(tournaments, countries, date_from, date_to)},
     )
 
 
@@ -212,10 +222,13 @@ def get_goals_per_year(
     order: 'asc' or 'desc' (default).
 
     Optional filters: tournaments (comma-separated), date_from / date_to (YYYY-MM-DD)."""
-    return engine.goals_per_year(
-        sort_by=sort_by,
-        order=order,
-        filters=_parse_filters(tournaments, None, date_from, date_to),
+    return _get(
+        "/goals_per_year",
+        {
+            "sort_by": sort_by,
+            "order": order,
+            **_filter_params(tournaments, None, date_from, date_to),
+        },
     )
 
 
@@ -232,7 +245,7 @@ def list_tournaments(
     home/away wins, draws, average goals per match, unique teams, season years.
 
     Optional filters: countries (comma-separated host countries), date_from / date_to (YYYY-MM-DD)."""
-    return engine.tournaments(_parse_filters(None, countries, date_from, date_to))
+    return _get("/tournaments", _filter_params(None, countries, date_from, date_to))
 
 
 @mcp.tool()
@@ -247,7 +260,10 @@ def get_tournament(
     top teams by wins, top host countries, top host cities, and biggest win.
 
     Optional filters: countries (comma-separated host countries), date_from / date_to (YYYY-MM-DD)."""
-    return engine.tournament(name, _parse_filters(None, countries, date_from, date_to))
+    return _get(
+        f"/tournament/{name}",
+        _filter_params(None, countries, date_from, date_to),
+    )
 
 
 # ─── Cities ───────────────────────────────────────────────────────────────
@@ -263,7 +279,7 @@ def list_cities(
     unique teams, tournament count, first/last year, average goals per match.
 
     Optional filters: tournaments (comma-separated), date_from / date_to (YYYY-MM-DD)."""
-    return engine.cities(_parse_filters(tournaments, None, date_from, date_to))
+    return _get("/cities", _filter_params(tournaments, None, date_from, date_to))
 
 
 @mcp.tool()
@@ -278,7 +294,10 @@ def get_city(
     top teams by wins, top tournaments, and biggest win.
 
     Optional filters: tournaments (comma-separated), date_from / date_to (YYYY-MM-DD)."""
-    return engine.city(name, _parse_filters(tournaments, None, date_from, date_to))
+    return _get(
+        f"/city/{name}",
+        _filter_params(tournaments, None, date_from, date_to),
+    )
 
 
 # ─── Countries ────────────────────────────────────────────────────────────
@@ -294,7 +313,7 @@ def list_countries(
     unique teams, tournament count, city count, first/last year, average goals per match.
 
     Optional filters: tournaments (comma-separated), date_from / date_to (YYYY-MM-DD)."""
-    return engine.countries(_parse_filters(tournaments, None, date_from, date_to))
+    return _get("/countries", _filter_params(tournaments, None, date_from, date_to))
 
 
 @mcp.tool()
@@ -309,7 +328,10 @@ def get_country(
     unique cities, top teams by wins, top tournaments, top cities, and biggest win.
 
     Optional filters: tournaments (comma-separated), date_from / date_to (YYYY-MM-DD)."""
-    return engine.country(name, _parse_filters(tournaments, None, date_from, date_to))
+    return _get(
+        f"/country/{name}",
+        _filter_params(tournaments, None, date_from, date_to),
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -317,7 +339,7 @@ def get_country(
 # ---------------------------------------------------------------------------
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="MCP Server for International Football Stats"
+        description="MCP Server for International Football Stats (API wrapper)"
     )
     parser.add_argument(
         "--transport",
@@ -330,8 +352,9 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    logger.info("Starting MCP server — transport=%s", args.transport)
+    logger.info("MCP server starting — transport=%s, api=%s", args.transport, API_BASE)
     if args.transport == "sse":
-        mcp.run(transport="sse", port=args.port)
+        mcp.settings.port = args.port
+        mcp.run(transport="sse")
     else:
         mcp.run(transport="stdio")

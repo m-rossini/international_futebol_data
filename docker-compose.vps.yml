@@ -29,6 +29,24 @@ services:
       start_period: 30s
     restart: unless-stopped
 
+  mcp:
+    image: international-futebol-data:prod
+    container_name: futebol-mcp
+    ports:
+      - "7532:7532"
+    environment:
+      - API_BASE_URL=http://api:7531
+      - MCP_REQUEST_TIMEOUT=30
+      - OTEL_SERVICE_NAME=futebol-mcp
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://openobserve:5080/api/default
+      - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
+      - OTEL_EXPORTER_OTLP_HEADERS=Authorization=Basic YWRtaW5AZnV0ZWJvbC5sb2NhbDpGdXRlYm9sQDEyMw==,stream-name=mcp_logs
+    command: ["python", "football_stats/mcp_server.py", "--transport", "sse", "--port", "7532"]
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+
   web:
     image: futebol-web:prod
     container_name: futebol-web

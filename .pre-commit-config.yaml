@@ -40,7 +40,7 @@ repos:
         args: [--markdown-linebreak-ext=md]
         exclude: \.patch$|\.diff$
       - id: end-of-file-fixer
-        exclude: \.patch$|\.diff$|\.pkl$|\.csv$
+        exclude: \.patch$|\.diff$|\.pkl$|\.csv$|\.svg$
       - id: check-yaml
         args: [--allow-multiple-documents]
         exclude: ^dashboards/
