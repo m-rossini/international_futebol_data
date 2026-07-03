@@ -68,6 +68,7 @@ services:
       - /app/.next
     environment:
       - NEXT_PUBLIC_API_URL=http://api:7531
+      - NEXT_PUBLIC_OBS_PROVIDER=openobserve
       - NEXT_PUBLIC_OO_ENDPOINT=
       - NEXT_PUBLIC_OO_BASIC_AUTH=YWRtaW5AZnV0ZWJvbC5sb2NhbDpGdXRlYm9sQDEyMw==
       - NEXT_PUBLIC_OO_ORG=default
