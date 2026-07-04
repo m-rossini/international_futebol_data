@@ -120,6 +120,17 @@ export interface TournamentYearlyRow {
   host_country: string | null;
 }
 
+export interface TournamentTeamRow {
+  team: string;
+  matches_played: number;
+  goals_for: number;
+  goals_against: number;
+  wins: number;
+  losses: number;
+  draws: number;
+  goal_diff: number;
+}
+
 export interface TournamentDetail {
   tournament: string;
   summary: {
@@ -136,6 +147,7 @@ export interface TournamentDetail {
     biggest_win: BiggestWin | null;
     top_teams_by_wins: { team: string; value: number }[];
     top_teams: Record<string, { team: string; value: number }[]>;
+    all_teams: TournamentTeamRow[];
     top_host_countries: { country: string; matches: number }[];
     top_host_cities: { city: string; matches: number }[];
   };

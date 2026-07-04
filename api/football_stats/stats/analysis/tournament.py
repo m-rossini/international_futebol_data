@@ -213,7 +213,11 @@ def tournament_info(results: pd.DataFrame, tournament: str, top_n: int = 10) -> 
     for _, row in yearly.iterrows():
         y = int(row["year"])
         yr_df = df[df["year"] == y]
-        host = yr_df["country"].mode().iloc[0] if len(yr_df) else None
+        if len(yr_df):
+            countries = sorted(yr_df["country"].dropna().unique())
+            host = ", ".join(countries) if countries else None
+        else:
+            host = None
         yearly_list.append(
             {
                 "year": y,
@@ -229,6 +233,11 @@ def tournament_info(results: pd.DataFrame, tournament: str, top_n: int = 10) -> 
                 "host_country": host,
             }
         )
+
+    # -- all teams in this tournament with aggregate stats --
+    all_teams = sorted(
+        per_team.to_dict(orient="records"), key=lambda t: -t.get("wins", 0)
+    )
 
     return {
         "tournament": tournament,
@@ -246,6 +255,7 @@ def tournament_info(results: pd.DataFrame, tournament: str, top_n: int = 10) -> 
             "biggest_win": biggest_win,
             "top_teams_by_wins": top_teams["by_wins"],
             "top_teams": top_teams,
+            "all_teams": all_teams,
             "top_host_countries": [
                 {"country": c, "matches": int(m)} for c, m in top_countries.items()
             ],
@@ -279,7 +289,7 @@ def season_info(results: pd.DataFrame, tournament: str, year: int) -> dict:
     away_wins = int(df["away_win"].sum())
     draws = int(df["draw"].sum())
     unique_teams = int(pd.concat([df["home_team"], df["away_team"]]).nunique())
-    host = df["country"].mode().iloc[0] if len(df) else None
+    host = ", ".join(sorted(df["country"].dropna().unique())) if len(df) else None
 
     # -- biggest win --
     biggest_win = biggest_single_win(df)

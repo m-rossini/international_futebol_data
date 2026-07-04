@@ -2,13 +2,14 @@
 
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { ArrowLeft, Trophy } from 'lucide-react';
 import { DataTable, type Column } from '@/components/shared/DataTable';
 import { FilterBar } from '@/components/shared/FilterBar';
 import { CountryFlag } from '@/components/shared/CountryFlag';
 import { GoalsPerYearChart } from '@/components/shared/chart/GoalsPerYearChart';
 import { logApiCall, logUserAction } from '@/lib/observability';
-import type { TournamentDetail, TournamentYearlyRow } from '@/lib/types';
+import type { TournamentDetail, TournamentYearlyRow, TournamentTeamRow } from '@/lib/types';
 
 const API = '/api/proxy';
 
@@ -63,17 +64,57 @@ const yearlyColumns: Column<TournamentYearlyRow>[] = [
   },
   {
     key: 'host_country',
-    header: 'Host',
+    header: 'Host(s)',
     sortable: true,
-    render: (r) =>
-      r.host_country ? (
-        <span className="inline-flex items-center gap-1">
-          <CountryFlag countryName={r.host_country} size={14} />
-          {r.host_country}
+    render: (r) => {
+      if (!r.host_country) return '—';
+      const countries = r.host_country.split(', ');
+      return (
+        <span className="inline-flex items-center gap-1 flex-wrap">
+          {countries.map((c, i) => (
+            <span key={c} className="inline-flex items-center gap-0.5">
+              {i > 0 && <span className="text-gray-400">,</span>}
+              <CountryFlag countryName={c} size={14} />
+              {c}
+            </span>
+          ))}
         </span>
-      ) : (
-        '—'
-      ),
+      );
+    },
+  },
+];
+
+const allTeamsColumns: Column<TournamentTeamRow>[] = [
+  {
+    key: 'team',
+    header: 'Team',
+    render: (r) => (
+      <Link
+        href={`/teams/${encodeURIComponent(r.team)}`}
+        className="inline-flex items-center gap-1.5 text-blue-600 hover:text-blue-800 hover:underline"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <CountryFlag countryName={r.team} size={16} />
+        {r.team}
+      </Link>
+    ),
+  },
+  { key: 'matches_played', header: 'P', sortable: true },
+  { key: 'wins', header: 'W', sortable: true },
+  { key: 'draws', header: 'D', sortable: true },
+  { key: 'losses', header: 'L', sortable: true },
+  { key: 'goals_for', header: 'GF', sortable: true },
+  { key: 'goals_against', header: 'GA', sortable: true },
+  {
+    key: 'goal_diff',
+    header: 'GD',
+    sortable: true,
+    render: (r) => (
+      <span className={r.goal_diff > 0 ? 'text-green-600' : r.goal_diff < 0 ? 'text-red-500' : ''}>
+        {r.goal_diff > 0 ? '+' : ''}
+        {r.goal_diff}
+      </span>
+    ),
   },
 ];
 
@@ -265,10 +306,13 @@ export function TournamentDetailClient({ tournamentName }: Props) {
                       <tr key={t.team} className="border-b border-gray-50 last:border-0">
                         <td className="px-4 py-2 text-gray-400">{i + 1}</td>
                         <td className="px-4 py-2 font-medium text-gray-800">
-                          <span className="inline-flex items-center gap-1.5">
+                          <Link
+                            href={`/teams/${encodeURIComponent(t.team)}`}
+                            className="inline-flex items-center gap-1.5 text-blue-600 hover:text-blue-800 hover:underline"
+                          >
                             <CountryFlag countryName={t.team} size={16} />
                             {t.team}
-                          </span>
+                          </Link>
                         </td>
                         <td className="px-4 py-2 text-right font-semibold text-gray-800">
                           {t.value}
@@ -278,6 +322,21 @@ export function TournamentDetailClient({ tournamentName }: Props) {
                   </tbody>
                 </table>
               </div>
+            </div>
+          )}
+
+          {/* All teams */}
+          {detail.summary.all_teams && detail.summary.all_teams.length > 0 && (
+            <div className="mb-6">
+              <h2 className="text-lg font-semibold text-gray-800 mb-3">
+                All Teams ({detail.summary.all_teams.length})
+              </h2>
+              <DataTable
+                columns={allTeamsColumns}
+                data={detail.summary.all_teams}
+                keyField="team"
+                defaultSort={{ key: 'wins', dir: 'desc' }}
+              />
             </div>
           )}
 

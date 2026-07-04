@@ -141,8 +141,14 @@ export function SeasonDetailClient({ tournamentName, year }: Props) {
       </h1>
       {detail?.host_country && (
         <p className="text-sm text-gray-500 mb-4 inline-flex items-center gap-1.5">
-          Hosted in <CountryFlag countryName={detail.host_country} size={14} />
-          {detail.host_country}
+          {'Hosted in '}
+          {detail.host_country.split(', ').map((c, i) => (
+            <span key={c} className="inline-flex items-center gap-0.5">
+              {i > 0 && <span className="text-gray-400">, </span>}
+              <CountryFlag countryName={c} size={14} />
+              {c}
+            </span>
+          ))}
         </p>
       )}
 
