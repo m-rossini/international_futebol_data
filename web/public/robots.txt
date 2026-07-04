@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://futebol.orbisplace.co.uk/sitemap.xml

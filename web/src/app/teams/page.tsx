@@ -1,5 +1,17 @@
 import { Suspense } from 'react';
+import { Metadata } from 'next';
 import { TeamsClient } from './teams-client';
+
+export const metadata: Metadata = {
+  title: 'Teams',
+  description:
+    'Browse all national and non-FIFA teams with match history, win rates, goals, and ELO ratings.',
+  openGraph: {
+    title: 'Teams — International Football Stats',
+    description:
+      'Browse all national and non-FIFA teams with match history, win rates, goals, and ELO ratings.',
+  },
+};
 
 export default function TeamsPage() {
   return (

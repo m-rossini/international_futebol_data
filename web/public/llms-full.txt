@@ -1,0 +1,57 @@
+# International Football Stats — Full Description
+
+> A comprehensive, open database of international football match results dating back to the first ever international match in 1872.
+
+## About
+International Football Stats is a web application and API that provides detailed statistics and historical data for international football matches. The dataset covers matches from 1872 to the present day, encompassing a wide range of teams, competitions, and outcomes.
+
+## Data Scope
+- **Matches**: Tens of thousands of international football matches with dates, scores, cities, countries, tournaments, and match types
+- **Teams**: 300+ teams including FIFA members, CONIFA teams, historical nations (Soviet Union, Czechoslovakia, Yugoslavia, East/West Germany), non-FIFA teams (Basque Country, Catalonia, Kurdistan), and unrecognized states
+- **Tournaments**: 200+ competitions including FIFA World Cup, UEFA Euro, Copa América, African Cup of Nations, AFC Asian Cup, CONCACAF Gold Cup, Olympic Games, CONIFA World Cup, regional championships, and friendlies
+- **Countries**: 200+ countries where matches have been played
+- **Cities**: 2000+ host cities across the globe
+- **Goal Scorers**: Individual goal scorer data for many matches
+- **Shootouts**: Penalty shootout results
+
+## Features
+- **Team Profiles**: Browse any team's full match history, win/draw/loss record, goals scored/conceded, and ELO rating trajectory
+- **Tournament Details**: View all seasons of a tournament with standings, results, and historical data
+- **Head-to-Head**: Compare any two teams with cumulative wins charts, goal difference, and full match history
+- **ELO Rankings**: Real-time ELO ratings calculated using the standard formula (K=20, with adjustments for goal difference, home advantage, and match importance). Rankings update after every match
+- **Decade Leaders**: See which teams dominated each decade based on average ELO rating
+- **Flag Report**: Visual mapping of teams to their national flags and countries
+- **Default Preferences**: Save your favorite team and tournament for quick access across the app
+
+## ELO Rating System
+The ELO rating system used here follows the standard approach:
+- **K-factor**: 20 (determines rating sensitivity)
+- **Expected score**: Calculated from rating difference between teams
+- **Home advantage**: +100 ELO points for the home team
+- **Goal difference multiplier**: Larger victories yield more rating points
+- **Match importance**: Friendly matches have reduced weight
+
+## API Endpoints
+The REST API at /api/proxy/ provides:
+- GET /teams — List all teams
+- GET /teams/{name} — Team details and stats
+- GET /tournaments — List all tournaments
+- GET /tournaments/{name} — Tournament details
+- GET /matches — Query matches with filters
+- GET /rankings/elo — Current ELO rankings
+- GET /rankings/elo/history?team={name} — ELO history for a team
+- GET /head-to-head — Head-to-head comparison
+- GET /filters — Available filter values (teams, tournaments, countries)
+
+## MCP Server
+An MCP (Model Context Protocol) server is available at futebol-mcp.orbisplace.co.uk for AI assistants to query the database programmatically.
+
+## Technical Details
+- Built with Next.js (React) frontend and Python FastAPI backend
+- Data stored in CSV format, processed with pandas
+- ELO ratings computed server-side
+- Deployed on IONOS VPS with Docker, nginx reverse proxy, and Let's Encrypt SSL
+- OpenObserve integration for observability and analytics
+
+## Credits
+Data sourced from various public international football result datasets. ELO rating implementation based on the standard chess ELO system adapted for football.

@@ -1,11 +1,25 @@
 import { Suspense } from 'react';
+import type { Metadata } from 'next';
 import { TournamentDetailClient } from './tournament-detail-client';
 
-export default async function TournamentDetailPage({
-  params,
-}: {
+interface Props {
   params: Promise<{ name: string }>;
-}) {
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { name } = await params;
+  const tournamentName = decodeURIComponent(name);
+  return {
+    title: tournamentName,
+    description: `Seasons, results, and statistics for ${tournamentName}.`,
+    openGraph: {
+      title: `${tournamentName} — International Football Stats`,
+      description: `Seasons, results, and statistics for ${tournamentName}.`,
+    },
+  };
+}
+
+export default async function TournamentDetailPage({ params }: Props) {
   const { name } = await params;
 
   return (

@@ -1,7 +1,25 @@
 import { Suspense } from 'react';
+import type { Metadata } from 'next';
 import { TeamDetailClient } from './team-detail-client';
 
-export default async function TeamDetailPage({ params }: { params: Promise<{ name: string }> }) {
+interface Props {
+  params: Promise<{ name: string }>;
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { name } = await params;
+  const teamName = decodeURIComponent(name);
+  return {
+    title: teamName,
+    description: `Full match history, stats, and ELO rating for ${teamName}.`,
+    openGraph: {
+      title: `${teamName} — International Football Stats`,
+      description: `Full match history, stats, and ELO rating for ${teamName}.`,
+    },
+  };
+}
+
+export default async function TeamDetailPage({ params }: Props) {
   const { name } = await params;
 
   return (

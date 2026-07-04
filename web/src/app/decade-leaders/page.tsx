@@ -1,8 +1,13 @@
+import { Metadata } from 'next';
 import { DecadeLeadersClient } from './decade-leaders-client';
 
-export const metadata = {
-  title: 'Decade Leaders - ELO Ratings',
-  description: 'See which teams dominated each decade based on ELO ratings',
+export const metadata: Metadata = {
+  title: 'Decade Leaders',
+  description: 'See which teams dominated each decade based on ELO ratings.',
+  openGraph: {
+    title: 'Decade Leaders — International Football Stats',
+    description: 'See which teams dominated each decade based on ELO ratings.',
+  },
 };
 
 export default function DecadeLeadersPage() {

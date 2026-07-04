@@ -1,0 +1,29 @@
+# International Football Stats
+
+> A comprehensive database of international football match results dating back to 1872.
+
+## What's Here
+- 300+ national and non-FIFA teams including historical entities like Soviet Union, Czechoslovakia, and Yugoslavia
+- 200+ tournaments: World Cup, Euros, Copa América, African Cup of Nations, Asian Games, friendlies, and more
+- Match results with scores, dates, cities, and host countries
+- ELO ratings calculated from historical match results
+- Head-to-head comparisons between any two teams
+- Goal scorers and shootout data
+- Decade-by-decade dominance rankings
+
+## Key Pages
+- /teams — Browse all teams
+- /teams/{name} — Team detail with full match history and stats
+- /tournaments — Browse all tournaments
+- /tournaments/{name} — Tournament detail with seasons and results
+- /tournaments/{name}/season/{year} — Season standings and matches
+- /head-to-head — Compare any two teams head-to-head
+- /elo-ranking — Current ELO world rankings with historical charts
+- /decade-leaders — Top teams by decade based on ELO ratings
+- /flag-report — Teams mapped to countries and flags
+
+## API
+The site exposes a REST API at /api/proxy/ with endpoints for teams, tournaments, matches, rankings, and filters. An MCP server is also available at futebol-mcp.orbisplace.co.uk.
+
+## Data Coverage
+Matches from 1872 to present day. Includes FIFA and non-FIFA teams, CONIFA World Cup, regional competitions, youth tournaments, and historical qualifiers.

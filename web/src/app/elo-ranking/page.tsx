@@ -3,8 +3,12 @@ import { Metadata } from 'next';
 import { EloRankingClient } from './elo-ranking-client';
 
 export const metadata: Metadata = {
-  title: 'ELO Rankings — International Football Stats',
+  title: 'ELO Rankings',
   description: 'World football ELO ratings calculated from historical match results since 1872.',
+  openGraph: {
+    title: 'ELO Rankings — International Football Stats',
+    description: 'World football ELO ratings calculated from historical match results since 1872.',
+  },
 };
 
 export default function EloRankingPage() {
