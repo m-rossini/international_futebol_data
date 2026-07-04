@@ -108,6 +108,72 @@ export interface TournamentListItem {
   seasons: string[];
 }
 
+export interface TournamentYearlyRow {
+  year: number;
+  matches: number;
+  goals: number;
+  avg_goals: number;
+  home_wins: number;
+  away_wins: number;
+  draws: number;
+  teams: number;
+  host_country: string | null;
+}
+
+export interface TournamentDetail {
+  tournament: string;
+  summary: {
+    first_year: number;
+    last_year: number;
+    editions: number;
+    matches: number;
+    total_goals: number;
+    avg_goals_per_match: number;
+    home_wins: number;
+    away_wins: number;
+    draws: number;
+    unique_teams: number;
+    biggest_win: BiggestWin | null;
+    top_teams_by_wins: { team: string; value: number }[];
+    top_teams: Record<string, { team: string; value: number }[]>;
+    top_host_countries: { country: string; matches: number }[];
+    top_host_cities: { city: string; matches: number }[];
+  };
+  yearly: TournamentYearlyRow[];
+  error?: boolean;
+  message?: string;
+}
+
+export interface TournamentSeasonDetail {
+  tournament: string;
+  year: number;
+  host_country: string | null;
+  summary: {
+    matches: number;
+    total_goals: number;
+    avg_goals_per_match: number;
+    home_wins: number;
+    away_wins: number;
+    draws: number;
+    unique_teams: number;
+    biggest_win: BiggestWin | null;
+  };
+  standings: {
+    team: string;
+    matches_played: number;
+    wins: number;
+    draws: number;
+    losses: number;
+    goals_for: number;
+    goals_against: number;
+    goal_diff: number;
+    points: number;
+  }[];
+  matches_list: MatchItem[];
+  error?: boolean;
+  message?: string;
+}
+
 export interface HeadToHeadResult {
   team1: string;
   team2: string;

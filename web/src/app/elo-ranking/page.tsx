@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { Metadata } from 'next';
 import { EloRankingClient } from './elo-ranking-client';
 
@@ -15,7 +16,9 @@ export default function EloRankingPage() {
           Calculated from historical match results using the standard ELO formula.
         </p>
       </div>
-      <EloRankingClient />
+      <Suspense fallback={<p className="text-sm text-gray-400">Loading...</p>}>
+        <EloRankingClient />
+      </Suspense>
     </div>
   );
 }
