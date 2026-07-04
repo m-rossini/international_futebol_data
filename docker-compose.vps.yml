@@ -96,12 +96,6 @@ services:
       - ZO_DATA_DIR=/data
       - ZO_COMPACT_ENABLED=true
       - ZO_COMPACT_INTERVAL=60
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5080/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 15s
     restart: unless-stopped
 
 volumes:

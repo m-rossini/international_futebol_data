@@ -98,12 +98,6 @@ services:
       - ZO_DATA_DIR=/data
       - ZO_COMPACT_ENABLED=true
       - ZO_COMPACT_INTERVAL=60
-    healthcheck:
-      test: ["CMD", "/openobserve", "node", "status"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 15s
     restart: unless-stopped
 
 volumes:

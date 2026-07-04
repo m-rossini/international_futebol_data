@@ -24,6 +24,11 @@ FROM node:22-slim AS build
 
 WORKDIR /app
 
+ARG NEXT_PUBLIC_API_URL=http://api:7531
+ARG NEXT_PUBLIC_OBS_PROXY_URL=http://openobserve:5080/api
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_OBS_PROXY_URL=$NEXT_PUBLIC_OBS_PROXY_URL
+
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable && corepack prepare pnpm@10 --activate
