@@ -3,6 +3,15 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Trophy, TrendingUp, Search, LineChart, Calendar, Info, Filter } from 'lucide-react';
+import {
+  ResponsiveContainer,
+  LineChart as RLineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+} from 'recharts';
 import { CountryFlag } from '@/components/shared/CountryFlag';
 import { DownloadButton } from '@/components/shared/DownloadButton';
 import { FilterBar } from '@/components/shared/FilterBar';
@@ -164,180 +173,113 @@ function useTeamHistory(team: string | null, qs: string) {
 /*  ELO History Chart                                                  */
 /* ------------------------------------------------------------------ */
 function EloHistoryChart({ data }: { data: EloHistoryEntry[] }) {
-  if (!data || data.length < 2)
-    return <p className="text-xs text-gray-400">Not enough data for chart.</p>;
+  const points = useMemo(
+    () =>
+      data && data.length >= 2
+        ? [...data].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+        : [],
+    [data],
+  );
 
-  const points = [...data].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  const chartData = useMemo(
+    () =>
+      points.map((p) => ({ date: p.date.slice(0, 7), elo: p.elo_rating_new, ranking: p.ranking })),
+    [points],
+  );
 
-  const minElo = Math.min(...points.map((p) => p.elo_rating_new)) - 50;
-  const maxElo = Math.max(...points.map((p) => p.elo_rating_new)) + 50;
-  const eloRange = maxElo - minElo || 1;
+  const xTicks = useMemo(() => {
+    if (chartData.length <= 8) return chartData.map((d) => d.date);
+    const step = Math.max(1, Math.floor(chartData.length / 6));
+    const ticks: string[] = [];
+    for (let i = 0; i < chartData.length; i += step) ticks.push(chartData[i].date);
+    const last = chartData[chartData.length - 1].date;
+    if (ticks[ticks.length - 1] !== last) ticks.push(last);
+    return ticks;
+  }, [chartData]);
 
-  const rankValues = points.map((p) => p.ranking).filter((r): r is number => r !== null);
-  const maxRank = rankValues.length > 0 ? Math.max(...rankValues) + 1 : 50;
+  const hasRanking = useMemo(() => chartData.some((d) => d.ranking !== null), [chartData]);
 
-  const w = 600,
-    h = 250;
-  const pad = { top: 20, right: 50, bottom: 30, left: 60 };
-  const iw = w - pad.left - pad.right;
-  const ih = h - pad.top - pad.bottom;
-
-  const xScale = (i: number) => pad.left + (i / (points.length - 1)) * iw;
-  const yScaleElo = (v: number) => pad.top + ((maxElo - v) / eloRange) * ih;
-  const yScaleRank = (v: number) => pad.top + ((v - 1) / (maxRank - 1)) * ih;
-
-  const eloPath = points
-    .map(
-      (p, i) =>
-        `${i === 0 ? 'M' : 'L'}${xScale(i).toFixed(1)},${yScaleElo(p.elo_rating_new).toFixed(1)}`,
-    )
-    .join(' ');
-
-  const rankPath =
-    rankValues.length > 0
-      ? points
-          .filter((p) => p.ranking !== null)
-          .map((p, i) => {
-            const idx = points.indexOf(p);
-            return `${i === 0 ? 'M' : 'L'}${xScale(idx).toFixed(1)},${yScaleRank(p.ranking!).toFixed(1)}`;
-          })
-          .join(' ')
-      : '';
-
-  // Y-axis ticks for ELO
-  const eloStep = Math.max(50, Math.round(eloRange / 5 / 50) * 50);
-  const eloTicks: number[] = [];
-  for (let v = Math.ceil(minElo / eloStep) * eloStep; v <= maxElo; v += eloStep) {
-    eloTicks.push(v);
-  }
-
-  // Y-axis ticks for ranking (1, 5, 10, 20, 50...)
-  const rankTicks = [1, 5, 10, 25, 50].filter((v) => v <= maxRank);
-
-  // X-axis ticks
-  const xTickIndices: number[] = [];
-  const xStep = Math.max(1, Math.floor(points.length / 6));
-  for (let i = 0; i < points.length; i += xStep) xTickIndices.push(i);
-  if (xTickIndices[xTickIndices.length - 1] !== points.length - 1)
-    xTickIndices.push(points.length - 1);
+  if (points.length < 2) return <p className="text-xs text-gray-400">Not enough data for chart.</p>;
 
   return (
-    <div className="overflow-x-auto">
-      <svg viewBox={`0 0 ${w} ${h}`} className="w-full min-w-[600px]">
-        {/* ELO grid lines */}
-        {eloTicks.map((v) => (
-          <g key={`elo-${v}`}>
-            <line
-              x1={pad.left}
-              y1={yScaleElo(v)}
-              x2={w - pad.right}
-              y2={yScaleElo(v)}
-              stroke="#e5e7eb"
-              strokeWidth={1}
+    <div className="space-y-2">
+      {/* ELO Rating */}
+      <div>
+        <div className="text-[10px] text-gray-400 font-medium mb-1">ELO Rating</div>
+        <ResponsiveContainer width="100%" height={200}>
+          <RLineChart data={chartData} margin={{ top: 4, right: 16, bottom: 0, left: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+            <XAxis
+              dataKey="date"
+              ticks={xTicks}
+              interval={0}
+              tick={{ fontSize: 10, fill: '#9ca3af' }}
+              tickLine={false}
+              axisLine={{ stroke: '#e5e7eb' }}
             />
-            <text
-              x={pad.left - 6}
-              y={yScaleElo(v) + 4}
-              textAnchor="end"
-              className="text-[10px] fill-gray-400"
-            >
-              {v}
-            </text>
-          </g>
-        ))}
-        {/* Ranking grid lines */}
-        {rankTicks.map((v) => (
-          <g key={`rank-${v}`}>
-            <line
-              x1={pad.left}
-              y1={yScaleRank(v)}
-              x2={w - pad.right}
-              y2={yScaleRank(v)}
-              stroke="#e0e7ff"
-              strokeWidth={1}
-              strokeDasharray="4 2"
+            <YAxis
+              tick={{ fontSize: 10, fill: '#9ca3af' }}
+              tickLine={false}
+              axisLine={{ stroke: '#e5e7eb' }}
+              allowDecimals={false}
             />
-            <text
-              x={w - pad.right + 6}
-              y={yScaleRank(v) + 4}
-              textAnchor="start"
-              className="text-[10px] fill-indigo-400"
-            >
-              #{v}
-            </text>
-          </g>
-        ))}
-        {/* X-axis ticks */}
-        {xTickIndices.map((i) => (
-          <text
-            key={i}
-            x={xScale(i)}
-            y={h - 6}
-            textAnchor="middle"
-            className="text-[10px] fill-gray-400"
-          >
-            {points[i].date.slice(0, 7)}
-          </text>
-        ))}
-        {/* ELO line */}
-        <path d={eloPath} fill="none" stroke="#8b5cf6" strokeWidth={2} />
-        {points.map((p, i) => (
-          <circle
-            key={i}
-            cx={xScale(i)}
-            cy={yScaleElo(p.elo_rating_new)}
-            r={2}
-            fill="#8b5cf6"
-            stroke="white"
-            strokeWidth={1}
-          />
-        ))}
-        {/* Ranking line */}
-        {rankPath && (
-          <>
-            <path
-              d={rankPath}
-              fill="none"
-              stroke="#6366f1"
-              strokeWidth={1.5}
-              strokeDasharray="4 2"
+            <Tooltip
+              contentStyle={{ fontSize: 11, borderRadius: 6 }}
+              formatter={(value: number) => [value.toFixed(1), 'ELO']}
+              labelFormatter={(label: string) => `Date: ${label}`}
             />
-            {points
-              .filter((p) => p.ranking !== null)
-              .map((p) => {
-                const idx = points.indexOf(p);
-                return (
-                  <circle
-                    key={`rank-${idx}`}
-                    cx={xScale(idx)}
-                    cy={yScaleRank(p.ranking!)}
-                    r={2}
-                    fill="#6366f1"
-                    stroke="white"
-                    strokeWidth={1}
-                  />
-                );
-              })}
-          </>
-        )}
-        {/* Legend */}
-        <circle cx={pad.left + 10} cy={8} r={4} fill="#8b5cf6" />
-        <text x={pad.left + 18} y={12} className="text-[10px] fill-gray-500">
-          ELO Rating
-        </text>
-        <line
-          x1={pad.left + 100}
-          y1={8}
-          x2={pad.left + 116}
-          y2={8}
-          stroke="#6366f1"
-          strokeWidth={1.5}
-          strokeDasharray="4 2"
-        />
-        <text x={pad.left + 122} y={12} className="text-[10px] fill-gray-500">
-          Ranking
-        </text>
-      </svg>
+            <Line
+              type="monotone"
+              dataKey="elo"
+              stroke="#8b5cf6"
+              strokeWidth={2}
+              dot={false}
+              name="ELO"
+            />
+          </RLineChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* Ranking */}
+      {hasRanking && (
+        <div>
+          <div className="text-[10px] text-gray-400 font-medium mb-1">Ranking</div>
+          <ResponsiveContainer width="100%" height={200}>
+            <RLineChart data={chartData} margin={{ top: 4, right: 16, bottom: 0, left: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+              <XAxis
+                dataKey="date"
+                ticks={xTicks}
+                interval={0}
+                tick={{ fontSize: 10, fill: '#9ca3af' }}
+                tickLine={false}
+                axisLine={{ stroke: '#e5e7eb' }}
+              />
+              <YAxis
+                reversed
+                tick={{ fontSize: 10, fill: '#9ca3af' }}
+                tickLine={false}
+                axisLine={{ stroke: '#e5e7eb' }}
+                allowDecimals={false}
+              />
+              <Tooltip
+                contentStyle={{ fontSize: 11, borderRadius: 6 }}
+                formatter={(value: number) => [`#${value}`, 'Ranking']}
+                labelFormatter={(label: string) => `Date: ${label}`}
+              />
+              <Line
+                type="monotone"
+                dataKey="ranking"
+                stroke="#6366f1"
+                strokeWidth={2}
+                dot={false}
+                name="Ranking"
+                connectNulls
+              />
+            </RLineChart>
+          </ResponsiveContainer>
+        </div>
+      )}
     </div>
   );
 }
@@ -573,19 +515,23 @@ export function EloRankingClient() {
                 <span className="text-gray-400">Worst ELO</span>
                 <div className="font-semibold text-red-600">{history.min_elo.toFixed(0)}</div>
               </div>
-              <div className="bg-gray-50 rounded-lg p-2 text-center">
-                <span className="text-gray-400">Best Rank</span>
-                <div className="font-semibold text-indigo-600">
-                  #
-                  {Math.min(
-                    ...history.history.map((h) => h.ranking).filter((r): r is number => r !== null),
-                  )}
-                </div>
-              </div>
+              {(() => {
+                const ranks = history.history
+                  .map((h) => h.ranking)
+                  .filter((r): r is number => r !== null);
+                if (ranks.length === 0) return null;
+                return (
+                  <div className="bg-gray-50 rounded-lg p-2 text-center">
+                    <span className="text-gray-400">Best Rank</span>
+                    <div className="font-semibold text-indigo-600">#{Math.min(...ranks)}</div>
+                  </div>
+                );
+              })()}
             </div>
             <div className="text-xs text-gray-400 mt-2">
               <LineChart size={12} className="inline mr-1" />
-              ELO rating over time — calculated from ~49,000 international matches since 1872
+              ELO rating and ranking over time — calculated from ~49,000 international matches since
+              1872
             </div>
           </div>
         )}
@@ -598,15 +544,22 @@ export function EloRankingClient() {
           <div className="text-xs text-blue-700 space-y-1">
             <p className="font-semibold">How ELO Ratings Work</p>
             <p>
-              ELO ratings are calculated from all historical match results. Each match updates both
-              teams&apos; ratings based on the actual result vs. the expected result. Home teams get
-              a +100 point advantage. Neutral venue matches (World Cup, continental cups) have no
-              home advantage.
+              ELO ratings are calculated from all historical match results since 1872. Each match
+              updates both teams&apos; ratings based on the actual result vs. the expected result. A
+              higher-rated team is expected to win; an upset causes a larger rating swing.
             </p>
             <p>
-              Formula: <code>new_elo = old_elo + K × (result − expected)</code> where K=60, and
-              <code>expected = 1 / (1 + 10^((elo_opponent − elo_team) / 400))</code>. Teams start at
-              1500 ELO.
+              Formula: <code>new_elo = old_elo + K × W × GD × (result − expected)</code> where K=60
+              (sensitivity), W is the tournament weight (friendlies ~0.33, World Cup ~1.0), GD is a
+              goal-difference multiplier (capped at 2.0), and{' '}
+              <code>expected = 1 / (1 + 10^((elo_opponent − elo_team + HA) / 400))</code>. Home
+              advantage (HA) is +100 points, removed for neutral venues. All teams start at 1500
+              ELO.
+            </p>
+            <p>
+              Ranking is derived from each team&apos;s current ELO: the team with the highest rating
+              is #1, and so on. The ranking chart shows how a team&apos;s position among all nations
+              has changed over time.
             </p>
           </div>
         </div>

@@ -502,7 +502,7 @@ def enrich_history_with_ranking(elo_history: pd.DataFrame, team: str) -> pd.Data
     grouped = sorted_df.groupby("date", sort=True)
 
     latest_elo: dict[str, float] = {}
-    ranking_by_date: dict = {}
+    ranking_by_date: dict[str, int] = {}
 
     for date, group in grouped:
         for _, row in group.iterrows():
@@ -510,9 +510,9 @@ def enrich_history_with_ranking(elo_history: pd.DataFrame, team: str) -> pd.Data
         if team in latest_elo:
             team_elo = latest_elo[team]
             rank = sum(1 for e in latest_elo.values() if e > team_elo) + 1
-            ranking_by_date[date] = rank
+            ranking_by_date[str(date)] = rank
 
-    rankings = [ranking_by_date.get(d) for d in team_df["date"]]
+    rankings = [ranking_by_date.get(str(d)) for d in team_df["date"]]
 
     team_df = team_df.copy()
     team_df["ranking"] = rankings
