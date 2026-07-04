@@ -264,7 +264,7 @@ vps-deploy:
 	@test -n "$(VPS_HOST)" || (echo "ERROR: VPS_HOST is not set. Usage: make vps-provision VPS_HOST=user@host" && exit 1)
 	@echo "Deploying on $(VPS_HOST)…"
 	@echo "  1/5 Stopping old containers…"
-	ssh $(VPS_HOST) "cd $(VPS_DEPLOY_DIR) && docker compose stop api mcp web openobserve nginx 2>/dev/null || true"
+	ssh $(VPS_HOST) "cd $(VPS_DEPLOY_DIR) && docker compose stop api mcp web openobserve 2>/dev/null || true"
 	@echo "  2/5 Loading new images…"
 	ssh $(VPS_HOST) "docker load < $(VPS_DEPLOY_DIR)/tmp/api.tar && docker load < $(VPS_DEPLOY_DIR)/tmp/web.tar"
 	@echo "  3/5 Decompressing data…"
@@ -275,7 +275,7 @@ vps-deploy:
 	ssh $(VPS_HOST) "cd $(VPS_DEPLOY_DIR) && docker compose ps"
 	@echo "Cleaning up temp files on VPS…"
 	ssh $(VPS_HOST) "rm -rf $(VPS_DEPLOY_DIR)/tmp"
-	@echo "Deploy complete — nginx not started yet (run: make certbot-init)"
+	@echo "Deploy complete"
 
 vps-provision: vps-publish vps-release vps-deploy
 	@echo "Full VPS provision complete (run: make certbot-init for SSL)"
