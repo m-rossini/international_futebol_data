@@ -41,24 +41,33 @@ async def elo_ranking_current(
     top_n: int = Query(
         50, ge=1, le=211, description="Number of top-ranked teams to return"
     ),
+    filters: FilterParamsDep = Depends(),
 ):
-    """Current ELO World Rankings (calculated from historical match results)."""
+    """Current ELO World Rankings (calculated from historical match results).
+
+    Optional filters (``?tournaments=...&date_from=...&date_to=...``) recalculate
+    ELO on the filtered subset of matches.
+    """
     require_data()
     if state.elo_ratings is None:
         raise HTTPException(503, "ELO ratings not calculated yet.")
 
-    # Get latest ELO for each team
-    from football_stats.stats.elo import get_latest_elo
+    from football_stats.stats.elo import calculate_elo_for_filters, get_latest_elo
 
-    latest = get_latest_elo(state.elo_ratings, top_n=top_n)
+    elo_df = calculate_elo_for_filters(state.results, filters.inner, state.elo_config)
+    if elo_df is None:
+        elo_df = state.elo_ratings
+
+    latest = get_latest_elo(elo_df, top_n=top_n)
 
     if latest.empty:
         raise HTTPException(503, "No ELO data available.")
 
     return {
-        "calculation_date": str(state.elo_ratings["date"].max().date()),
+        "calculation_date": str(elo_df["date"].max().date()),
         "total_teams": len(latest),
         "top_n": top_n,
+        "filtered": filters.inner is not None and not filters.inner.is_empty,
         "ranking": latest.to_dict(orient="records"),
     }
 
@@ -68,15 +77,24 @@ async def elo_ranking_history(
     team: str,
     date_from: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
     date_to: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
+    filters: FilterParamsDep = Depends(),
 ):
-    """Historical ELO rating for a specific team."""
+    """Historical ELO rating for a specific team.
+
+    Supports both manual ``date_from``/``date_to`` params and the standard
+    filter system (``?tournaments=...&countries=...``).
+    """
     require_data()
     if state.elo_ratings is None:
         raise HTTPException(503, "ELO ratings not calculated yet.")
 
-    from football_stats.stats.elo import get_team_elo_history
+    from football_stats.stats.elo import calculate_elo_for_filters, get_team_elo_history
 
-    df = get_team_elo_history(state.elo_ratings, team)
+    elo_df = calculate_elo_for_filters(state.results, filters.inner, state.elo_config)
+    if elo_df is None:
+        elo_df = state.elo_ratings
+
+    df = get_team_elo_history(elo_df, team)
 
     if df.empty:
         raise HTTPException(404, f"Team '{team}' not found in ELO ratings.")
@@ -126,27 +144,35 @@ async def elo_decade_leaders(
 
 
 @router.get("/elo-ranking/summary")
-async def elo_ranking_summary():
-    """Summary statistics for ELO ratings."""
+async def elo_ranking_summary(filters: FilterParamsDep = Depends()):
+    """Summary statistics for ELO ratings.
+
+    Optional filters recalculate ELO on the filtered subset of matches.
+    """
     require_data()
     if state.elo_ratings is None:
         raise HTTPException(503, "ELO ratings not calculated yet.")
 
-    from football_stats.stats.elo import get_latest_elo
+    from football_stats.stats.elo import calculate_elo_for_filters, get_latest_elo
 
-    latest = get_latest_elo(state.elo_ratings, top_n=300)
+    elo_df = calculate_elo_for_filters(state.results, filters.inner, state.elo_config)
+    if elo_df is None:
+        elo_df = state.elo_ratings
+
+    latest = get_latest_elo(elo_df, top_n=300)
 
     return {
-        "total_matches_calculated": len(state.elo_ratings),
+        "total_matches_calculated": len(elo_df),
         "total_teams": len(latest),
         "min_elo": float(latest["elo_rating"].min()),
         "max_elo": float(latest["elo_rating"].max()),
         "mean_elo": float(latest["elo_rating"].mean()),
         "median_elo": float(latest["elo_rating"].median()),
         "date_range": {
-            "from": str(state.elo_ratings["date"].min().date()),
-            "to": str(state.elo_ratings["date"].max().date()),
+            "from": str(elo_df["date"].min().date()),
+            "to": str(elo_df["date"].max().date()),
         },
+        "filtered": filters.inner is not None and not filters.inner.is_empty,
         "top_10": latest.head(10).to_dict(orient="records"),
     }
 

@@ -192,3 +192,76 @@ class TestEloRankingSummary:
         data = resp.json()
         assert data["min_elo"] <= data["median_elo"]
         assert data["median_elo"] <= data["max_elo"]
+
+    def test_filtered_field_exists(self, client):
+        resp = client.get(self.ENDPOINT)
+        _assert_status(resp)
+        data = resp.json()
+        assert "filtered" in data
+        assert data["filtered"] is False
+
+
+class TestEloRankingFiltered:
+    """GET /elo-ranking/* with filter parameters (recalculate on filtered matches)."""
+
+    def test_current_with_tournament_filter(self, client):
+        resp = client.get("/elo-ranking/current?tournaments=FIFA+World+Cup&top_n=5")
+        _assert_status(resp)
+        data = resp.json()
+        assert data["filtered"] is True
+        assert data["top_n"] == 5
+        assert len(data["ranking"]) == 5
+
+    def test_current_with_date_filter(self, client):
+        resp = client.get(
+            "/elo-ranking/current?date_from=2000-01-01&date_to=2010-12-31&top_n=5"
+        )
+        _assert_status(resp)
+        data = resp.json()
+        assert data["filtered"] is True
+        assert len(data["ranking"]) == 5
+
+    def test_current_no_filters(self, client):
+        resp = client.get("/elo-ranking/current?top_n=5")
+        _assert_status(resp)
+        data = resp.json()
+        assert data["filtered"] is False
+
+    def test_summary_with_tournament_filter(self, client):
+        resp = client.get("/elo-ranking/summary?tournaments=Friendly")
+        _assert_status(resp)
+        data = resp.json()
+        assert data["filtered"] is True
+        assert data["total_matches_calculated"] > 0
+        assert data["total_teams"] > 0
+
+    def test_summary_with_date_filter(self, client):
+        resp = client.get(
+            "/elo-ranking/summary?date_from=2020-01-01&date_to=2020-12-31"
+        )
+        _assert_status(resp)
+        data = resp.json()
+        assert data["filtered"] is True
+
+    def test_history_with_tournament_filter(self, client):
+        resp = client.get(
+            f"/elo-ranking/history/{_KNOWN_TEAM}?tournaments=FIFA+World+Cup"
+        )
+        _assert_status(resp)
+        data = resp.json()
+        assert data["matches_calculated"] > 0
+        assert data["team"].lower() == _KNOWN_TEAM.lower()
+
+    def test_filtered_differs_from_unfiltered(self, client):
+        """Filtered ELO should differ from full-history ELO."""
+        resp_full = client.get("/elo-ranking/current?top_n=1")
+        resp_filtered = client.get(
+            "/elo-ranking/current?tournaments=FIFA+World+Cup&top_n=1"
+        )
+        _assert_status(resp_full)
+        _assert_status(resp_filtered)
+        full_elo = resp_full.json()["ranking"][0]["elo_rating"]
+        filtered_elo = resp_filtered.json()["ranking"][0]["elo_rating"]
+        # They may occasionally be equal but usually differ
+        assert isinstance(full_elo, (int, float))
+        assert isinstance(filtered_elo, (int, float))

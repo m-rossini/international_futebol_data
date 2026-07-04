@@ -22,6 +22,7 @@ import os
 import pandas as pd
 
 from .elo_config import EloConfig, goal_difference_multiplier
+from .filters import FilterParams, apply_filters
 from .log import get_logger
 
 logger = get_logger("elo")
@@ -276,6 +277,40 @@ def calculate_elo_ratings(
     _save_elo_cache(result, matches, elo_config)
 
     return result
+
+
+def calculate_elo_for_filters(
+    matches: pd.DataFrame,
+    filters: FilterParams | None,
+    elo_config: EloConfig | None = None,
+) -> pd.DataFrame | None:
+    """Calculate ELO ratings on a filtered subset of matches.
+
+    Parameters
+    ----------
+    matches : pd.DataFrame
+        Full historical match results.
+    filters : FilterParams, optional
+        Filters to apply before ELO calculation.  When ``None`` or empty,
+        returns ``None`` so the caller can fall back to the pre-computed
+        ``state.elo_ratings``.
+    elo_config : EloConfig, optional
+        ELO configuration (K-factor, tournament weights, etc.).
+
+    Returns
+    -------
+    pd.DataFrame or None
+        ELO ratings computed on the filtered subset, or ``None`` when no
+        filters are active.
+    """
+    if filters is None or filters.is_empty:
+        return None
+
+    filtered = apply_filters(matches, filters)
+    if filtered.empty:
+        return pd.DataFrame()
+
+    return calculate_elo_ratings(filtered, elo_config=elo_config)
 
 
 def get_latest_elo(elo_history: pd.DataFrame, top_n: int = 50) -> pd.DataFrame:

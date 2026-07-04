@@ -1,9 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { Trophy, TrendingUp, Search, LineChart, Calendar, Info } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
+import { Trophy, TrendingUp, Search, LineChart, Calendar, Info, Filter } from 'lucide-react';
 import { CountryFlag } from '@/components/shared/CountryFlag';
 import { DownloadButton } from '@/components/shared/DownloadButton';
+import { FilterBar } from '@/components/shared/FilterBar';
 import { logApiCall } from '@/lib/observability';
 
 const API = '/api/proxy';
@@ -22,6 +24,7 @@ interface CurrentElo {
   calculation_date: string;
   total_teams: number;
   top_n: number;
+  filtered: boolean;
   ranking: EloEntry[];
 }
 
@@ -60,14 +63,28 @@ interface EloSummary {
   mean_elo: number;
   median_elo: number;
   date_range: { from: string; to: string };
+  filtered: boolean;
   top_10: EloEntry[];
+}
+
+/* ------------------------------------------------------------------ */
+/*  Helpers                                                            */
+/* ------------------------------------------------------------------ */
+
+function buildQs(params: URLSearchParams): string {
+  const q = new URLSearchParams();
+  for (const key of ['tournaments', 'countries', 'date_from', 'date_to']) {
+    const v = params.get(key);
+    if (v) q.set(key, v);
+  }
+  return q.toString();
 }
 
 /* ------------------------------------------------------------------ */
 /*  Hooks                                                              */
 /* ------------------------------------------------------------------ */
 
-function useCurrentElo(topN: number) {
+function useCurrentElo(topN: number, qs: string) {
   const [data, setData] = useState<CurrentElo | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -76,42 +93,44 @@ function useCurrentElo(topN: number) {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
     setError(null);
+    const params = qs ? `top_n=${topN}&${qs}` : `top_n=${topN}`;
     const t0 = performance.now();
-    fetch(`${API}/elo-ranking/current?top_n=${topN}`)
+    fetch(`${API}/elo-ranking/current?${params}`)
       .then((r) => {
-        logApiCall(`/elo-ranking/current?top_n=${topN}`, performance.now() - t0, r.status, {});
+        logApiCall(`/elo-ranking/current?${params}`, performance.now() - t0, r.status, {});
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json();
       })
       .then((d) => setData(d))
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
-  }, [topN]);
+  }, [topN, qs]);
 
   return { data, loading, error };
 }
 
-function useSummary() {
+function useSummary(qs: string) {
   const [data, setData] = useState<EloSummary | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const params = qs ? `?${qs}` : '';
     const t0 = performance.now();
-    fetch(`${API}/elo-ranking/summary`)
+    fetch(`${API}/elo-ranking/summary${params}`)
       .then((r) => {
-        logApiCall('/elo-ranking/summary', performance.now() - t0, r.status, {});
+        logApiCall(`/elo-ranking/summary${params}`, performance.now() - t0, r.status, {});
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json();
       })
       .then((d) => setData(d))
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, []);
+  }, [qs]);
 
   return { data, loading };
 }
 
-function useTeamHistory(team: string | null) {
+function useTeamHistory(team: string | null, qs: string) {
   const [data, setData] = useState<TeamHistory | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -124,17 +143,18 @@ function useTeamHistory(team: string | null) {
     }
     setLoading(true);
     setError(null);
+    const params = qs ? `?${qs}` : '';
     const t0 = performance.now();
-    fetch(`${API}/elo-ranking/history/${encodeURIComponent(team)}`)
+    fetch(`${API}/elo-ranking/history/${encodeURIComponent(team)}${params}`)
       .then((r) => {
-        logApiCall(`/elo-ranking/history/${team}`, performance.now() - t0, r.status, {});
+        logApiCall(`/elo-ranking/history/${team}${params}`, performance.now() - t0, r.status, {});
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.json();
       })
       .then((d) => setData(d))
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
-  }, [team]);
+  }, [team, qs]);
 
   return { data, loading, error };
 }
@@ -237,13 +257,22 @@ function EloHistoryChart({ data }: { data: EloHistoryEntry[] }) {
 /*  Main Component                                                     */
 /* ------------------------------------------------------------------ */
 export function EloRankingClient() {
+  const sp = useSearchParams();
   const [topN, setTopN] = useState(20);
   const [search] = useState('');
   const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
 
-  const { data: current, loading, error } = useCurrentElo(topN);
-  const { data: summary } = useSummary();
-  const { data: history, loading: histLoading, error: histError } = useTeamHistory(selectedTeam);
+  const qs = useMemo(() => buildQs(sp), [sp]);
+
+  const { data: current, loading, error } = useCurrentElo(topN, qs);
+  const { data: summary } = useSummary(qs);
+  const {
+    data: history,
+    loading: histLoading,
+    error: histError,
+  } = useTeamHistory(selectedTeam, qs);
+
+  const isFiltered = current?.filtered ?? false;
 
   const filteredRanking =
     current?.ranking?.filter((e) => {
@@ -253,6 +282,20 @@ export function EloRankingClient() {
 
   return (
     <div className="space-y-8">
+      {/* ---- Filters ---- */}
+      <FilterBar fields={{ teams: false }} injectDefaults={false} />
+
+      {/* ---- Filter Info Banner ---- */}
+      {isFiltered && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 flex items-center gap-2">
+          <Filter size={14} className="text-amber-600 shrink-0" />
+          <span className="text-xs text-amber-700">
+            ELO recalculated on filtered matches. Ratings reflect only the selected filters, not the
+            full match history.
+          </span>
+        </div>
+      )}
+
       {/* ---- Summary Cards ---- */}
       {summary && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">

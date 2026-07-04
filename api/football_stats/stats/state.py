@@ -54,6 +54,7 @@ class DataState:
         self.shootouts = None
         self.former_names = None
         self.elo_ratings = None
+        self.elo_config = None
         self.config = {}
 
         # Precomputed list caches
@@ -230,6 +231,7 @@ class DataState:
 
         # Build ELO config from the loaded config
         elo_cfg = load_elo_config(self.config)
+        self.elo_config = elo_cfg
 
         # Calculate ELO ratings from historical match results
         if self.results is not None and not self.results.empty:

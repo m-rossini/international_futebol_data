@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useMemo, useCallback } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { DataTable, type Column } from '@/components/shared/DataTable';
 import { FilterBar } from '@/components/shared/FilterBar';
 import { logApiCall, logUserAction } from '@/lib/observability';
@@ -61,6 +61,7 @@ const columns: Column<TournamentListItem>[] = [
 
 export function TournamentsClient() {
   const sp = useSearchParams();
+  const router = useRouter();
   const [tournaments, setTournaments] = useState<TournamentListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -103,9 +104,15 @@ export function TournamentsClient() {
     };
   }, [qs]);
 
-  const handleRowClick = useCallback((row: TournamentListItem) => {
-    logUserAction('select_tournament', { page: 'tournaments', tournament: row.tournament });
-  }, []);
+  const handleRowClick = useCallback(
+    (row: TournamentListItem) => {
+      logUserAction('select_tournament', { page: 'tournaments', tournament: row.tournament });
+      const params = new URLSearchParams(sp.toString());
+      const q = params.toString();
+      router.push(`/tournaments/${encodeURIComponent(row.tournament)}${q ? `?${q}` : ''}`);
+    },
+    [router, sp],
+  );
 
   return (
     <div className="p-8">
