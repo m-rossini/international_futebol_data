@@ -10,6 +10,8 @@ export interface TeamItem {
   points: number;
   win_rate: number;
   unique_countries: number;
+  elo_rating: number | null;
+  elo_ranking: number | null;
 }
 
 export interface SeriesStats {

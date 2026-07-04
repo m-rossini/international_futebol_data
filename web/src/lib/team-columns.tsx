@@ -11,6 +11,13 @@ export function winRateColor(rate: number): string {
   return 'text-red-500 font-semibold';
 }
 
+function eloColor(rating: number | null): string {
+  if (rating === null) return 'text-gray-400';
+  if (rating >= 1700) return 'text-green-600 font-semibold';
+  if (rating >= 1500) return 'text-amber-600 font-semibold';
+  return 'text-red-500 font-semibold';
+}
+
 export const TEAMS_COLUMNS: Column<TeamItem>[] = [
   {
     key: 'team',
@@ -62,6 +69,30 @@ export const TEAMS_COLUMNS: Column<TeamItem>[] = [
     header: 'Win Rate',
     sortable: true,
     render: (row) => <span className={winRateColor(row.win_rate)}>{row.win_rate.toFixed(1)}%</span>,
+  },
+  {
+    key: 'elo_rating',
+    header: 'ELO',
+    sortable: true,
+    compare: (a, b) => (a.elo_rating ?? 0) - (b.elo_rating ?? 0),
+    render: (row) =>
+      row.elo_rating !== null ? (
+        <span className={eloColor(row.elo_rating)}>{row.elo_rating.toLocaleString()}</span>
+      ) : (
+        <span className="text-gray-400">\u2014</span>
+      ),
+  },
+  {
+    key: 'elo_ranking',
+    header: 'Rank',
+    sortable: true,
+    compare: (a, b) => (a.elo_ranking ?? 9999) - (b.elo_ranking ?? 9999),
+    render: (row) =>
+      row.elo_ranking !== null ? (
+        <span className="text-gray-700">#{row.elo_ranking.toLocaleString()}</span>
+      ) : (
+        <span className="text-gray-400">\u2014</span>
+      ),
   },
   {
     key: 'goals_for',

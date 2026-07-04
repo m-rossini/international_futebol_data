@@ -95,12 +95,43 @@ class QueryEngine:
         }
 
     def teams(self, filters: Optional[FilterParams] = None) -> list:
-        """Return all teams with full aggregate stats."""
+        """Return all teams with full aggregate stats + ELO rating/ranking."""
         if self._no_filters(filters):
             logger.debug("Teams list", extra={"source": "cache"})
-            return self._state.cache_teams_list
-        logger.debug("Teams list", extra={"source": "live"})
-        return teams_list(self._filtered_results(filters))
+            result = self._state.cache_teams_list
+        else:
+            logger.debug("Teams list", extra={"source": "live"})
+            result = teams_list(self._filtered_results(filters))
+        return self._merge_elo(result)
+
+    def _merge_elo(self, teams: list[dict]) -> list[dict]:
+        """Add elo_rating and elo_ranking to each team dict."""
+        if self._state.elo_ratings is None:
+            for t in teams:
+                t["elo_rating"] = None
+                t["elo_ranking"] = None
+            return teams
+
+        from .elo import get_latest_elo
+
+        latest = get_latest_elo(self._state.elo_ratings, top_n=500)
+        elo_lookup: dict[str, dict] = {}
+        for _, row in latest.iterrows():
+            elo_lookup[row["team"]] = {
+                "elo_rating": round(row["elo_rating"]),
+                "elo_ranking": int(row["ranking"]),
+            }
+
+        for t in teams:
+            elo = elo_lookup.get(t["team"])
+            if elo:
+                t["elo_rating"] = elo["elo_rating"]
+                t["elo_ranking"] = elo["elo_ranking"]
+            else:
+                t["elo_rating"] = None
+                t["elo_ranking"] = None
+
+        return teams
 
     def team(self, team_name: str, filters: Optional[FilterParams] = None) -> dict:
         logger.debug("Team stats requested: %s", team_name)
