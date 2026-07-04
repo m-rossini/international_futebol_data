@@ -2,93 +2,13 @@
 
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
-import { DataTable, type Column } from '@/components/shared/DataTable';
+import { DataTable } from '@/components/shared/DataTable';
 import { FilterBar } from '@/components/shared/FilterBar';
-import { CountryFlag } from '@/components/shared/CountryFlag';
 import { logApiCall, logUserAction } from '@/lib/observability';
+import { TEAMS_COLUMNS } from '@/lib/team-columns';
 import type { TeamItem } from '@/lib/types';
 
 const API = '/api/proxy';
-
-function winRateColor(rate: number): string {
-  if (rate >= 60) return 'text-green-600 font-semibold';
-  if (rate >= 45) return 'text-amber-600 font-semibold';
-  return 'text-red-500 font-semibold';
-}
-
-const columns: Column<TeamItem>[] = [
-  {
-    key: 'team',
-    header: 'Team',
-    sortable: true,
-    render: (row) => (
-      <span className="inline-flex items-center gap-1.5">
-        <CountryFlag countryName={row.team} size={14} />
-        {row.team}
-      </span>
-    ),
-  },
-  {
-    key: 'matches_played',
-    header: 'Matches',
-    sortable: true,
-    render: (row) => row.matches_played.toLocaleString(),
-  },
-  {
-    key: 'wins',
-    header: 'Wins',
-    sortable: true,
-    render: (row) => row.wins.toLocaleString(),
-  },
-  {
-    key: 'losses',
-    header: 'Losses',
-    sortable: true,
-    render: (row) => row.losses.toLocaleString(),
-  },
-  {
-    key: 'draws',
-    header: 'Draws',
-    sortable: true,
-    render: (row) => row.draws.toLocaleString(),
-  },
-  {
-    key: 'points',
-    header: 'Pts',
-    sortable: true,
-    render: (row) => <span className="font-bold text-gray-900">{row.points.toLocaleString()}</span>,
-  },
-  {
-    key: 'win_rate',
-    header: 'Win Rate',
-    sortable: true,
-    render: (row) => <span className={winRateColor(row.win_rate)}>{row.win_rate.toFixed(1)}%</span>,
-  },
-  {
-    key: 'goals_for',
-    header: 'GF',
-    sortable: true,
-    render: (row) => row.goals_for.toLocaleString(),
-  },
-  {
-    key: 'goals_against',
-    header: 'GA',
-    sortable: true,
-    render: (row) => row.goals_against.toLocaleString(),
-  },
-  {
-    key: 'gf_ga_ratio',
-    header: 'GF/GA',
-    sortable: true,
-    render: (row) => (row.goals_against > 0 ? row.gf_ga_ratio.toFixed(2) : '—'),
-  },
-  {
-    key: 'unique_countries',
-    header: 'Countries',
-    sortable: true,
-    render: (row) => row.unique_countries.toLocaleString(),
-  },
-];
 
 function buildQs(params: URLSearchParams): string {
   const q = new URLSearchParams();
@@ -237,7 +157,7 @@ export function TeamsClient() {
         <p className="text-sm text-red-500">Error: {error}</p>
       ) : (
         <DataTable
-          columns={columns}
+          columns={TEAMS_COLUMNS}
           data={filteredTeams}
           keyField="team"
           defaultSort={{ key: 'matches_played', dir: 'desc' }}

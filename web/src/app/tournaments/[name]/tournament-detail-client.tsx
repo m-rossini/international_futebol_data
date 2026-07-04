@@ -1,15 +1,15 @@
 'use client';
 
 import { useEffect, useState, useMemo, useCallback } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { ArrowLeft, Trophy } from 'lucide-react';
 import { DataTable, type Column } from '@/components/shared/DataTable';
 import { FilterBar } from '@/components/shared/FilterBar';
 import { CountryFlag } from '@/components/shared/CountryFlag';
 import { GoalsPerYearChart } from '@/components/shared/chart/GoalsPerYearChart';
 import { logApiCall, logUserAction } from '@/lib/observability';
-import type { TournamentDetail, TournamentYearlyRow, TournamentTeamRow } from '@/lib/types';
+import { TEAMS_COLUMNS } from '@/lib/team-columns';
+import type { TournamentDetail, TournamentYearlyRow, TeamItem } from '@/lib/types';
 
 const API = '/api/proxy';
 
@@ -84,59 +84,6 @@ const yearlyColumns: Column<TournamentYearlyRow>[] = [
   },
 ];
 
-const allTeamsColumns: Column<TournamentTeamRow>[] = [
-  {
-    key: 'team',
-    header: 'Team',
-    render: (r) => (
-      <Link
-        href={`/teams/${encodeURIComponent(r.team)}`}
-        className="inline-flex items-center gap-1.5 text-blue-600 hover:text-blue-800 hover:underline"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <CountryFlag countryName={r.team} size={16} />
-        {r.team}
-      </Link>
-    ),
-  },
-  { key: 'matches_played', header: 'P', sortable: true },
-  { key: 'wins', header: 'W', sortable: true },
-  { key: 'draws', header: 'D', sortable: true },
-  { key: 'losses', header: 'L', sortable: true },
-  { key: 'goals_for', header: 'GF', sortable: true },
-  { key: 'goals_against', header: 'GA', sortable: true },
-  {
-    key: 'goal_diff',
-    header: 'GD',
-    sortable: true,
-    render: (r) => (
-      <span className={r.goal_diff > 0 ? 'text-green-600' : r.goal_diff < 0 ? 'text-red-500' : ''}>
-        {r.goal_diff > 0 ? '+' : ''}
-        {r.goal_diff}
-      </span>
-    ),
-  },
-  {
-    key: 'win_loss_ratio',
-    header: 'W/L',
-    sortable: true,
-    compare: (a, b) => a.win_loss_ratio - b.win_loss_ratio,
-    render: (r) => (
-      <span
-        className={
-          r.win_loss_ratio >= 1
-            ? 'text-green-600'
-            : r.win_loss_ratio > 0
-              ? 'text-gray-600'
-              : 'text-red-500'
-        }
-      >
-        {r.losses === 0 ? (r.wins > 0 ? '∞' : '—') : r.win_loss_ratio.toFixed(2)}
-      </span>
-    ),
-  },
-];
-
 interface Props {
   tournamentName: string;
 }
@@ -144,12 +91,27 @@ interface Props {
 export function TournamentDetailClient({ tournamentName }: Props) {
   const sp = useSearchParams();
   const router = useRouter();
+  const pathname = usePathname();
 
   const [detail, setDetail] = useState<TournamentDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const [teams, setTeams] = useState<TeamItem[]>([]);
+  const [teamsLoading, setTeamsLoading] = useState(true);
+
   const qs = useMemo(() => buildQs(sp), [sp]);
+
+  const minMatches = useMemo(() => {
+    const v = sp.get('min_matches');
+    return v ? Math.max(0, parseInt(v, 10) || 0) : 0;
+  }, [sp]);
+
+  const sortKey = useMemo(() => sp.get('sort') || null, [sp]);
+  const sortDir = useMemo(() => {
+    const d = sp.get('dir');
+    return d === 'asc' || d === 'desc' ? d : null;
+  }, [sp]);
 
   useEffect(() => {
     let cancelled = false;
@@ -194,6 +156,46 @@ export function TournamentDetailClient({ tournamentName }: Props) {
     };
   }, [tournamentName, qs]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadTeams() {
+      setTeamsLoading(true);
+      const t0 = performance.now();
+      try {
+        const url = `${API}/teams?tournaments=${encodeURIComponent(tournamentName)}`;
+        const res = await fetch(url);
+        const duration = performance.now() - t0;
+        logApiCall('/teams', duration, res.status, {
+          tournament: tournamentName,
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data: TeamItem[] = (await res.json()).map((t: TeamItem) => ({
+          ...t,
+          gf_ga_ratio: t.goals_against > 0 ? t.goals_for / t.goals_against : 0,
+        }));
+        if (!cancelled) {
+          setTeams(data);
+          setTeamsLoading(false);
+        }
+      } catch (err) {
+        const duration = performance.now() - t0;
+        logApiCall('/teams', duration, 0, {
+          tournament: tournamentName,
+          error: err instanceof Error ? err.message : String(err),
+        });
+        if (!cancelled) {
+          setTeamsLoading(false);
+        }
+      }
+    }
+
+    loadTeams();
+    return () => {
+      cancelled = true;
+    };
+  }, [tournamentName]);
+
   const handleBack = useCallback(() => {
     logUserAction('back_to_tournaments', { from_tournament: tournamentName });
     const params = new URLSearchParams(sp.toString());
@@ -212,6 +214,49 @@ export function TournamentDetailClient({ tournamentName }: Props) {
     },
     [router, sp, tournamentName],
   );
+
+  const setMinMatches = useCallback(
+    (value: number) => {
+      logUserAction('set_min_matches', { page: 'tournament_detail', min_matches: value });
+      const params = new URLSearchParams(sp.toString());
+      if (value > 0) {
+        params.set('min_matches', String(value));
+      } else {
+        params.delete('min_matches');
+      }
+      router.replace(`${pathname}?${params.toString()}`);
+    },
+    [router, pathname, sp],
+  );
+
+  const handleTeamsSortChange = useCallback(
+    (key: string | null, dir: 'asc' | 'desc' | null) => {
+      logUserAction('sort_teams', { page: 'tournament_detail', sort_key: key, sort_dir: dir });
+      const params = new URLSearchParams(sp.toString());
+      if (key && dir) {
+        params.set('sort', key);
+        params.set('dir', dir);
+      } else {
+        params.delete('sort');
+        params.delete('dir');
+      }
+      router.replace(`${pathname}?${params.toString()}`);
+    },
+    [router, pathname, sp],
+  );
+
+  const handleTeamRowClick = useCallback(
+    (row: TeamItem) => {
+      logUserAction('select_team', { page: 'tournament_detail', team: row.team });
+      router.push(`/teams/${encodeURIComponent(row.team)}`);
+    },
+    [router],
+  );
+
+  const filteredTeams = useMemo(() => {
+    if (minMatches <= 0) return teams;
+    return teams.filter((t) => t.matches_played >= minMatches);
+  }, [teams, minMatches]);
 
   return (
     <div className="p-8">
@@ -236,7 +281,19 @@ export function TournamentDetailClient({ tournamentName }: Props) {
         </p>
       )}
 
-      <FilterBar fields={{ teams: false, tournaments: false }} injectDefaults={false} />
+      <FilterBar fields={{ teams: false, tournaments: false }} injectDefaults={false}>
+        <div className="flex flex-col gap-1 w-[140px]">
+          <label className="text-xs font-medium text-gray-500">Min. matches</label>
+          <input
+            type="number"
+            min={0}
+            value={minMatches || ''}
+            onChange={(e) => setMinMatches(Number(e.target.value))}
+            placeholder="0"
+            className="border border-gray-300 rounded-lg px-2 py-1.5 text-sm bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-200 outline-none"
+          />
+        </div>
+      </FilterBar>
 
       {loading ? (
         <p className="text-sm text-gray-400 mt-4">Loading...</p>
@@ -307,55 +364,26 @@ export function TournamentDetailClient({ tournamentName }: Props) {
             </div>
           )}
 
-          {/* Top teams */}
-          {detail.summary.top_teams_by_wins.length > 0 && (
-            <div className="mb-6">
-              <h2 className="text-lg font-semibold text-gray-800 mb-3">Top Teams by Wins</h2>
-              <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-gray-100 bg-gray-50">
-                      <th className="text-left px-4 py-2 font-medium text-gray-600">#</th>
-                      <th className="text-left px-4 py-2 font-medium text-gray-600">Team</th>
-                      <th className="text-right px-4 py-2 font-medium text-gray-600">Wins</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {detail.summary.top_teams_by_wins.map((t, i) => (
-                      <tr key={t.team} className="border-b border-gray-50 last:border-0">
-                        <td className="px-4 py-2 text-gray-400">{i + 1}</td>
-                        <td className="px-4 py-2 font-medium text-gray-800">
-                          <Link
-                            href={`/teams/${encodeURIComponent(t.team)}`}
-                            className="inline-flex items-center gap-1.5 text-blue-600 hover:text-blue-800 hover:underline"
-                          >
-                            <CountryFlag countryName={t.team} size={16} />
-                            {t.team}
-                          </Link>
-                        </td>
-                        <td className="px-4 py-2 text-right font-semibold text-gray-800">
-                          {t.value}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-
           {/* Team standings */}
-          {detail.summary.all_teams && detail.summary.all_teams.length > 0 && (
+          {teams.length > 0 && (
             <div className="mb-6">
               <h2 className="text-lg font-semibold text-gray-800 mb-3">
-                Team Standings ({detail.summary.all_teams.length})
+                Team Standings ({filteredTeams.length})
               </h2>
-              <DataTable
-                columns={allTeamsColumns}
-                data={detail.summary.all_teams}
-                keyField="team"
-                defaultSort={{ key: 'wins', dir: 'desc' }}
-              />
+              {teamsLoading ? (
+                <p className="text-sm text-gray-400">Loading teams...</p>
+              ) : (
+                <DataTable
+                  columns={TEAMS_COLUMNS}
+                  data={filteredTeams}
+                  keyField="team"
+                  defaultSort={{ key: 'matches_played', dir: 'desc' }}
+                  sortKey={sortKey}
+                  sortDir={sortDir}
+                  onSortChange={handleTeamsSortChange}
+                  onRowClick={handleTeamRowClick}
+                />
+              )}
             </div>
           )}
 
