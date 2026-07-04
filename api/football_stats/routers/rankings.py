@@ -88,13 +88,16 @@ async def elo_ranking_history(
     if state.elo_ratings is None:
         raise HTTPException(503, "ELO ratings not calculated yet.")
 
-    from football_stats.stats.elo import calculate_elo_for_filters, get_team_elo_history
+    from football_stats.stats.elo import (
+        calculate_elo_for_filters,
+        enrich_history_with_ranking,
+    )
 
     elo_df = calculate_elo_for_filters(state.results, filters.inner, state.elo_config)
     if elo_df is None:
         elo_df = state.elo_ratings
 
-    df = get_team_elo_history(elo_df, team)
+    df = enrich_history_with_ranking(elo_df, team)
 
     if df.empty:
         raise HTTPException(404, f"Team '{team}' not found in ELO ratings.")

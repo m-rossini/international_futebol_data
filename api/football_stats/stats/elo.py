@@ -474,3 +474,46 @@ def get_team_elo_history(elo_history: pd.DataFrame, team: str) -> pd.DataFrame:
     if team_df.empty:
         return team_df
     return team_df.sort_values("date")
+
+
+def enrich_history_with_ranking(elo_history: pd.DataFrame, team: str) -> pd.DataFrame:
+    """Add ranking position to a team's ELO history.
+
+    For each unique date, computes the team's rank based on each team's
+    latest ELO up to that date. Uses O(n) scan with incremental tracking.
+
+    Parameters
+    ----------
+    elo_history : pd.DataFrame
+        Full ELO history (output from ``calculate_elo_ratings``).
+    team : str
+        Team name.
+
+    Returns
+    -------
+    pd.DataFrame
+        Team history with ``ranking`` column added, sorted by date.
+    """
+    team_df = get_team_elo_history(elo_history, team)
+    if team_df.empty:
+        return team_df
+
+    sorted_df = elo_history.sort_values("date")
+    grouped = sorted_df.groupby("date", sort=True)
+
+    latest_elo: dict[str, float] = {}
+    ranking_by_date: dict = {}
+
+    for date, group in grouped:
+        for _, row in group.iterrows():
+            latest_elo[row["team"]] = row["elo_rating_new"]
+        if team in latest_elo:
+            team_elo = latest_elo[team]
+            rank = sum(1 for e in latest_elo.values() if e > team_elo) + 1
+            ranking_by_date[date] = rank
+
+    rankings = [ranking_by_date.get(d) for d in team_df["date"]]
+
+    team_df = team_df.copy()
+    team_df["ranking"] = rankings
+    return team_df

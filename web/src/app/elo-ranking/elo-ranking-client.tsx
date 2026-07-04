@@ -42,6 +42,7 @@ interface EloHistoryEntry {
   expected_score: number;
   actual_result: number;
   rating_change: number;
+  ranking: number | null;
 }
 
 interface TeamHistory {
@@ -170,30 +171,48 @@ function EloHistoryChart({ data }: { data: EloHistoryEntry[] }) {
 
   const minElo = Math.min(...points.map((p) => p.elo_rating_new)) - 50;
   const maxElo = Math.max(...points.map((p) => p.elo_rating_new)) + 50;
-  const range = maxElo - minElo || 1;
+  const eloRange = maxElo - minElo || 1;
+
+  const rankValues = points.map((p) => p.ranking).filter((r): r is number => r !== null);
+  const maxRank = rankValues.length > 0 ? Math.max(...rankValues) + 1 : 50;
 
   const w = 600,
     h = 250;
-  const pad = { top: 20, right: 20, bottom: 30, left: 60 };
+  const pad = { top: 20, right: 50, bottom: 30, left: 60 };
   const iw = w - pad.left - pad.right;
   const ih = h - pad.top - pad.bottom;
 
   const xScale = (i: number) => pad.left + (i / (points.length - 1)) * iw;
-  const yScale = (v: number) => pad.top + ((maxElo - v) / range) * ih;
+  const yScaleElo = (v: number) => pad.top + ((maxElo - v) / eloRange) * ih;
+  const yScaleRank = (v: number) => pad.top + ((v - 1) / (maxRank - 1)) * ih;
 
-  const linePath = points
+  const eloPath = points
     .map(
       (p, i) =>
-        `${i === 0 ? 'M' : 'L'}${xScale(i).toFixed(1)},${yScale(p.elo_rating_new).toFixed(1)}`,
+        `${i === 0 ? 'M' : 'L'}${xScale(i).toFixed(1)},${yScaleElo(p.elo_rating_new).toFixed(1)}`,
     )
     .join(' ');
 
-  // Y-axis ticks
-  const yStep = Math.max(50, Math.round(range / 5 / 50) * 50);
-  const yTicks: number[] = [];
-  for (let v = Math.ceil(minElo / yStep) * yStep; v <= maxElo; v += yStep) {
-    yTicks.push(v);
+  const rankPath =
+    rankValues.length > 0
+      ? points
+          .filter((p) => p.ranking !== null)
+          .map((p, i) => {
+            const idx = points.indexOf(p);
+            return `${i === 0 ? 'M' : 'L'}${xScale(idx).toFixed(1)},${yScaleRank(p.ranking!).toFixed(1)}`;
+          })
+          .join(' ')
+      : '';
+
+  // Y-axis ticks for ELO
+  const eloStep = Math.max(50, Math.round(eloRange / 5 / 50) * 50);
+  const eloTicks: number[] = [];
+  for (let v = Math.ceil(minElo / eloStep) * eloStep; v <= maxElo; v += eloStep) {
+    eloTicks.push(v);
   }
+
+  // Y-axis ticks for ranking (1, 5, 10, 20, 50...)
+  const rankTicks = [1, 5, 10, 25, 50].filter((v) => v <= maxRank);
 
   // X-axis ticks
   const xTickIndices: number[] = [];
@@ -205,19 +224,20 @@ function EloHistoryChart({ data }: { data: EloHistoryEntry[] }) {
   return (
     <div className="overflow-x-auto">
       <svg viewBox={`0 0 ${w} ${h}`} className="w-full min-w-[600px]">
-        {yTicks.map((v) => (
-          <g key={v}>
+        {/* ELO grid lines */}
+        {eloTicks.map((v) => (
+          <g key={`elo-${v}`}>
             <line
               x1={pad.left}
-              y1={yScale(v)}
+              y1={yScaleElo(v)}
               x2={w - pad.right}
-              y2={yScale(v)}
+              y2={yScaleElo(v)}
               stroke="#e5e7eb"
               strokeWidth={1}
             />
             <text
               x={pad.left - 6}
-              y={yScale(v) + 4}
+              y={yScaleElo(v) + 4}
               textAnchor="end"
               className="text-[10px] fill-gray-400"
             >
@@ -225,6 +245,29 @@ function EloHistoryChart({ data }: { data: EloHistoryEntry[] }) {
             </text>
           </g>
         ))}
+        {/* Ranking grid lines */}
+        {rankTicks.map((v) => (
+          <g key={`rank-${v}`}>
+            <line
+              x1={pad.left}
+              y1={yScaleRank(v)}
+              x2={w - pad.right}
+              y2={yScaleRank(v)}
+              stroke="#e0e7ff"
+              strokeWidth={1}
+              strokeDasharray="4 2"
+            />
+            <text
+              x={w - pad.right + 6}
+              y={yScaleRank(v) + 4}
+              textAnchor="start"
+              className="text-[10px] fill-indigo-400"
+            >
+              #{v}
+            </text>
+          </g>
+        ))}
+        {/* X-axis ticks */}
         {xTickIndices.map((i) => (
           <text
             key={i}
@@ -236,18 +279,64 @@ function EloHistoryChart({ data }: { data: EloHistoryEntry[] }) {
             {points[i].date.slice(0, 7)}
           </text>
         ))}
-        <path d={linePath} fill="none" stroke="#8b5cf6" strokeWidth={2} />
+        {/* ELO line */}
+        <path d={eloPath} fill="none" stroke="#8b5cf6" strokeWidth={2} />
         {points.map((p, i) => (
           <circle
             key={i}
             cx={xScale(i)}
-            cy={yScale(p.elo_rating_new)}
+            cy={yScaleElo(p.elo_rating_new)}
             r={2}
             fill="#8b5cf6"
             stroke="white"
             strokeWidth={1}
           />
         ))}
+        {/* Ranking line */}
+        {rankPath && (
+          <>
+            <path
+              d={rankPath}
+              fill="none"
+              stroke="#6366f1"
+              strokeWidth={1.5}
+              strokeDasharray="4 2"
+            />
+            {points
+              .filter((p) => p.ranking !== null)
+              .map((p) => {
+                const idx = points.indexOf(p);
+                return (
+                  <circle
+                    key={`rank-${idx}`}
+                    cx={xScale(idx)}
+                    cy={yScaleRank(p.ranking!)}
+                    r={2}
+                    fill="#6366f1"
+                    stroke="white"
+                    strokeWidth={1}
+                  />
+                );
+              })}
+          </>
+        )}
+        {/* Legend */}
+        <circle cx={pad.left + 10} cy={8} r={4} fill="#8b5cf6" />
+        <text x={pad.left + 18} y={12} className="text-[10px] fill-gray-500">
+          ELO Rating
+        </text>
+        <line
+          x1={pad.left + 100}
+          y1={8}
+          x2={pad.left + 116}
+          y2={8}
+          stroke="#6366f1"
+          strokeWidth={1.5}
+          strokeDasharray="4 2"
+        />
+        <text x={pad.left + 122} y={12} className="text-[10px] fill-gray-500">
+          Ranking
+        </text>
       </svg>
     </div>
   );
@@ -469,20 +558,29 @@ export function EloRankingClient() {
               </span>
             </div>
             <EloHistoryChart data={history.history} />
-            <div className="grid grid-cols-3 gap-3 text-xs">
+            <div className="grid grid-cols-4 gap-3 text-xs">
               <div className="bg-gray-50 rounded-lg p-2 text-center">
-                <span className="text-gray-400">Best</span>
+                <span className="text-gray-400">Best ELO</span>
                 <div className="font-semibold text-green-600">{history.max_elo.toFixed(0)}</div>
               </div>
               <div className="bg-gray-50 rounded-lg p-2 text-center">
-                <span className="text-gray-400">Current</span>
+                <span className="text-gray-400">Current ELO</span>
                 <div className="font-semibold text-violet-600">
                   {history.current_elo.toFixed(0)}
                 </div>
               </div>
               <div className="bg-gray-50 rounded-lg p-2 text-center">
-                <span className="text-gray-400">Worst</span>
+                <span className="text-gray-400">Worst ELO</span>
                 <div className="font-semibold text-red-600">{history.min_elo.toFixed(0)}</div>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-2 text-center">
+                <span className="text-gray-400">Best Rank</span>
+                <div className="font-semibold text-indigo-600">
+                  #
+                  {Math.min(
+                    ...history.history.map((h) => h.ranking).filter((r): r is number => r !== null),
+                  )}
+                </div>
               </div>
             </div>
             <div className="text-xs text-gray-400 mt-2">
