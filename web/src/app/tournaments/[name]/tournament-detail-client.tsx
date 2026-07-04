@@ -7,7 +7,7 @@ import { DataTable, type Column } from '@/components/shared/DataTable';
 import { FilterBar } from '@/components/shared/FilterBar';
 import { StatsBar } from '@/components/shared/StatsBar';
 import { CountryFlag } from '@/components/shared/CountryFlag';
-import { YearlyChart } from '@/components/shared/chart/YearlyChart';
+import { GoalsPerYearChart } from '@/components/shared/chart/GoalsPerYearChart';
 import { logApiCall, logUserAction } from '@/lib/observability';
 import type { TournamentDetail, TournamentYearlyRow } from '@/lib/types';
 
@@ -235,14 +235,13 @@ export function TournamentDetailClient({ tournamentName }: Props) {
           {/* Goals per year chart */}
           {detail.yearly.length > 0 && (
             <div className="mb-6">
-              <h2 className="text-lg font-semibold text-gray-800 mb-3">Goals per Year</h2>
+              <h2 className="text-lg font-semibold text-gray-800 mb-3">Goals by Season</h2>
               <div className="bg-white rounded-lg border border-gray-200 p-4">
-                <YearlyChart
+                <GoalsPerYearChart
                   data={detail.yearly.map((r) => ({
                     year: r.year,
-                    wins: r.home_wins,
-                    losses: r.away_wins,
-                    draws: r.draws,
+                    goals: r.goals,
+                    avg_goals: r.avg_goals,
                   }))}
                 />
               </div>
