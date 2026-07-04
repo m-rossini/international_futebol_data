@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Users, Trophy, Swords, Flag, TrendingUp, Clock, Zap } from 'lucide-react';
+import { Users, Trophy, Swords, Flag, TrendingUp, Clock } from 'lucide-react';
 
 const navItems = [
   { href: '/teams', label: 'Teams', icon: Users },
@@ -11,7 +11,6 @@ const navItems = [
   { href: '/flag-report', label: 'Flag Report', icon: Flag },
   { href: '/elo-ranking', label: 'ELO Rankings', icon: TrendingUp },
   { href: '/decade-leaders', label: 'Decade Leaders', icon: Clock },
-  { href: '/predict-match', label: 'Predictions', icon: Zap },
 ];
 
 export function Sidebar() {

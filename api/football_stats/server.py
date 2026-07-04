@@ -28,7 +28,6 @@ from football_stats.routers.rankings import router as rankings_router
 from football_stats.routers.tournaments import router as tournaments_router
 from football_stats.routers.cities import router as cities_router
 from football_stats.routers.countries import router as countries_router
-from football_stats.routers.predictions import router as predictions_router
 
 
 # ---------------------------------------------------------------------------
@@ -89,7 +88,6 @@ app.include_router(rankings_router)  # /most/{stat}, /fifa-ranking/*, /elo-ranki
 app.include_router(tournaments_router)  # /tournaments, /tournament/{name}
 app.include_router(cities_router)  # /cities, /city/{name}
 app.include_router(countries_router)  # /countries, /country/{name}
-app.include_router(predictions_router)  # /predict/{home}/{away}, /predict/upcoming
 
 
 # ---------------------------------------------------------------------------

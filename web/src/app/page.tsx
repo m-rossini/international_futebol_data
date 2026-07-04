@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
-import { Users, Swords, Trophy, Check, RotateCcw, TrendingUp, Clock, Zap } from 'lucide-react';
+import { Users, Swords, Trophy, Check, RotateCcw, TrendingUp, Clock } from 'lucide-react';
 import { AutocompleteInput } from '@/components/shared/AutocompleteInput';
 import { useDefaults } from '@/lib/useDefaults';
 import { logUserAction, logApiCall } from '@/lib/observability';
@@ -234,16 +234,6 @@ export default function HomePage() {
           <Clock size={24} className="text-amber-500" />
           <span className="text-sm font-semibold text-gray-700">Decade Leaders</span>
           <span className="text-xs text-gray-400 text-center">Which teams dominated each era?</span>
-        </Link>
-        <Link
-          href="/predict-match"
-          className="flex flex-col items-center gap-2 p-5 bg-white rounded-xl border border-gray-200 hover:border-amber-300 hover:shadow-md transition-all"
-        >
-          <Zap size={24} className="text-amber-500" />
-          <span className="text-sm font-semibold text-gray-700">Predictions</span>
-          <span className="text-xs text-gray-400 text-center">
-            Match outcome predictions using ELO
-          </span>
         </Link>
       </div>
     </div>
