@@ -131,7 +131,7 @@ export interface TournamentTeamRow {
   losses: number;
   draws: number;
   goal_diff: number;
-  win_loss_ratio: number;
+  win_loss_ratio: number | null;
 }
 
 export interface TournamentDetail {
