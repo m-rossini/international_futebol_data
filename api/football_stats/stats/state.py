@@ -9,6 +9,7 @@ import pandas as pd
 from .loader import load_all_data
 from .log import get_logger
 from .elo import calculate_elo_ratings
+from .elo_config import load_elo_config
 
 logger = get_logger("state")
 
@@ -210,7 +211,6 @@ class DataState:
         logger.info("Reloading data from CSV files...")
         data = load_all_data()
 
-        # Keep all results (including future matches) so upcoming predictions work.
         # Future matches have NA scores and are correctly skipped by ELO calculation.
         self.results = data["results"]
 
@@ -219,14 +219,7 @@ class DataState:
         self.shootouts = _drop_future_rows(data["shootouts"], "shootouts")
         self.former_names = data["former_names"]  # no date column for matches
 
-        # Calculate ELO ratings from historical match results
-        if self.results is not None and not self.results.empty:
-            logger.info("Calculating ELO ratings from %d matches...", len(self.results))
-            self.elo_ratings = calculate_elo_ratings(self.results)
-        else:
-            self.elo_ratings = None
-            logger.warning("No match results available for ELO calculation.")
-
+        # Load config BEFORE ELO calculation so elo_config is available
         if os.path.exists(CONFIG_PATH):
             with open(CONFIG_PATH) as f:
                 self.config = json.load(f)
@@ -234,6 +227,17 @@ class DataState:
         else:
             self.config = {}
             logger.warning("Config file not found at %s", CONFIG_PATH)
+
+        # Build ELO config from the loaded config
+        elo_cfg = load_elo_config(self.config)
+
+        # Calculate ELO ratings from historical match results
+        if self.results is not None and not self.results.empty:
+            logger.info("Calculating ELO ratings from %d matches...", len(self.results))
+            self.elo_ratings = calculate_elo_ratings(self.results, elo_config=elo_cfg)
+        else:
+            self.elo_ratings = None
+            logger.warning("No match results available for ELO calculation.")
 
         # Load or compute precomputed list caches
         if self.results is not None and not self.results.empty:

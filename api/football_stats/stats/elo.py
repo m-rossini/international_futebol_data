@@ -1,23 +1,27 @@
 """ELO rating calculation from historical match results.
 
 Uses the standard ELO formula:
-    new_elo = old_elo + K * (actual_result - expected_result)
+    new_elo = old_elo + K * weight * gd_mult * (actual_result - expected_result)
 
 Where:
-    - K (factor): 60 for international matches
+    - K (factor): configurable, default 60
+    - weight: tournament importance multiplier (0–1)
+    - gd_mult: goal-difference multiplier  min(ln(|GD|+1), cap)
     - expected = 1 / (1 + 10^((elo_opponent - elo_team) / 400))
     - actual: 1.0 (win), 0.5 (draw), 0.0 (loss)
-    - Home advantage: +100 ELO points added to the home team
+    - Home advantage: configurable, default +100 ELO points
     - Neutral venue: no adjustment
 
 Includes disk caching via pickle to avoid recalculating on every reload.
 """
 
 import hashlib
+import json
 import os
 
 import pandas as pd
 
+from .elo_config import EloConfig, goal_difference_multiplier
 from .log import get_logger
 
 logger = get_logger("elo")
@@ -37,14 +41,18 @@ ELO_CACHE_FILE = os.path.join(ELO_CACHE_DIR, "elo_ratings.pkl")
 ELO_HASH_FILE = os.path.join(ELO_CACHE_DIR, "elo_matches_hash.txt")
 
 
-def _matches_hash(matches: pd.DataFrame) -> str:
-    """Compute a hash of the matches dataframe to detect changes."""
+def _matches_hash(matches: pd.DataFrame, elo_config: EloConfig | None = None) -> str:
+    """Compute a hash of the matches dataframe + ELO config to detect changes."""
     # Use the number of rows + the date of the last match + the total goals
-    key = f"{len(matches)}_{matches['date'].max()}_{matches['home_score'].sum()}_{matches['away_score'].sum()}"
+    match_key = f"{len(matches)}_{matches['date'].max()}_{matches['home_score'].sum()}_{matches['away_score'].sum()}"
+    config_key = json.dumps(elo_config.to_dict(), sort_keys=True) if elo_config else ""
+    key = f"{match_key}_{config_key}"
     return hashlib.md5(key.encode()).hexdigest()
 
 
-def _load_elo_cache(matches: pd.DataFrame) -> pd.DataFrame | None:
+def _load_elo_cache(
+    matches: pd.DataFrame, elo_config: EloConfig | None = None
+) -> pd.DataFrame | None:
     """Try to load cached ELO ratings from disk. Returns None if cache is stale or missing."""
     if not os.path.exists(ELO_CACHE_FILE) or not os.path.exists(ELO_HASH_FILE):
         logger.info("No ELO cache found on disk — will calculate fresh.")
@@ -53,9 +61,11 @@ def _load_elo_cache(matches: pd.DataFrame) -> pd.DataFrame | None:
     with open(ELO_HASH_FILE) as f:
         cached_hash = f.read().strip()
 
-    current_hash = _matches_hash(matches)
+    current_hash = _matches_hash(matches, elo_config)
     if cached_hash != current_hash:
-        logger.info("ELO cache is stale (match data changed) — recalculating.")
+        logger.info(
+            "ELO cache is stale (match data or config changed) — recalculating."
+        )
         return None
 
     try:
@@ -80,13 +90,15 @@ def clear_elo_cache() -> bool:
     return removed
 
 
-def _save_elo_cache(df: pd.DataFrame, matches: pd.DataFrame) -> None:
+def _save_elo_cache(
+    df: pd.DataFrame, matches: pd.DataFrame, elo_config: EloConfig | None = None
+) -> None:
     """Save ELO ratings to disk cache."""
     try:
         os.makedirs(ELO_CACHE_DIR, exist_ok=True)
         df.to_pickle(ELO_CACHE_FILE)
         with open(ELO_HASH_FILE, "w") as f:
-            f.write(_matches_hash(matches))
+            f.write(_matches_hash(matches, elo_config))
         logger.info("ELO ratings cached to disk (%d rows).", len(df))
     except Exception as exc:
         logger.warning("Failed to write ELO cache: %s", exc)
@@ -108,6 +120,7 @@ def _get_actual_result(home_score: int, away_score: int) -> float:
 
 def calculate_elo_ratings(
     matches: pd.DataFrame,
+    elo_config: EloConfig | None = None,
     initial_elo: float = INITIAL_ELO,
     k_factor: float = K_FACTOR,
     home_advantage: float = HOME_ADVANTAGE,
@@ -118,7 +131,11 @@ def calculate_elo_ratings(
     ----------
     matches : pd.DataFrame
         Must have columns: date, home_team, away_team, home_score, away_score,
-        tournament (to detect neutral venue).
+        tournament, neutral.
+    elo_config : EloConfig, optional
+        Full ELO configuration.  When provided, its values override the
+        individual ``initial_elo``, ``k_factor``, and ``home_advantage``
+        parameters.
     initial_elo : float
         Starting ELO for all teams (default: 1500).
     k_factor : float
@@ -131,14 +148,21 @@ def calculate_elo_ratings(
     pd.DataFrame
         Columns: date, team, elo_rating, opponent, opponent_elo,
         home_score, away_score, tournament, home_advantage_applied,
-        expected_score, actual_result, rating_change
+        expected_score, actual_result, rating_change, match_weight,
+        gd_multiplier
     """
+    # Apply config overrides
+    if elo_config is not None:
+        initial_elo = elo_config.initial_elo
+        k_factor = elo_config.k_factor
+        home_advantage = elo_config.home_advantage
+
     if matches.empty:
         logger.warning("No matches provided for ELO calculation.")
         return pd.DataFrame()
 
     # Try loading from cache first
-    cached = _load_elo_cache(matches)
+    cached = _load_elo_cache(matches, elo_config)
     if cached is not None:
         return cached
 
@@ -190,8 +214,19 @@ def calculate_elo_ratings(
         expected_home = _expected_score(home_elo_effective, away_elo_effective)
         actual_home = _get_actual_result(home_score, away_score)
 
+        # Tournament weight and goal-difference multiplier
+        match_weight = (
+            elo_config.get_tournament_weight(tournament) if elo_config else 1.0
+        )
+        if elo_config and elo_config.gd_enabled:
+            gd_mult = goal_difference_multiplier(
+                home_score - away_score, elo_config.gd_cap
+            )
+        else:
+            gd_mult = 1.0
+
         # ELO change
-        elo_change = k_factor * (actual_home - expected_home)
+        elo_change = k_factor * match_weight * gd_mult * (actual_home - expected_home)
 
         # Update ratings (use the *effective* home ELO for the formula but apply
         # the change to the *base* rating)
@@ -218,6 +253,8 @@ def calculate_elo_ratings(
                 "expected_score": round(expected_home, 4),
                 "actual_result": actual_home,
                 "rating_change": round(elo_change, 2),
+                "match_weight": round(match_weight, 4),
+                "gd_multiplier": round(gd_mult, 4),
             }
         )
 
@@ -236,7 +273,7 @@ def calculate_elo_ratings(
     )
 
     # Save to disk cache for faster reloads
-    _save_elo_cache(result, matches)
+    _save_elo_cache(result, matches, elo_config)
 
     return result
 

@@ -8,5 +8,33 @@
     "top_scorers_n": 20,
     "biggest_wins_n": 10
   },
-  "log_level": "DEBUG"
+  "log_level": "DEBUG",
+  "elo": {
+    "k_factor": 60,
+    "home_advantage": 100,
+    "initial_elo": 1500,
+    "tournament_weights": {
+      "FIFA World Cup": 1.0,
+      "FIFA World Cup qualification": 0.67,
+      "UEFA Euro": 0.83,
+      "UEFA Euro qualification": 0.5,
+      "Copa América": 0.83,
+      "Copa América qualification": 0.5,
+      "African Cup of Nations": 0.67,
+      "African Cup of Nations qualification": 0.5,
+      "AFC Asian Cup": 0.67,
+      "AFC Asian Cup qualification": 0.5,
+      "Gold Cup": 0.67,
+      "Gold Cup qualification": 0.5,
+      "Confederations Cup": 0.83,
+      "Olympic Games": 0.5,
+      "UEFA Nations League": 0.5,
+      "Friendly": 0.17,
+      "*": 0.33
+    },
+    "goal_difference": {
+      "enabled": true,
+      "cap": 2.0
+    }
+  }
 }
