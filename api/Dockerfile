@@ -53,6 +53,7 @@ COPY . .
 # Activate the venv
 ENV PATH="/app/.venv/bin:$PATH"
 ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH="/app"
 
 EXPOSE 7531
 

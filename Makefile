@@ -21,7 +21,7 @@ VPS_DATA_DIR   ?= $(VPS_DEPLOY_DIR)/data
 IMG_API_PROD   = $(IMG_API):prod
 IMG_WEB_PROD   = $(IMG_WEB):prod
 STAGING        = /tmp/futebol-vps
-
+DOMAIN         ?= orbisplace.co.uk
 
 # ── Phony targets ─────────────────────────────────────────
 .PHONY: help \
@@ -30,7 +30,8 @@ STAGING        = /tmp/futebol-vps
         web-build web-up web-down web-run web-shell web-logs \
         web-test web-test-cov \
         up down test test-cov install-hooks \
-        vps-build vps-save vps-publish vps-release vps-deploy vps-provision
+        vps-build vps-save vps-publish vps-release vps-deploy vps-provision \
+        certbot-init certbot-renew
 
 # ═══════════════════════════════════════════════════════════
 #  Help
@@ -41,7 +42,7 @@ help:
 	@echo "  ─────────────────────────────"
 	@echo ""
 	@echo "  FULL STACK (docker compose)"
-	@echo "    make up             Start api + web"
+	@echo "    make up             Start api + web + nginx"
 	@echo "    make down           Stop all"
 	@echo "    make test           Run api + web test suites"
 	@echo "    make test-cov       Run api + web test suites with coverage"
@@ -71,10 +72,12 @@ help:
 	@echo "  VPS DEPLOYMENT (requires VPS_HOST=user@host)"
 	@echo "    make vps-build      Build production images (slim, no dev tools)"
 	@echo "    make vps-save       Save images to tarballs in $(STAGING)/"
-	@echo "    make vps-publish    SCP images + compose + data to VPS"
+	@echo "    make vps-publish    SCP images + compose + nginx + data to VPS"
 	@echo "    make vps-release    Load images on VPS via SSH"
 	@echo "    make vps-deploy     Rolling restart on VPS (stop → start → verify)"
 	@echo "    make vps-provision  Full pipeline: build → save → publish → release → deploy"
+	@echo "    make certbot-init   Generate initial SSL certs (first time only)"
+	@echo "    make certbot-renew  Force cert renewal on VPS"
 	@echo ""
 
 # ═══════════════════════════════════════════════════════════
@@ -239,38 +242,71 @@ vps-save: vps-build
 vps-publish: vps-save
 	@test -n "$(VPS_HOST)" || (echo "ERROR: VPS_HOST is not set. Usage: make vps-provision VPS_HOST=user@host" && exit 1)
 	@echo "Publishing to $(VPS_HOST):$(VPS_DEPLOY_DIR)…"
-	@ssh $(VPS_HOST) "mkdir -p $(VPS_DEPLOY_DIR)/data"
-	scp $(STAGING)/api.tar $(VPS_HOST):/tmp/futebol-api.tar
-	scp $(STAGING)/web.tar $(VPS_HOST):/tmp/futebol-web.tar
-	scp docker-compose.vps.yml $(VPS_HOST):$(VPS_DEPLOY_DIR)/docker-compose.yml
-	scp .env.vps.example $(VPS_HOST):$(VPS_DEPLOY_DIR)/.env
+	@ssh $(VPS_HOST) "mkdir -p $(VPS_DEPLOY_DIR)/data $(VPS_DEPLOY_DIR)/nginx/conf.d $(VPS_DEPLOY_DIR)/tmp"
+	cat $(STAGING)/api.tar | ssh $(VPS_HOST) "cat > $(VPS_DEPLOY_DIR)/tmp/api.tar"
+	cat $(STAGING)/web.tar | ssh $(VPS_HOST) "cat > $(VPS_DEPLOY_DIR)/tmp/web.tar"
+	cat docker-compose.vps.yml | ssh $(VPS_HOST) "cat > $(VPS_DEPLOY_DIR)/docker-compose.yml"
+	cat .env.vps.example | ssh $(VPS_HOST) "cat > $(VPS_DEPLOY_DIR)/.env"
+	cat nginx/conf.d/futebol.conf | ssh $(VPS_HOST) "cat > $(VPS_DEPLOY_DIR)/nginx/conf.d/futebol.conf"
+	cat nginx/conf.d/futebol-init.conf | ssh $(VPS_HOST) "cat > $(VPS_DEPLOY_DIR)/nginx/conf.d/futebol-init.conf"
 	@echo "Compressing data…"
 	@tar czf $(STAGING)/data.tar.gz -C "$(DATA_VOLUME)" .
-	scp $(STAGING)/data.tar.gz $(VPS_HOST):/tmp/futebol-data.tar.gz
-	@echo "Published images, compose, env, and data to $(VPS_HOST)"
+	cat $(STAGING)/data.tar.gz | ssh $(VPS_HOST) "cat > $(VPS_DEPLOY_DIR)/tmp/data.tar.gz"
+	@echo "Published images, compose, nginx, env, and data to $(VPS_HOST)"
 
 vps-release:
 	@test -n "$(VPS_HOST)" || (echo "ERROR: VPS_HOST is not set. Usage: make vps-provision VPS_HOST=user@host" && exit 1)
 	@echo "Loading images on $(VPS_HOST)…"
-	ssh $(VPS_HOST) "docker load < /tmp/futebol-api.tar && docker load < /tmp/futebol-web.tar"
+	ssh $(VPS_HOST) "docker load < $(VPS_DEPLOY_DIR)/tmp/api.tar && docker load < $(VPS_DEPLOY_DIR)/tmp/web.tar"
 	@echo "Images loaded on VPS"
 
 vps-deploy:
 	@test -n "$(VPS_HOST)" || (echo "ERROR: VPS_HOST is not set. Usage: make vps-provision VPS_HOST=user@host" && exit 1)
 	@echo "Deploying on $(VPS_HOST)…"
 	@echo "  1/5 Stopping old containers…"
-	ssh $(VPS_HOST) "cd $(VPS_DEPLOY_DIR) && docker compose stop api mcp web 2>/dev/null || true"
+	ssh $(VPS_HOST) "cd $(VPS_DEPLOY_DIR) && docker compose stop api mcp web openobserve nginx 2>/dev/null || true"
 	@echo "  2/5 Loading new images…"
-	ssh $(VPS_HOST) "docker load < /tmp/futebol-api.tar && docker load < /tmp/futebol-web.tar"
+	ssh $(VPS_HOST) "docker load < $(VPS_DEPLOY_DIR)/tmp/api.tar && docker load < $(VPS_DEPLOY_DIR)/tmp/web.tar"
 	@echo "  3/5 Decompressing data…"
-	ssh $(VPS_HOST) "cd $(VPS_DEPLOY_DIR) && mkdir -p data && tar xzf /tmp/futebol-data.tar.gz -C data/ 2>/dev/null || true"
-	@echo "  4/5 Starting new containers…"
-	ssh $(VPS_HOST) "cd $(VPS_DEPLOY_DIR) && docker compose up -d --no-deps api mcp web"
+	ssh $(VPS_HOST) "cd $(VPS_DEPLOY_DIR) && mkdir -p data && tar xzf tmp/data.tar.gz -C data/ 2>/dev/null || true"
+	@echo "  4/5 Starting containers…"
+	ssh $(VPS_HOST) "cd $(VPS_DEPLOY_DIR) && docker compose up -d --no-deps api mcp web openobserve"
 	@echo "  5/5 Verifying…"
 	ssh $(VPS_HOST) "cd $(VPS_DEPLOY_DIR) && docker compose ps"
 	@echo "Cleaning up temp files on VPS…"
-	ssh $(VPS_HOST) "rm -f /tmp/futebol-api.tar /tmp/futebol-web.tar /tmp/futebol-data.tar.gz"
-	@echo "Deploy complete"
+	ssh $(VPS_HOST) "rm -rf $(VPS_DEPLOY_DIR)/tmp"
+	@echo "Deploy complete — nginx not started yet (run: make certbot-init)"
 
 vps-provision: vps-publish vps-release vps-deploy
-	@echo "Full VPS provision complete"
+	@echo "Full VPS provision complete (run: make certbot-init for SSL)"
+
+# ── SSL / Let's Encrypt ───────────────────────────────────
+
+certbot-init:
+	@test -n "$(VPS_HOST)" || (echo "ERROR: VPS_HOST is not set. Usage: make certbot-init VPS_HOST=user@host" && exit 1)
+	@test -f "$(STAGING)/api.tar" || ($(MAKE) vps-save)
+	@echo "=== Step 1: Starting nginx with HTTP-only config ==="
+	ssh $(VPS_HOST) "cd $(VPS_DEPLOY_DIR) && cp nginx/conf.d/futebol-init.conf nginx/conf.d/futebol-active.conf"
+	ssh $(VPS_HOST) "cd $(VPS_DEPLOY_DIR) && docker compose up -d --no-deps nginx"
+	@echo "=== Step 2: Generating SSL certificates ==="
+	ssh $(VPS_HOST) "cd $(VPS_DEPLOY_DIR) && docker compose run --rm certbot certonly --webroot -w /var/www/certbot \
+		-d futebol.$(DOMAIN) \
+		-d futebol-observe.$(DOMAIN) \
+		-d futebol-mcp.$(DOMAIN) \
+		--email admin@$(DOMAIN) \
+		--agree-tos \
+		--no-eff-email"
+	@echo "=== Step 3: Switching to HTTPS config ==="
+	ssh $(VPS_HOST) "cd $(VPS_DEPLOY_DIR) && cp nginx/conf.d/futebol.conf nginx/conf.d/futebol-active.conf"
+	ssh $(VPS_HOST) "cd $(VPS_DEPLOY_DIR) && docker compose restart nginx"
+	@echo "=== SSL setup complete ==="
+	@echo "Verify: https://futebol.$(DOMAIN)"
+	@echo "Verify: https://futebol-observe.$(DOMAIN)"
+	@echo "Verify: https://futebol-mcp.$(DOMAIN)"
+
+certbot-renew:
+	@test -n "$(VPS_HOST)" || (echo "ERROR: VPS_HOST is not set. Usage: make certbot-renew VPS_HOST=user@host" && exit 1)
+	@echo "Renewing SSL certificates on $(VPS_HOST)…"
+	ssh $(VPS_HOST) "cd $(VPS_DEPLOY_DIR) && docker compose run --rm certbot renew"
+	ssh $(VPS_HOST) "cd $(VPS_DEPLOY_DIR) && docker compose restart nginx"
+	@echo "SSL certificates renewed"
