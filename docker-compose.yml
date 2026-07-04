@@ -70,6 +70,7 @@ services:
     build:
       context: ./web
       dockerfile: Dockerfile
+      target: development
     container_name: futebol-web
     volumes:
       - ./web:/app
