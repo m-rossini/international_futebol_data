@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { useSearchParams, useRouter, usePathname } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { Trophy, TrendingUp, Search, LineChart, Calendar, Info, Filter } from 'lucide-react';
 import { CountryFlag } from '@/components/shared/CountryFlag';
 import { DownloadButton } from '@/components/shared/DownloadButton';
@@ -204,7 +204,7 @@ function EloHistoryChart({ data }: { data: EloHistoryEntry[] }) {
 
   return (
     <div className="overflow-x-auto">
-      <svg width={w} height={h} className="min-w-[600px]">
+      <svg viewBox={`0 0 ${w} ${h}`} className="w-full min-w-[600px]">
         {yTicks.map((v) => (
           <g key={v}>
             <line

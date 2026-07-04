@@ -5,7 +5,6 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Trophy } from 'lucide-react';
 import { DataTable, type Column } from '@/components/shared/DataTable';
 import { FilterBar } from '@/components/shared/FilterBar';
-import { StatsBar } from '@/components/shared/StatsBar';
 import { CountryFlag } from '@/components/shared/CountryFlag';
 import { GoalsPerYearChart } from '@/components/shared/chart/GoalsPerYearChart';
 import { logApiCall, logUserAction } from '@/lib/observability';

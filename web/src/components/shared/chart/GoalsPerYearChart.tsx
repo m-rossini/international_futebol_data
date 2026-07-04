@@ -22,10 +22,9 @@ interface GoalDatum {
 interface Props {
   data: GoalDatum[];
   height?: number;
-  width?: number;
 }
 
-export function GoalsPerYearChart({ data, height = 240, width }: Props) {
+export function GoalsPerYearChart({ data, height = 240 }: Props) {
   const sorted = useMemo(() => [...data].sort((a, b) => a.year - b.year), [data]);
 
   const xTicks = useMemo(() => {
