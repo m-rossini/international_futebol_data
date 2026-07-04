@@ -116,6 +116,25 @@ const allTeamsColumns: Column<TournamentTeamRow>[] = [
       </span>
     ),
   },
+  {
+    key: 'win_loss_ratio',
+    header: 'W/L',
+    sortable: true,
+    compare: (a, b) => a.win_loss_ratio - b.win_loss_ratio,
+    render: (r) => (
+      <span
+        className={
+          r.win_loss_ratio >= 1
+            ? 'text-green-600'
+            : r.win_loss_ratio > 0
+              ? 'text-gray-600'
+              : 'text-red-500'
+        }
+      >
+        {r.losses === 0 ? (r.wins > 0 ? '∞' : '—') : r.win_loss_ratio.toFixed(2)}
+      </span>
+    ),
+  },
 ];
 
 interface Props {
@@ -325,11 +344,11 @@ export function TournamentDetailClient({ tournamentName }: Props) {
             </div>
           )}
 
-          {/* All teams */}
+          {/* Team standings */}
           {detail.summary.all_teams && detail.summary.all_teams.length > 0 && (
             <div className="mb-6">
               <h2 className="text-lg font-semibold text-gray-800 mb-3">
-                All Teams ({detail.summary.all_teams.length})
+                Team Standings ({detail.summary.all_teams.length})
               </h2>
               <DataTable
                 columns={allTeamsColumns}
@@ -340,7 +359,7 @@ export function TournamentDetailClient({ tournamentName }: Props) {
             </div>
           )}
 
-          {/* Host countries */}
+          {/* Host countries summary */}
           {detail.summary.top_host_countries.length > 0 && (
             <div className="mb-6">
               <h2 className="text-lg font-semibold text-gray-800 mb-3">Host Countries</h2>
