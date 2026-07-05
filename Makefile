@@ -158,7 +158,6 @@ web-up: web-down
 		-p $(PORT_WEB):3000 \
 		-v $(CURDIR)/web:/app \
 		-v /app/node_modules \
-		-v /app/.next \
 		--entrypoint /bin/sh \
 		$(IMG_WEB):dev \
 		-c "sleep infinity"

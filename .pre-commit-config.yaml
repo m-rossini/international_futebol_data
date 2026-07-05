@@ -29,6 +29,7 @@ repos:
         name: prettier format (web)
         types: [text]
         files: ^web/.*\.(ts|tsx|js|jsx|json|css|md|mdx|yaml|yml)$
+        exclude: ^web/src/lib/version\.ts$
         additional_dependencies:
           - prettier@3.5.0
 

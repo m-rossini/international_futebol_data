@@ -42,7 +42,7 @@ services:
       timeout: 5s
       retries: 3
       start_interval: 5s
-      start_period: 30s
+      start_period: 90s
     restart: unless-stopped
 
   mcp:
@@ -75,7 +75,6 @@ services:
     volumes:
       - ./web:/app
       - /app/node_modules
-      - /app/.next
     environment:
       - NEXT_PUBLIC_API_URL=http://api:7531
       - NEXT_PUBLIC_OBS_PROVIDER=openobserve

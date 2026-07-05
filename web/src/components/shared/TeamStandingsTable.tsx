@@ -123,13 +123,16 @@ export function TeamStandingsTable({ tournamentName }: Props) {
     (row: TeamItem) => {
       logUserAction('select_team', { page: 'team_standings', team: row.team });
       const params = new URLSearchParams(sp.toString());
+      if (tournamentName && !params.has('tournaments')) {
+        params.set('tournaments', tournamentName);
+      }
       for (const key of ['sort', 'dir', 'min_matches']) {
         params.delete(key);
       }
       const q = params.toString();
       router.push(`/teams/${encodeURIComponent(row.team)}${q ? `?${q}` : ''}`);
     },
-    [router, sp],
+    [router, sp, tournamentName],
   );
 
   return (

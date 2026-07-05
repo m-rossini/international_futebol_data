@@ -24,7 +24,14 @@ async def teams_list_endpoint(filters: FilterParamsDep = Depends()):
 async def team_stats(team_name: str, filters: FilterParamsDep = Depends()):
     """Stats for a specific national team. Optional filters: ``?tournaments=FIFA+World+cup``"""
     require_data()
-    logger.debug("GET /team/%s", team_name)
+    logger.info(
+        "GET /team/%s tournaments=%s countries=%s date_from=%s date_to=%s",
+        team_name,
+        filters.inner.tournaments,
+        filters.inner.countries,
+        filters.inner.date_from,
+        filters.inner.date_to,
+    )
     return engine.team(team_name, filters.inner)
 
 
