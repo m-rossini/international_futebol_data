@@ -2,11 +2,10 @@
 
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
-import { DataTable } from '@/components/shared/DataTable';
-import { FilterBar } from '@/components/shared/FilterBar';
+import { TeamTable } from '@/components/shared/TeamTable';
 import { logApiCall, logUserAction } from '@/lib/observability';
-import { TEAMS_COLUMNS } from '@/lib/team-columns';
 import type { TeamItem } from '@/lib/types';
+import type { SortDir } from '@/components/shared/DataTable';
 
 const API = '/api/proxy';
 
@@ -105,7 +104,7 @@ export function TeamStandingsTable({ tournamentName }: Props) {
   );
 
   const handleSortChange = useCallback(
-    (key: string | null, dir: 'asc' | 'desc' | null) => {
+    (key: string | null, dir: SortDir) => {
       logUserAction('sort_teams', { page: 'team_standings', sort_key: key, sort_dir: dir });
       const params = new URLSearchParams(sp.toString());
       if (key && dir) {
@@ -128,45 +127,17 @@ export function TeamStandingsTable({ tournamentName }: Props) {
     [router],
   );
 
-  const filteredTeams = useMemo(() => {
-    if (minMatches <= 0) return teams;
-    return teams.filter((t) => t.matches_played >= minMatches);
-  }, [teams, minMatches]);
-
   return (
-    <div>
-      <FilterBar
-        fields={{ teams: false, tournaments: false, countries: false, dates: false }}
-        injectDefaults={false}
-      >
-        <div className="flex flex-col gap-1 w-[140px]">
-          <label className="text-xs font-medium text-gray-500">Min. matches</label>
-          <input
-            type="number"
-            min={0}
-            value={minMatches || ''}
-            onChange={(e) => setMinMatches(Number(e.target.value))}
-            placeholder="0"
-            className="border border-gray-300 rounded-lg px-2 py-1.5 text-sm bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-200 outline-none"
-          />
-        </div>
-      </FilterBar>
-      {loading ? (
-        <p className="text-sm text-gray-400">Loading teams...</p>
-      ) : error ? (
-        <p className="text-sm text-red-500">Error: {error}</p>
-      ) : (
-        <DataTable
-          columns={TEAMS_COLUMNS}
-          data={filteredTeams}
-          keyField="team"
-          defaultSort={{ key: 'matches_played', dir: 'desc' }}
-          sortKey={sortKey}
-          sortDir={sortDir}
-          onSortChange={handleSortChange}
-          onRowClick={handleRowClick}
-        />
-      )}
-    </div>
+    <TeamTable
+      data={teams}
+      loading={loading}
+      error={error}
+      sortKey={sortKey}
+      sortDir={sortDir}
+      onSortChange={handleSortChange}
+      onRowClick={handleRowClick}
+      minMatches={minMatches}
+      onMinMatchesChange={setMinMatches}
+    />
   );
 }

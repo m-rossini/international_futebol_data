@@ -22,7 +22,7 @@ interface Props<T> {
   onRowClick?: (row: T) => void;
 }
 
-type SortDir = 'asc' | 'desc' | null;
+export type SortDir = 'asc' | 'desc' | null;
 
 export function DataTable<T>({
   columns,
