@@ -18,7 +18,7 @@ function buildQs(sp: URLSearchParams, tournamentName?: string): string {
   if (tournamentName) {
     q.set('tournaments', tournamentName);
   }
-  for (const key of ['tournaments', 'countries', 'date_from', 'date_to']) {
+  for (const key of ['teams', 'tournaments', 'countries', 'date_from', 'date_to']) {
     const v = sp.get(key);
     if (v && !q.has(key)) q.set(key, v);
   }
@@ -122,9 +122,14 @@ export function TeamStandingsTable({ tournamentName }: Props) {
   const handleRowClick = useCallback(
     (row: TeamItem) => {
       logUserAction('select_team', { page: 'team_standings', team: row.team });
-      router.push(`/teams/${encodeURIComponent(row.team)}`);
+      const params = new URLSearchParams(sp.toString());
+      for (const key of ['sort', 'dir', 'min_matches']) {
+        params.delete(key);
+      }
+      const q = params.toString();
+      router.push(`/teams/${encodeURIComponent(row.team)}${q ? `?${q}` : ''}`);
     },
-    [router],
+    [router, sp],
   );
 
   return (

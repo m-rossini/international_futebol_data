@@ -76,7 +76,7 @@ export const TEAMS_COLUMNS: Column<TeamItem>[] = [
     sortable: true,
     compare: (a, b) => (a.elo_rating ?? 0) - (b.elo_rating ?? 0),
     render: (row) =>
-      row.elo_rating !== null ? (
+      row.elo_rating != null ? (
         <span className={eloColor(row.elo_rating)}>{row.elo_rating.toLocaleString()}</span>
       ) : (
         <span className="text-gray-400">\u2014</span>
@@ -88,7 +88,7 @@ export const TEAMS_COLUMNS: Column<TeamItem>[] = [
     sortable: true,
     compare: (a, b) => (a.elo_ranking ?? 9999) - (b.elo_ranking ?? 9999),
     render: (row) =>
-      row.elo_ranking !== null ? (
+      row.elo_ranking != null ? (
         <span className="text-gray-700">#{row.elo_ranking.toLocaleString()}</span>
       ) : (
         <span className="text-gray-400">\u2014</span>

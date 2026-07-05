@@ -50,9 +50,16 @@ function mockFetchSuccess() {
         json: () => Promise.resolve(mockFilters),
       });
     }
+    const parsedUrl = new URL(url, 'http://localhost');
+    const teamsParam = parsedUrl.searchParams.get('teams');
+    let filtered = mockTeams;
+    if (teamsParam) {
+      const selected = teamsParam.split(',').filter(Boolean);
+      filtered = mockTeams.filter((t) => selected.includes(t.team));
+    }
     return Promise.resolve({
       ok: true,
-      json: () => Promise.resolve(mockTeams),
+      json: () => Promise.resolve(filtered),
     });
   });
 }
