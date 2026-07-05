@@ -34,6 +34,7 @@ from .analysis import (
     _strip_accents,
 )
 from .analysis.enrich import build_shootout_lookup, mark_shootouts
+from .elo import calculate_elo_for_filters, get_latest_elo
 
 logger = get_logger("engine")
 
@@ -102,19 +103,31 @@ class QueryEngine:
         else:
             logger.debug("Teams list", extra={"source": "live"})
             result = teams_list(self._filtered_results(filters))
-        return self._merge_elo(result)
+        return self._merge_elo(result, filters)
 
-    def _merge_elo(self, teams: list[dict]) -> list[dict]:
-        """Add elo_rating and elo_ranking to each team dict."""
-        if self._state.elo_ratings is None:
+    def _merge_elo(
+        self, teams: list[dict], filters: Optional[FilterParams] = None
+    ) -> list[dict]:
+        """Add elo_rating and elo_ranking to each team dict.
+
+        When filters are active, ELO is recomputed from the filtered match
+        subset so that ratings and rankings reflect the selected scope
+        (tournament, date range, countries, etc.).
+        """
+        if not self._no_filters(filters):
+            elo_history = calculate_elo_for_filters(
+                self._state.results, filters, elo_config=self._state.elo_config
+            )
+        else:
+            elo_history = self._state.elo_ratings
+
+        if elo_history is None or elo_history.empty:
             for t in teams:
                 t["elo_rating"] = None
                 t["elo_ranking"] = None
             return teams
 
-        from .elo import get_latest_elo
-
-        latest = get_latest_elo(self._state.elo_ratings, top_n=500)
+        latest = get_latest_elo(elo_history, top_n=500)
         elo_lookup: dict[str, dict] = {}
         for _, row in latest.iterrows():
             elo_lookup[row["team"]] = {
