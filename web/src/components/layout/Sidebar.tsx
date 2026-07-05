@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Users, Trophy, Swords, Flag, TrendingUp, Clock } from 'lucide-react';
+import { VERSION } from '@/lib/version';
 
 const navItems = [
   { href: '/teams', label: 'Teams', icon: Users },
@@ -43,6 +44,10 @@ export function Sidebar() {
           );
         })}
       </nav>
+      <div className="px-4 py-3 border-t border-gray-200 text-[11px] text-gray-400 leading-relaxed">
+        <p>&copy; Marcos Rossini</p>
+        <p>onegoodarea &middot; v{VERSION}</p>
+      </div>
     </aside>
   );
 }

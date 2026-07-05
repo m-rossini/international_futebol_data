@@ -31,7 +31,8 @@ DOMAIN         ?= orbisplace.co.uk
         web-test web-test-cov \
         up down test test-cov install-hooks \
         vps-build vps-save vps-publish vps-release vps-deploy vps-provision \
-        certbot-init certbot-renew
+        certbot-init certbot-renew \
+        bump-patch bump-minor bump-major commit
 
 # ═══════════════════════════════════════════════════════════
 #  Help
@@ -78,6 +79,10 @@ help:
 	@echo "    make vps-provision  Full pipeline: build → save → publish → release → deploy"
 	@echo "    make certbot-init   Generate initial SSL certs (first time only)"
 	@echo "    make certbot-renew  Force cert renewal on VPS"
+	@echo "    make bump-patch     Bump patch version (1.0.1 → 1.0.2)"
+	@echo "    make bump-minor     Bump minor version (1.0.1 → 1.1.0)"
+	@echo "    make bump-major     Bump major version (1.0.1 → 2.0.0)"
+	@echo "    make commit MSG='..' Bump patch + commit (use MSG='...' for message)"
 	@echo ""
 
 # ═══════════════════════════════════════════════════════════
@@ -202,6 +207,23 @@ install-hooks:
 		echo "    pip install pre-commit && pre-commit install"; \
 		ln -sf ../../.githooks/pre-push .git/hooks/pre-push 2>/dev/null && echo "  ✓ pre-push hook installed"; \
 	fi
+
+# ═══════════════════════════════════════════════════════════
+#  Version bump
+# ═══════════════════════════════════════════════════════════
+bump-patch:
+	python3 scripts/bump_version.py patch
+
+bump-minor:
+	python3 scripts/bump_version.py minor
+
+bump-major:
+	python3 scripts/bump_version.py major
+
+commit:
+	python3 scripts/bump_version.py patch
+	git add api/config.json web/src/lib/version.ts
+	@if [ -n "$(MSG)" ]; then git commit -m "$$MSG"; else git commit; fi
 
 # ═══════════════════════════════════════════════════════════
 #  Full stack (docker compose)
