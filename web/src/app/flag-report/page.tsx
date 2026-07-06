@@ -3,13 +3,11 @@ import { Metadata } from 'next';
 import { FlagReportClient } from './flag-report-client';
 
 export const metadata: Metadata = {
-  title: 'Flag Report',
-  description:
-    'See which teams are associated with which countries and flags in international football.',
+  title: 'House Keeping',
+  description: 'Flag coverage report and MCP server configuration for AI agents.',
   openGraph: {
-    title: 'Flag Report — International Football Stats',
-    description:
-      'See which teams are associated with which countries and flags in international football.',
+    title: 'House Keeping — International Football Stats',
+    description: 'Flag coverage report and MCP server configuration for AI agents.',
   },
 };
 

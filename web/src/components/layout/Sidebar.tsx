@@ -10,9 +10,9 @@ const navItems = [
   { href: '/teams', label: 'Teams', icon: Users },
   { href: '/tournaments', label: 'Tournaments', icon: Trophy },
   { href: '/head-to-head', label: 'Head to Head', icon: Swords },
-  { href: '/flag-report', label: 'Flag Report', icon: Flag },
   { href: '/elo-ranking', label: 'ELO Rankings', icon: TrendingUp },
   { href: '/decade-leaders', label: 'Decade Leaders', icon: Clock },
+  { href: '/flag-report', label: 'House Keeping', icon: Flag },
 ];
 
 interface Props {
