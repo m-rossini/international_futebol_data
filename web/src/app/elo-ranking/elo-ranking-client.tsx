@@ -500,7 +500,7 @@ export function EloRankingClient() {
               </span>
             </div>
             <EloHistoryChart data={history.history} />
-            <div className="grid grid-cols-4 gap-3 text-xs">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
               <div className="bg-gray-50 rounded-lg p-2 text-center">
                 <span className="text-gray-400">Best ELO</span>
                 <div className="font-semibold text-green-600">{history.max_elo.toFixed(0)}</div>
