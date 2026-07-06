@@ -200,7 +200,7 @@ export function DecadeLeadersClient() {
               </div>
 
               {/* Teams Table */}
-              <div className="p-6">
+              <div className="p-6 overflow-x-auto">
                 <table className="w-full">
                   <thead>
                     <tr className="text-xs text-gray-400 uppercase tracking-wider border-b border-gray-100">
