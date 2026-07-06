@@ -355,7 +355,7 @@ export function EloRankingClient() {
 
       {/* ---- Current Ranking ---- */}
       <section className="bg-white rounded-xl border border-gray-200 shadow-sm">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+        <div className="flex flex-wrap items-center justify-between px-5 py-4 border-b border-gray-100 gap-2">
           <h2 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
             <Trophy size={16} className="text-violet-500" />
             Current ELO Ranking
@@ -452,7 +452,7 @@ export function EloRankingClient() {
 
       {/* ---- Team History ---- */}
       <section className="bg-white rounded-xl border border-gray-200 shadow-sm">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+        <div className="flex flex-wrap items-center justify-between px-5 py-4 border-b border-gray-100 gap-2">
           <h2 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
             <TrendingUp size={16} className="text-violet-500" />
             ELO History
