@@ -355,7 +355,7 @@ export function EloRankingClient() {
 
       {/* ---- Current Ranking ---- */}
       <section className="bg-white rounded-xl border border-gray-200 shadow-sm">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+        <div className="flex flex-wrap items-center justify-between px-5 py-4 border-b border-gray-100 gap-2">
           <h2 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
             <Trophy size={16} className="text-violet-500" />
             Current ELO Ranking
@@ -452,7 +452,7 @@ export function EloRankingClient() {
 
       {/* ---- Team History ---- */}
       <section className="bg-white rounded-xl border border-gray-200 shadow-sm">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+        <div className="flex flex-wrap items-center justify-between px-5 py-4 border-b border-gray-100 gap-2">
           <h2 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
             <TrendingUp size={16} className="text-violet-500" />
             ELO History
@@ -500,7 +500,7 @@ export function EloRankingClient() {
               </span>
             </div>
             <EloHistoryChart data={history.history} />
-            <div className="grid grid-cols-4 gap-3 text-xs">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
               <div className="bg-gray-50 rounded-lg p-2 text-center">
                 <span className="text-gray-400">Best ELO</span>
                 <div className="font-semibold text-green-600">{history.max_elo.toFixed(0)}</div>

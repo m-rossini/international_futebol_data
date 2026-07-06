@@ -202,12 +202,12 @@ export function HeadToHeadClient() {
   const sameTeam = team1 && team2 && team1 === team2;
 
   return (
-    <div className="p-8">
+    <div className="p-4 md:p-8">
       <h1 className="text-2xl font-bold text-gray-800 mb-4">Head to Head</h1>
 
       {/* Team selectors */}
-      <div className="flex items-end gap-2 mb-4">
-        <div className="flex flex-col gap-1 min-w-[200px] max-w-[300px] flex-1">
+      <div className="flex flex-col md:flex-row items-stretch md:items-end gap-3 mb-4">
+        <div className="flex flex-col gap-1 min-w-0 max-w-[300px] flex-1">
           <label className="text-xs font-medium text-gray-500">Team 1</label>
           <AutocompleteInput
             options={teamNames}
@@ -228,13 +228,13 @@ export function HeadToHeadClient() {
           type="button"
           onClick={swapTeams}
           disabled={!team1 || !team2}
-          className="mb-0.5 p-2 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+          className="p-2 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed shrink-0 self-center md:self-end md:mb-0.5"
           title="Swap teams"
         >
           <ArrowRightLeft size={16} className="text-gray-500" />
         </button>
 
-        <div className="flex flex-col gap-1 min-w-[200px] max-w-[300px] flex-1">
+        <div className="flex flex-col gap-1 min-w-0 max-w-[300px] flex-1">
           <label className="text-xs font-medium text-gray-500">Team 2</label>
           <AutocompleteInput
             options={teamNames}
