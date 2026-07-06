@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import './globals.css';
-import { Sidebar } from '@/components/layout/Sidebar';
+import { AppShell } from '@/components/layout/AppShell';
 import { PageViewTracker } from '@/components/shared/PageViewTracker';
 import { WebVitalsTracker } from '@/components/shared/WebVitalsTracker';
 
@@ -73,8 +73,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <PageViewTracker />
         </Suspense>
         <WebVitalsTracker />
-        <Sidebar />
-        <main className="flex-1 min-w-0">{children}</main>
+        <AppShell>{children}</AppShell>
       </body>
     </html>
   );
