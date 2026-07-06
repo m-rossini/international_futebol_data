@@ -113,6 +113,18 @@ export const TEAMS_COLUMNS: Column<TeamItem>[] = [
     render: (row) => (row.goals_against > 0 ? row.gf_ga_ratio.toFixed(2) : '\u2014'),
   },
   {
+    key: 'avg_gf',
+    header: 'Avg GF',
+    sortable: true,
+    render: (row) => row.avg_gf.toFixed(2),
+  },
+  {
+    key: 'avg_ga',
+    header: 'Avg GA',
+    sortable: true,
+    render: (row) => row.avg_ga.toFixed(2),
+  },
+  {
     key: 'unique_countries',
     header: 'Countries',
     sortable: true,

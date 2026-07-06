@@ -65,6 +65,8 @@ export function TeamStandingsTable({ tournamentName }: Props) {
         const data: TeamItem[] = (await res.json()).map((t: TeamItem) => ({
           ...t,
           gf_ga_ratio: t.goals_against > 0 ? t.goals_for / t.goals_against : 0,
+          avg_gf: t.matches_played > 0 ? t.goals_for / t.matches_played : 0,
+          avg_ga: t.matches_played > 0 ? t.goals_against / t.matches_played : 0,
         }));
         if (!cancelled) {
           setTeams(data);
