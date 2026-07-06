@@ -116,7 +116,7 @@ export function TeamStandingsTable({ tournamentName }: Props) {
         params.delete('sort');
         params.delete('dir');
       }
-      router.replace(`${pathname}?${params.toString()}`);
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
     },
     [router, pathname, sp],
   );
