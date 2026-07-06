@@ -49,12 +49,12 @@ export function Sidebar({ isOpen, onClose }: Props) {
         />
       )}
 
-      {/* Sidebar — desktop: static sticky, mobile: fixed drawer */}
+      {/* Sidebar — desktop: sticky, mobile: fixed drawer */}
       <aside
         className={`
           fixed inset-y-0 left-0 z-50 flex flex-col bg-white border-r border-gray-200
           w-[270px] transition-transform duration-200 ease-in-out
-          lg:static lg:translate-x-0 lg:w-[220px] lg:min-w-[220px]
+          lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto lg:translate-x-0 lg:w-[220px] lg:min-w-[220px]
           ${isOpen ? 'translate-x-0' : '-translate-x-full'}
         `}
         role="dialog"
