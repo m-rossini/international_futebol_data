@@ -70,7 +70,7 @@ export function FlagReportClient() {
   }
 
   return (
-    <div className="p-8">
+    <div className="p-4 md:p-8">
       <h1 className="text-2xl font-bold text-gray-800 mb-2">Flag Coverage Report</h1>
       <p className="text-sm text-gray-500 mb-6">
         Shows which teams and countries from the dataset do not have a flag mapped in the system.

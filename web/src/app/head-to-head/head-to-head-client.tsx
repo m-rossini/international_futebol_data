@@ -202,7 +202,7 @@ export function HeadToHeadClient() {
   const sameTeam = team1 && team2 && team1 === team2;
 
   return (
-    <div className="p-8">
+    <div className="p-4 md:p-8">
       <h1 className="text-2xl font-bold text-gray-800 mb-4">Head to Head</h1>
 
       {/* Team selectors */}

@@ -161,7 +161,7 @@ export function TournamentDetailClient({ tournamentName }: Props) {
   );
 
   return (
-    <div className="p-8">
+    <div className="p-4 md:p-8">
       <div className="flex items-center gap-3 mb-4">
         <button
           onClick={handleBack}
