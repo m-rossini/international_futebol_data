@@ -4,6 +4,8 @@ export interface TeamItem {
   goals_for: number;
   goals_against: number;
   gf_ga_ratio: number;
+  avg_gf: number;
+  avg_ga: number;
   wins: number;
   losses: number;
   draws: number;
