@@ -72,6 +72,7 @@ Before implementing:
 4. Produce an implementation plan.
 5. Implement incrementally AFTER asking if you coudl proceed
 6. Validate changes.
+1. Use Make targets whenever possible
 
 ---
 
@@ -154,3 +155,9 @@ Do not:
 - NEVER DELETE FILES
 
 Prefer minimal, targeted changes.
+
+## Implementation Rules
+
+- You never touch MAIN branch
+- You checjk the branch you are in and make a new one for that task in hand
+- You create small commits for every stepp in the plan, the flow is execute, test, commit when done, next step, repeat

@@ -1,0 +1,10 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "futebol-api": {
+      "type": "remote",
+      "url": "https://futebol-mcp.orbisplace.co.uk/sse",
+      "enabled": true
+    }
+  }
+}
