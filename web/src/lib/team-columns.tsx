@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { type Column } from '@/components/shared/DataTable';
 import { CountryFlag } from '@/components/shared/CountryFlag';
 import type { TeamItem } from '@/lib/types';
@@ -24,14 +23,10 @@ export const TEAMS_COLUMNS: Column<TeamItem>[] = [
     header: 'Team',
     sortable: true,
     render: (row) => (
-      <Link
-        href={`/teams/${encodeURIComponent(row.team)}`}
-        className="inline-flex items-center gap-1.5 text-blue-600 hover:text-blue-800 hover:underline"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <span className="inline-flex items-center gap-1.5">
         <CountryFlag countryName={row.team} size={14} />
         {row.team}
-      </Link>
+      </span>
     ),
   },
   {
