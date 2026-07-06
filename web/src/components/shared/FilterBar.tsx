@@ -123,7 +123,7 @@ export function FilterBar({ fields, injectDefaults = true, children }: Props) {
   return (
     <div className="flex flex-wrap items-end gap-3 mb-4">
       {cfg.teams && (
-        <div className="flex flex-col gap-1 min-w-[200px] max-w-[300px] flex-1">
+        <div className="flex flex-col gap-1 min-w-0 max-w-[300px] flex-1">
           <label className="text-xs font-medium text-gray-500">Teams</label>
           <AutocompleteInput
             options={options.teams}
@@ -134,7 +134,7 @@ export function FilterBar({ fields, injectDefaults = true, children }: Props) {
         </div>
       )}
       {cfg.tournaments && (
-        <div className="flex flex-col gap-1 min-w-[200px] max-w-[300px] flex-1">
+        <div className="flex flex-col gap-1 min-w-0 max-w-[300px] flex-1">
           <label className="text-xs font-medium text-gray-500">Tournaments</label>
           <AutocompleteInput
             options={options.tournaments}
@@ -145,7 +145,7 @@ export function FilterBar({ fields, injectDefaults = true, children }: Props) {
         </div>
       )}
       {cfg.countries && (
-        <div className="flex flex-col gap-1 min-w-[200px] max-w-[300px] flex-1">
+        <div className="flex flex-col gap-1 min-w-0 max-w-[300px] flex-1">
           <label className="text-xs font-medium text-gray-500">Countries</label>
           <AutocompleteInput
             options={options.countries}
@@ -163,7 +163,7 @@ export function FilterBar({ fields, injectDefaults = true, children }: Props) {
       )}
       {cfg.dates && (
         <>
-          <div className="flex flex-col gap-1 w-[140px]">
+          <div className="flex flex-col gap-1 min-w-0 w-[140px]">
             <label className="text-xs font-medium text-gray-500">From</label>
             <input
               type="date"
@@ -172,7 +172,7 @@ export function FilterBar({ fields, injectDefaults = true, children }: Props) {
               className="border border-gray-300 rounded-lg px-2 py-1.5 text-sm bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-200 outline-none"
             />
           </div>
-          <div className="flex flex-col gap-1 w-[140px]">
+          <div className="flex flex-col gap-1 min-w-0 w-[140px]">
             <label className="text-xs font-medium text-gray-500">To</label>
             <input
               type="date"
