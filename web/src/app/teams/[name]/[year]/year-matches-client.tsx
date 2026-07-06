@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, SlidersHorizontal } from 'lucide-react';
 import { AutocompleteInput } from '@/components/shared/AutocompleteInput';
 import { CountryFlag } from '@/components/shared/CountryFlag';
 import { StatsBar, buildMatchStats, buildGoalStats } from '@/components/shared/StatsBar';
@@ -57,6 +57,7 @@ export function YearMatchesClient({ teamName, year }: Props) {
   const [filtDateFrom, setFiltDateFrom] = useState('');
   const [filtDateTo, setFiltDateTo] = useState('');
   const [filtShootout, setFiltShootout] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const qs = useMemo(() => buildQs(sp), [sp]);
 
@@ -239,94 +240,107 @@ export function YearMatchesClient({ teamName, year }: Props) {
       ) : data ? (
         <>
           {/* --- Client-side filters --- */}
-          <div className="flex flex-wrap items-end gap-3 mb-4">
-            <div className="flex flex-col gap-1 min-w-[170px] max-w-[260px] flex-1">
-              <label className="text-xs font-medium text-gray-500">Opponent</label>
-              <AutocompleteInput
-                options={filterOptions.opponents}
-                selected={filtOpponent}
-                onChange={setFiltOpponent}
-                placeholder="Any opponent"
-              />
-            </div>
-            <div className="flex flex-col gap-1 min-w-[170px] max-w-[260px] flex-1">
-              <label className="text-xs font-medium text-gray-500">Tournament</label>
-              <AutocompleteInput
-                options={filterOptions.tournaments}
-                selected={filtTournament}
-                onChange={setFiltTournament}
-                placeholder="Any tournament"
-              />
-            </div>
-            <div className="flex flex-col gap-1 min-w-[170px] max-w-[260px] flex-1">
-              <label className="text-xs font-medium text-gray-500">Country</label>
-              <AutocompleteInput
-                options={filterOptions.countries}
-                selected={filtCountry}
-                onChange={setFiltCountry}
-                placeholder="Any country"
-                renderItem={(c) => (
-                  <span className="inline-flex items-center gap-1.5">
-                    <CountryFlag countryName={c} size={14} />
-                    {c}
-                  </span>
-                )}
-              />
-            </div>
-            <div className="flex flex-col gap-1 min-w-[170px] max-w-[260px] flex-1">
-              <label className="text-xs font-medium text-gray-500">City</label>
-              <AutocompleteInput
-                options={filterOptions.cities}
-                selected={filtCity}
-                onChange={setFiltCity}
-                placeholder="Any city"
-              />
-            </div>
-            <div className="flex flex-col gap-1 w-[140px]">
-              <label className="text-xs font-medium text-gray-500">From</label>
-              <input
-                type="date"
-                value={filtDateFrom}
-                onChange={(e) => setFiltDateFrom(e.target.value)}
-                className="border border-gray-300 rounded-lg px-2 py-1.5 text-sm bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-200 outline-none"
-              />
-            </div>
-            <div className="flex flex-col gap-1 w-[140px]">
-              <label className="text-xs font-medium text-gray-500">To</label>
-              <input
-                type="date"
-                value={filtDateTo}
-                onChange={(e) => setFiltDateTo(e.target.value)}
-                className="border border-gray-300 rounded-lg px-2 py-1.5 text-sm bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-200 outline-none"
-              />
-            </div>
-            <label className="flex items-center gap-1.5 pb-0.5 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={filtShootout}
-                onChange={(e) => setFiltShootout(e.target.checked)}
-                className="rounded border-gray-300 text-amber-600 focus:ring-amber-500"
-              />
-              <span className="text-xs font-medium text-gray-500">Shootouts only</span>
-            </label>
-            {anyFilterActive && (
-              <button
-                type="button"
-                onClick={() => {
-                  logUserAction('clear_filters', { page: 'year_matches', team: teamName, year });
-                  setFiltOpponent([]);
-                  setFiltTournament([]);
-                  setFiltCountry([]);
-                  setFiltCity([]);
-                  setFiltDateFrom('');
-                  setFiltDateTo('');
-                  setFiltShootout(false);
-                }}
-                className="px-3 py-1.5 text-xs text-blue-600 hover:text-blue-800 hover:underline"
-              >
-                Clear filters
-              </button>
+          <button
+            type="button"
+            onClick={() => setFiltersOpen((o) => !o)}
+            className="lg:hidden flex items-center gap-1.5 text-sm font-medium text-gray-600 hover:text-gray-800 mb-3"
+          >
+            <SlidersHorizontal size={14} />
+            {filtersOpen ? 'Hide filters' : 'Show filters'}
+            {anyFilterActive && !filtersOpen && (
+              <span className="w-2 h-2 rounded-full bg-blue-500" />
             )}
+          </button>
+          <div className={`${filtersOpen ? 'block' : 'hidden'} lg:!block`}>
+            <div className="flex flex-wrap items-end gap-3 mb-4">
+              <div className="flex flex-col gap-1 min-w-0 max-w-[260px] flex-1">
+                <label className="text-xs font-medium text-gray-500">Opponent</label>
+                <AutocompleteInput
+                  options={filterOptions.opponents}
+                  selected={filtOpponent}
+                  onChange={setFiltOpponent}
+                  placeholder="Any opponent"
+                />
+              </div>
+              <div className="flex flex-col gap-1 min-w-0 max-w-[260px] flex-1">
+                <label className="text-xs font-medium text-gray-500">Tournament</label>
+                <AutocompleteInput
+                  options={filterOptions.tournaments}
+                  selected={filtTournament}
+                  onChange={setFiltTournament}
+                  placeholder="Any tournament"
+                />
+              </div>
+              <div className="flex flex-col gap-1 min-w-0 max-w-[260px] flex-1">
+                <label className="text-xs font-medium text-gray-500">Country</label>
+                <AutocompleteInput
+                  options={filterOptions.countries}
+                  selected={filtCountry}
+                  onChange={setFiltCountry}
+                  placeholder="Any country"
+                  renderItem={(c) => (
+                    <span className="inline-flex items-center gap-1.5">
+                      <CountryFlag countryName={c} size={14} />
+                      {c}
+                    </span>
+                  )}
+                />
+              </div>
+              <div className="flex flex-col gap-1 min-w-0 max-w-[260px] flex-1">
+                <label className="text-xs font-medium text-gray-500">City</label>
+                <AutocompleteInput
+                  options={filterOptions.cities}
+                  selected={filtCity}
+                  onChange={setFiltCity}
+                  placeholder="Any city"
+                />
+              </div>
+              <div className="flex flex-col gap-1 min-w-0 w-[140px]">
+                <label className="text-xs font-medium text-gray-500">From</label>
+                <input
+                  type="date"
+                  value={filtDateFrom}
+                  onChange={(e) => setFiltDateFrom(e.target.value)}
+                  className="border border-gray-300 rounded-lg px-2 py-1.5 text-sm bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-200 outline-none"
+                />
+              </div>
+              <div className="flex flex-col gap-1 min-w-0 w-[140px]">
+                <label className="text-xs font-medium text-gray-500">To</label>
+                <input
+                  type="date"
+                  value={filtDateTo}
+                  onChange={(e) => setFiltDateTo(e.target.value)}
+                  className="border border-gray-300 rounded-lg px-2 py-1.5 text-sm bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-200 outline-none"
+                />
+              </div>
+              <label className="flex items-center gap-1.5 pb-0.5 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={filtShootout}
+                  onChange={(e) => setFiltShootout(e.target.checked)}
+                  className="rounded border-gray-300 text-amber-600 focus:ring-amber-500"
+                />
+                <span className="text-xs font-medium text-gray-500">Shootouts only</span>
+              </label>
+              {anyFilterActive && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    logUserAction('clear_filters', { page: 'year_matches', team: teamName, year });
+                    setFiltOpponent([]);
+                    setFiltTournament([]);
+                    setFiltCountry([]);
+                    setFiltCity([]);
+                    setFiltDateFrom('');
+                    setFiltDateTo('');
+                    setFiltShootout(false);
+                  }}
+                  className="px-3 py-1.5 text-xs text-blue-600 hover:text-blue-800 hover:underline"
+                >
+                  Clear filters
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Summary cards */}
