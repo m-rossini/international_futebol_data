@@ -11,6 +11,7 @@ export interface TeamItem {
   draws: number;
   points: number;
   win_rate: number;
+  loss_rate: number;
   unique_countries: number;
   elo_rating: number | null;
   elo_ranking: number | null;

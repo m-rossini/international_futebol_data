@@ -14,6 +14,7 @@ const mockTeams = [
     draws: 20,
     points: 230,
     win_rate: 70.0,
+    loss_rate: 10.0,
     unique_countries: 15,
   },
   {
@@ -26,6 +27,7 @@ const mockTeams = [
     draws: 15,
     points: 195,
     win_rate: 66.67,
+    loss_rate: 16.67,
     unique_countries: 12,
   },
 ];

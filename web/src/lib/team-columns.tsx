@@ -10,6 +10,12 @@ export function winRateColor(rate: number): string {
   return 'text-red-500 font-semibold';
 }
 
+function lossRateColor(rate: number): string {
+  if (rate >= 55) return 'text-red-500 font-semibold';
+  if (rate >= 40) return 'text-amber-600 font-semibold';
+  return 'text-green-600 font-semibold';
+}
+
 function eloColor(rating: number | null): string {
   if (rating === null) return 'text-gray-400';
   if (rating >= 1700) return 'text-green-600 font-semibold';
@@ -54,16 +60,26 @@ export const TEAMS_COLUMNS: Column<TeamItem>[] = [
     render: (row) => row.draws.toLocaleString(),
   },
   {
+    key: 'win_rate',
+    header: 'Win %',
+    sortable: true,
+    render: (row) => (
+      <span className={winRateColor(row.win_rate ?? 0)}>{(row.win_rate ?? 0).toFixed(1)}%</span>
+    ),
+  },
+  {
+    key: 'loss_rate',
+    header: 'Loss %',
+    sortable: true,
+    render: (row) => (
+      <span className={lossRateColor(row.loss_rate ?? 0)}>{(row.loss_rate ?? 0).toFixed(1)}%</span>
+    ),
+  },
+  {
     key: 'points',
     header: 'Pts',
     sortable: true,
     render: (row) => <span className="font-bold text-gray-900">{row.points.toLocaleString()}</span>,
-  },
-  {
-    key: 'win_rate',
-    header: 'Win Rate',
-    sortable: true,
-    render: (row) => <span className={winRateColor(row.win_rate)}>{row.win_rate.toFixed(1)}%</span>,
   },
   {
     key: 'elo_rating',
