@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, Fragment } from 'react';
 import { ChevronUp, ChevronDown } from 'lucide-react';
 
 export interface Column<T> {
@@ -20,6 +20,10 @@ interface Props<T> {
   sortDir?: SortDir;
   onSortChange?: (key: string | null, dir: SortDir) => void;
   onRowClick?: (row: T) => void;
+  /** Key of the currently expanded row (from onRowClick). */
+  expandedKey?: string | null;
+  /** Render extra content below an expanded row. Receives the row and column span. */
+  renderExpanded?: (row: T, colSpan: number) => React.ReactNode;
 }
 
 export type SortDir = 'asc' | 'desc' | null;
@@ -33,6 +37,8 @@ export function DataTable<T>({
   sortDir: controlledSortDir,
   onSortChange,
   onRowClick,
+  expandedKey,
+  renderExpanded,
 }: Props<T>) {
   const [internalSortKey, setInternalSortKey] = useState<string | null>(defaultSort?.key ?? null);
   const [internalSortDir, setInternalSortDir] = useState<SortDir>(defaultSort?.dir ?? null);
@@ -124,21 +130,33 @@ export function DataTable<T>({
           </tr>
         </thead>
         <tbody>
-          {sorted.map((row) => (
-            <tr
-              key={String(row[keyField])}
-              onClick={() => onRowClick?.(row)}
-              className={`border-t border-gray-100 hover:bg-gray-50 ${onRowClick ? 'cursor-pointer' : ''}`}
-            >
-              {columns.map((col) => (
-                <td key={col.key} className="px-4 py-3 text-sm text-gray-700">
-                  {col.render
-                    ? col.render(row)
-                    : String((row as Record<string, unknown>)[col.key] ?? '')}
-                </td>
-              ))}
-            </tr>
-          ))}
+          {sorted.map((row) => {
+            const rowKey = String(row[keyField]);
+            const isExpanded = expandedKey === rowKey;
+            return (
+              <Fragment key={rowKey}>
+                <tr
+                  onClick={() => onRowClick?.(row)}
+                  className={`border-t border-gray-100 hover:bg-gray-50 ${onRowClick ? 'cursor-pointer' : ''} ${isExpanded ? 'bg-blue-50/50' : ''}`}
+                >
+                  {columns.map((col) => (
+                    <td key={col.key} className="px-4 py-3 text-sm text-gray-700">
+                      {col.render
+                        ? col.render(row)
+                        : String((row as Record<string, unknown>)[col.key] ?? '')}
+                    </td>
+                  ))}
+                </tr>
+                {isExpanded && renderExpanded && (
+                  <tr>
+                    <td colSpan={columns.length} className="p-0">
+                      {renderExpanded(row, columns.length)}
+                    </td>
+                  </tr>
+                )}
+              </Fragment>
+            );
+          })}
         </tbody>
       </table>
     </div>

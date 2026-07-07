@@ -78,6 +78,32 @@ export interface MatchItem {
   shootout?: boolean;
 }
 
+export interface MatchGoalScorer {
+  team: string;
+  scorer: string;
+  minute: number | null;
+  own_goal: boolean;
+  penalty: boolean;
+}
+
+export interface MatchShootoutInfo {
+  winner: string;
+  first_shooter?: string | null;
+}
+
+export interface MatchDetail {
+  date: string;
+  home_team: string;
+  away_team: string;
+  home_score: number;
+  away_score: number;
+  tournament?: string;
+  city?: string;
+  country?: string;
+  scorers: MatchGoalScorer[];
+  shootout?: MatchShootoutInfo | null;
+}
+
 export interface BiggestWin {
   date: string;
   home_team: string;
