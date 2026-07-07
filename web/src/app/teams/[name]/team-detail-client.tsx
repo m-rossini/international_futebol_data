@@ -116,7 +116,6 @@ export function TeamDetailClient({ teamName }: Props) {
   const [detail, setDetail] = useState<TeamDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [filtShootout, setFiltShootout] = useState(false);
 
   const qs = useMemo(() => buildQs(sp), [sp]);
 
@@ -176,12 +175,6 @@ export function TeamDetailClient({ teamName }: Props) {
     },
     [router, sp, teamName],
   );
-
-  const filteredMatches = useMemo(() => {
-    if (!detail?.matches_list) return [];
-    if (!filtShootout) return detail.matches_list;
-    return detail.matches_list.filter((m) => m.shootout);
-  }, [detail, filtShootout]);
 
   return (
     <div className="p-4 md:p-8">
@@ -259,7 +252,7 @@ export function TeamDetailClient({ teamName }: Props) {
               <div className="bg-white rounded-lg border border-gray-200 p-4">
                 <h3 className="text-sm font-semibold text-gray-700 mb-2">Cumulative Goals</h3>
                 <CumulativeGoalsChart
-                  matches={filteredMatches}
+                  matches={detail.matches_list}
                   track={[
                     { team: teamName, color: '#22c55e', label: 'Goals For' },
                     { team: teamName, color: '#ef4444', label: 'Goals Against', against: true },
@@ -270,12 +263,12 @@ export function TeamDetailClient({ teamName }: Props) {
           </div>
 
           {/* W/D/L ladder (match-by-match) */}
-          {filteredMatches.length >= 2 && (
+          {detail.matches_list.length >= 2 && (
             <div className="mb-6">
               <h2 className="text-lg font-semibold text-gray-800 mb-3">W/D/L Ladder</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="bg-white rounded-lg border border-gray-200 p-4">
-                  <MatchLadderChart matches={filteredMatches} team={teamName} height={200} />
+                  <MatchLadderChart matches={detail.matches_list} team={teamName} height={200} />
                 </div>
               </div>
             </div>
@@ -300,18 +293,7 @@ export function TeamDetailClient({ teamName }: Props) {
 
           {/* Yearly breakdown + All matches */}
           <div className="mb-6">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg font-semibold text-gray-800">Yearly Breakdown</h2>
-              <label className="flex items-center gap-1.5 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={filtShootout}
-                  onChange={(e) => setFiltShootout(e.target.checked)}
-                  className="rounded border-gray-300 text-amber-600 focus:ring-amber-500"
-                />
-                <span className="text-xs font-medium text-gray-500">Shootouts only</span>
-              </label>
-            </div>
+            <h2 className="text-lg font-semibold text-gray-800 mb-3">Yearly Breakdown</h2>
             {detail.yearly.length > 0 ? (
               <DataTable
                 columns={yearlyColumns}
@@ -325,8 +307,8 @@ export function TeamDetailClient({ teamName }: Props) {
             )}
             {detail.matches_list.length > 0 && (
               <div className="mt-4">
-                {filteredMatches.length > 0 ? (
-                  <MatchTable matches={filteredMatches} highlightTeam={teamName} showNeutral />
+                {detail.matches_list.length > 0 ? (
+                  <MatchTable matches={detail.matches_list} highlightTeam={teamName} showNeutral />
                 ) : (
                   <p className="text-sm text-gray-400">No matches match the current filter.</p>
                 )}
