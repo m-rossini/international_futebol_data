@@ -269,7 +269,6 @@ vps-publish: vps-save
 	cat docker-compose.vps.yml | ssh $(VPS_HOST) "cat > $(VPS_DEPLOY_DIR)/docker-compose.yml"
 	cat .env.vps.example | ssh $(VPS_HOST) "cat > $(VPS_DEPLOY_DIR)/.env"
 	cat nginx/conf.d/futebol.conf | ssh $(VPS_HOST) "cat > $(VPS_DEPLOY_DIR)/nginx/conf.d/futebol.conf"
-	cat nginx/conf.d/futebol-active.conf | ssh $(VPS_HOST) "cat > $(VPS_DEPLOY_DIR)/nginx/conf.d/futebol-active.conf"
 	@echo "Compressing data…"
 	@tar czf $(STAGING)/data.tar.gz -C "$(DATA_VOLUME)" .
 	cat $(STAGING)/data.tar.gz | ssh $(VPS_HOST) "cat > $(VPS_DEPLOY_DIR)/tmp/data.tar.gz"
@@ -292,7 +291,9 @@ vps-deploy:
 	ssh $(VPS_HOST) "cd $(VPS_DEPLOY_DIR) && mkdir -p data && tar xzf tmp/data.tar.gz -C data/ 2>/dev/null || true"
 	@echo "  4/5 Starting containers…"
 	ssh $(VPS_HOST) "cd $(VPS_DEPLOY_DIR) && docker compose up -d --no-deps --force-recreate api mcp web openobserve"
-	@echo "  5/5 Verifying…"
+	@echo "  5/5 Restoring HTTPS config if certs exist…"
+	ssh $(VPS_HOST) "test -f $(VPS_DEPLOY_DIR)/nginx/conf.d/futebol.conf && docker exec futebol-nginx test -f /etc/letsencrypt/live/futebol.orbisplace.co.uk/fullchain.pem && cp $(VPS_DEPLOY_DIR)/nginx/conf.d/futebol.conf $(VPS_DEPLOY_DIR)/nginx/conf.d/futebol-active.conf && docker exec futebol-nginx nginx -s reload" || true
+	@echo "  6/6 Verifying…"
 	ssh $(VPS_HOST) "cd $(VPS_DEPLOY_DIR) && docker compose ps"
 	@echo "Cleaning up temp files on VPS…"
 	ssh $(VPS_HOST) "rm -rf $(VPS_DEPLOY_DIR)/tmp"
