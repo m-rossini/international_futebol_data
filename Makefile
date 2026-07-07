@@ -269,7 +269,7 @@ vps-publish: vps-save
 	cat docker-compose.vps.yml | ssh $(VPS_HOST) "cat > $(VPS_DEPLOY_DIR)/docker-compose.yml"
 	cat .env.vps.example | ssh $(VPS_HOST) "cat > $(VPS_DEPLOY_DIR)/.env"
 	cat nginx/conf.d/futebol.conf | ssh $(VPS_HOST) "cat > $(VPS_DEPLOY_DIR)/nginx/conf.d/futebol.conf"
-	cat nginx/conf.d/futebol-init.conf | ssh $(VPS_HOST) "cat > $(VPS_DEPLOY_DIR)/nginx/conf.d/futebol-init.conf"
+	cat nginx/conf.d/futebol-active.conf | ssh $(VPS_HOST) "cat > $(VPS_DEPLOY_DIR)/nginx/conf.d/futebol-active.conf"
 	@echo "Compressing data…"
 	@tar czf $(STAGING)/data.tar.gz -C "$(DATA_VOLUME)" .
 	cat $(STAGING)/data.tar.gz | ssh $(VPS_HOST) "cat > $(VPS_DEPLOY_DIR)/tmp/data.tar.gz"
@@ -291,7 +291,7 @@ vps-deploy:
 	@echo "  3/5 Decompressing data…"
 	ssh $(VPS_HOST) "cd $(VPS_DEPLOY_DIR) && mkdir -p data && tar xzf tmp/data.tar.gz -C data/ 2>/dev/null || true"
 	@echo "  4/5 Starting containers…"
-	ssh $(VPS_HOST) "cd $(VPS_DEPLOY_DIR) && docker compose up -d --no-deps api mcp web openobserve"
+	ssh $(VPS_HOST) "cd $(VPS_DEPLOY_DIR) && docker compose up -d --no-deps --force-recreate api mcp web openobserve"
 	@echo "  5/5 Verifying…"
 	ssh $(VPS_HOST) "cd $(VPS_DEPLOY_DIR) && docker compose ps"
 	@echo "Cleaning up temp files on VPS…"
@@ -307,7 +307,6 @@ certbot-init:
 	@test -n "$(VPS_HOST)" || (echo "ERROR: VPS_HOST is not set. Usage: make certbot-init VPS_HOST=user@host" && exit 1)
 	@test -f "$(STAGING)/api.tar" || ($(MAKE) vps-save)
 	@echo "=== Step 1: Starting nginx with HTTP-only config ==="
-	ssh $(VPS_HOST) "cd $(VPS_DEPLOY_DIR) && cp nginx/conf.d/futebol-init.conf nginx/conf.d/futebol-active.conf"
 	ssh $(VPS_HOST) "cd $(VPS_DEPLOY_DIR) && docker compose up -d --no-deps nginx"
 	@echo "=== Step 2: Generating SSL certificates ==="
 	ssh $(VPS_HOST) "cd $(VPS_DEPLOY_DIR) && docker compose run --rm certbot certonly --webroot -w /var/www/certbot \
