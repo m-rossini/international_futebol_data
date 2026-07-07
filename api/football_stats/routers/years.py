@@ -5,7 +5,7 @@ import logging
 from fastapi import APIRouter, Depends
 
 from football_stats.routers.dependencies import FilterParamsDep, engine, require_data
-from football_stats.stats.models import YearOverviewItem, YearDetailResponse
+from football_stats.stats.models import YearOverviewItem
 
 logger = logging.getLogger("stats.server.years")
 
@@ -21,7 +21,7 @@ async def years_endpoint(filters: FilterParamsDep = Depends()):
     return engine.years(filters.inner)
 
 
-@router.get("/years/{year}", response_model=YearDetailResponse)
+@router.get("/years/{year}")
 async def year_detail_endpoint(year: int, filters: FilterParamsDep = Depends()):
     """Detailed stats for a specific year, with full match list.
     Optional filters: ``?tournaments=FIFA+World+Cup``"""
