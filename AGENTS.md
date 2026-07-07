@@ -102,6 +102,8 @@ Examples:
 
 Do not install dependencies on the host if a container workflow exists.
 
+Sometime swe work with git worktrees. When that isth e case using continaers can cause conflicts between tests. You need ot understand that we have either to wait for the contianer to not be used by another agent OR prefereably to create a new instance with the same properties and other name. Do not use existing containers that are already running. THI SIS VERY IMPORTANT
+
 ---
 
 ## Container Rules
