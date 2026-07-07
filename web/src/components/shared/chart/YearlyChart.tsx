@@ -2,8 +2,9 @@
 
 import { useMemo } from 'react';
 import {
-  ScatterChart,
-  Scatter,
+  ComposedChart,
+  Bar,
+  Line,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -21,6 +22,7 @@ interface BarDatum {
   wins: number;
   losses: number;
   draws: number;
+  matches_played: number;
 }
 
 interface Props {
@@ -41,26 +43,11 @@ const SERIES = [
 ] as const;
 
 // ---------------------------------------------------------------------------
-// Custom dot shape
-// ---------------------------------------------------------------------------
-
-function DotShape(props: Record<string, unknown>) {
-  const cx = props.cx as number | undefined;
-  const cy = props.cy as number | undefined;
-  const fill = props.fill as string | undefined;
-  const r = (props.r as number) ?? 3;
-  return <circle cx={cx} cy={cy} r={r} fill={fill} opacity={0.85} />;
-}
-
-// ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
 export function YearlyChart({ data, height = 240, width }: Props) {
   const sorted = useMemo(() => [...data].sort((a, b) => a.year - b.year), [data]);
-
-  // Dot radius: larger for small datasets, smaller for dense ones
-  const dotR = sorted.length <= 20 ? 4 : sorted.length <= 60 ? 3 : sorted.length <= 100 ? 2 : 1.5;
 
   // X-axis ticks: show all years for small sets, spaced subset for large
   const xTicks = useMemo(() => {
@@ -78,7 +65,12 @@ export function YearlyChart({ data, height = 240, width }: Props) {
   }
 
   const chart = (
-    <ScatterChart width={width} height={height} margin={{ top: 8, right: 20, bottom: 20, left: 4 }}>
+    <ComposedChart
+      data={sorted}
+      width={width}
+      height={height}
+      margin={{ top: 8, right: 40, bottom: 20, left: 4 }}
+    >
       <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
 
       <XAxis
@@ -93,6 +85,16 @@ export function YearlyChart({ data, height = 240, width }: Props) {
       />
 
       <YAxis
+        yAxisId="wdl"
+        tick={{ fontSize: 10, fill: '#9ca3af' }}
+        tickLine={false}
+        axisLine={{ stroke: '#e5e7eb' }}
+        allowDecimals={false}
+      />
+
+      <YAxis
+        yAxisId="total"
+        orientation="right"
         tick={{ fontSize: 10, fill: '#9ca3af' }}
         tickLine={false}
         axisLine={{ stroke: '#e5e7eb' }}
@@ -101,7 +103,10 @@ export function YearlyChart({ data, height = 240, width }: Props) {
 
       <Tooltip
         contentStyle={{ fontSize: 11, borderRadius: 6 }}
-        formatter={(value: number) => [value, undefined]}
+        formatter={(value: number, name: string) => {
+          if (name === 'Total Matches') return [value, 'Total Matches'];
+          return [value, name];
+        }}
         labelFormatter={(year: number) => `Year: ${year}`}
       />
 
@@ -113,16 +118,26 @@ export function YearlyChart({ data, height = 240, width }: Props) {
       />
 
       {SERIES.map((s) => (
-        <Scatter
+        <Bar
           key={s.dataKey}
-          data={sorted}
+          yAxisId="wdl"
           dataKey={s.dataKey}
+          stackId="wdl"
           fill={s.color}
           name={s.label}
-          shape={<DotShape r={dotR} />}
         />
       ))}
-    </ScatterChart>
+
+      <Line
+        yAxisId="total"
+        type="monotone"
+        dataKey="matches_played"
+        name="Total Matches"
+        stroke="#6366f1"
+        strokeWidth={2}
+        dot={false}
+      />
+    </ComposedChart>
   );
 
   return (
