@@ -3,12 +3,13 @@
 import { useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { X, Users, Trophy, Swords, Flag, TrendingUp, Clock } from 'lucide-react';
+import { X, Users, Trophy, Calendar, Swords, Flag, TrendingUp, Clock } from 'lucide-react';
 import { VERSION } from '@/lib/version';
 
 const navItems = [
   { href: '/teams', label: 'Teams', icon: Users },
   { href: '/tournaments', label: 'Tournaments', icon: Trophy },
+  { href: '/years', label: 'Years', icon: Calendar },
   { href: '/head-to-head', label: 'Head to Head', icon: Swords },
   { href: '/elo-ranking', label: 'ELO Rankings', icon: TrendingUp },
   { href: '/decade-leaders', label: 'Decade Leaders', icon: Clock },

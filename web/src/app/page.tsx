@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
-import { Users, Swords, Trophy, Check, RotateCcw, TrendingUp, Clock } from 'lucide-react';
+import { Users, Swords, Trophy, Check, RotateCcw, TrendingUp, Clock, Calendar } from 'lucide-react';
 import { AutocompleteInput } from '@/components/shared/AutocompleteInput';
 import { useDefaults } from '@/lib/useDefaults';
 import { logUserAction, logApiCall } from '@/lib/observability';
@@ -208,6 +208,14 @@ export default function HomePage() {
           <Trophy size={24} className="text-blue-600" />
           <span className="text-sm font-semibold text-gray-700">Tournaments</span>
           <span className="text-xs text-gray-400 text-center">Browse tournaments and seasons</span>
+        </Link>
+        <Link
+          href="/years"
+          className="flex flex-col items-center gap-2 p-5 bg-white rounded-xl border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all"
+        >
+          <Calendar size={24} className="text-blue-600" />
+          <span className="text-sm font-semibold text-gray-700">Years</span>
+          <span className="text-xs text-gray-400 text-center">Per-year statistics and charts</span>
         </Link>
         <Link
           href="/head-to-head"
