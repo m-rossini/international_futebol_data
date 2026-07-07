@@ -31,6 +31,8 @@ from .analysis import (
     city_info,
     countries_list,
     country_info,
+    yearly_overview,
+    yearly_matches,
     _strip_accents,
 )
 from .analysis.enrich import build_shootout_lookup, mark_shootouts
@@ -296,6 +298,25 @@ class QueryEngine:
             return country_info(self._enriched_filtered(filters), name)
         except ValueError as e:
             return {"error": True, "message": str(e)}
+
+    # ------------------------------------------------------------------
+    #  Year queries
+    # ------------------------------------------------------------------
+
+    def years(self, filters: Optional[FilterParams] = None) -> list:
+        """List all years with aggregate stats."""
+        logger.debug("Years overview requested")
+        return yearly_overview(self._filtered_results(filters))
+
+    def year_detail(self, year: int, filters: Optional[FilterParams] = None) -> dict:
+        """Comprehensive stats for a specific year."""
+        logger.debug("Year detail requested: %d", year)
+        overview = yearly_overview(self._filtered_results(filters))
+        match = next((r for r in overview if r["year"] == year), None)
+        if match is None:
+            return {"error": True, "message": f"Year {year} not found in the data."}
+        match["matches_list"] = yearly_matches(year, self._filtered_results(filters))
+        return match
 
     def top_scorers(self, top_n: int = 20) -> dict:
         logger.debug("Top %d scorers requested", top_n)
