@@ -54,3 +54,17 @@ async def goals_per_year_endpoint(
     require_data()
     logger.debug("GET /goals_per_year?sort_by=%s&order=%s", sort_by, order)
     return engine.goals_per_year(sort_by=sort_by, order=order, filters=filters.inner)
+
+
+@router.get("/matchgoals")
+async def match_goalscorers_endpoint(
+    date: str = Query(..., description="Match date (YYYY-MM-DD)"),
+    home_team: str = Query(..., description="Home team name"),
+    away_team: str = Query(..., description="Away team name"),
+):
+    """Goalscorers and shootout info for a specific match."""
+    require_data()
+    logger.debug(
+        "GET /matchgoals?date=%s&home_team=%s&away_team=%s", date, home_team, away_team
+    )
+    return engine.match_goalscorers(date, home_team, away_team)
