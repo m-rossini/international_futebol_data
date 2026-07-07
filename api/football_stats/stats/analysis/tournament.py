@@ -172,9 +172,11 @@ def tournament_info(results: pd.DataFrame, tournament: str, top_n: int = 10) -> 
             per_team[col] = per_team[col].astype(int)
     per_team["goal_diff"] = per_team["goals_for"] - per_team["goals_against"]
     per_team["win_loss_ratio"] = per_team.apply(
-        lambda r: round(r["wins"] / r["losses"], 2)
-        if r["losses"] > 0
-        else (None if r["wins"] > 0 else 0),
+        lambda r: (
+            round(r["wins"] / r["losses"], 2)
+            if r["losses"] > 0
+            else (None if r["wins"] > 0 else 0)
+        ),
         axis=1,
     ).astype(object)
     per_team.loc[per_team["win_loss_ratio"].isna(), "win_loss_ratio"] = None
