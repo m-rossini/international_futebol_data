@@ -83,6 +83,13 @@ services:
     depends_on:
       api:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/"]
+      interval: 3m
+      timeout: 5s
+      retries: 3
+      start_interval: 5s
+      start_period: 30s
     restart: unless-stopped
 
   openobserve:
