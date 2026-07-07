@@ -1,9 +1,10 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import { DataTable, type Column } from '@/components/shared/DataTable';
 import { CountryFlag } from '@/components/shared/CountryFlag';
 import { ShootoutBadge } from '@/components/shared/ShootoutBadge';
+import { MatchDetailRow } from '@/components/shared/MatchDetailRow';
 import type { MatchItem } from '@/lib/types';
 
 // ---------------------------------------------------------------------------
@@ -60,6 +61,8 @@ interface Row extends MatchItem {
 }
 
 export function MatchTable({ matches, highlightTeam, showNeutral = false, heading }: Props) {
+  const [expandedKey, setExpandedKey] = useState<string | null>(null);
+
   const rows: Row[] = useMemo(
     () =>
       matches.map((m, i) => ({
@@ -68,6 +71,10 @@ export function MatchTable({ matches, highlightTeam, showNeutral = false, headin
       })),
     [matches],
   );
+
+  const handleRowClick = useCallback((row: Row) => {
+    setExpandedKey((prev) => (prev === row._key ? null : row._key));
+  }, []);
 
   const hTeam = highlightTeam;
 
@@ -134,6 +141,15 @@ export function MatchTable({ matches, highlightTeam, showNeutral = false, headin
 
   if (matches.length === 0) return null;
 
+  const renderExpanded = (row: Row, colSpan: number) => (
+    <MatchDetailRow
+      date={row.date}
+      homeTeam={row.home_team}
+      awayTeam={row.away_team}
+      colSpan={colSpan}
+    />
+  );
+
   return (
     <>
       {heading && <h2 className="text-lg font-semibold text-gray-800 mb-3">{heading}</h2>}
@@ -142,6 +158,9 @@ export function MatchTable({ matches, highlightTeam, showNeutral = false, headin
         data={rows}
         keyField="_key"
         defaultSort={{ key: 'date', dir: 'desc' }}
+        onRowClick={handleRowClick}
+        expandedKey={expandedKey}
+        renderExpanded={renderExpanded}
       />
     </>
   );
