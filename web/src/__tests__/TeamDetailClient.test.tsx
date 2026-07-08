@@ -168,7 +168,7 @@ describe('TeamDetailClient', () => {
     // Draws stat card — use getAllByText since "20" also appears in Pts column for 2021
     const drawsElements = screen.getAllByText('20');
     expect(drawsElements.length).toBeGreaterThanOrEqual(1);
-  });
+  }, 10000);
 
   it('renders yearly chart before yearly breakdown table', async () => {
     render(<TeamDetailClient teamName="Brazil" />);

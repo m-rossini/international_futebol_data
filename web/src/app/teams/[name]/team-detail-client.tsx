@@ -251,6 +251,7 @@ export function TeamDetailClient({ teamName }: Props) {
                     wins: r.wins,
                     losses: r.losses,
                     draws: r.draws,
+                    matches_played: r.matches_played,
                   }))}
                 />
               </div>
