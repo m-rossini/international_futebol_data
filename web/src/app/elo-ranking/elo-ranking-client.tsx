@@ -83,7 +83,7 @@ interface EloSummary {
 
 function buildQs(params: URLSearchParams): string {
   const q = new URLSearchParams();
-  for (const key of ['tournaments', 'countries', 'date_from', 'date_to']) {
+  for (const key of ['teams', 'tournaments', 'countries', 'date_from', 'date_to']) {
     const v = params.get(key);
     if (v) q.set(key, v);
   }
@@ -314,7 +314,7 @@ export function EloRankingClient() {
   return (
     <div className="space-y-8">
       {/* ---- Filters ---- */}
-      <FilterBar fields={{ teams: false }} injectDefaults={false} />
+      <FilterBar injectDefaults={false} />
 
       {/* ---- Filter Info Banner ---- */}
       {isFiltered && (
