@@ -66,8 +66,7 @@ function reportFID() {
 function reportTTFB() {
   try {
     const nav = performance.getEntriesByType('navigation')[0] as
-      | PerformanceNavigationTiming
-      | undefined;
+      PerformanceNavigationTiming | undefined;
     if (nav) {
       sendMetric('web_vital_ttfb', nav.responseStart - nav.requestStart, 'ms', { metric: 'TTFB' });
     }
@@ -98,8 +97,7 @@ function reportFCP() {
 function reportNavigationTiming() {
   try {
     const nav = performance.getEntriesByType('navigation')[0] as
-      | PerformanceNavigationTiming
-      | undefined;
+      PerformanceNavigationTiming | undefined;
     if (nav) {
       sendMetric(
         'page_load_dom_content',

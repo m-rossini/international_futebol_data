@@ -31,7 +31,7 @@ repos:
         files: ^web/.*\.(ts|tsx|js|jsx|json|css|md|mdx|yaml|yml)$
         exclude: ^web/src/lib/version\.ts$
         additional_dependencies:
-          - prettier@3.5.0
+          - prettier@3.9.1
 
   # ── Generic file hygiene ────────────────────────────────
   - repo: https://github.com/pre-commit/pre-commit-hooks
