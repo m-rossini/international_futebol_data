@@ -1,0 +1,79 @@
+name: Bump Version
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'dashboards/**'
+      - 'scripts/**'
+      - '**.md'
+
+jobs:
+  bump-version:
+    runs-on: ubuntu-latest
+    if: "!contains(github.event.head_commit.message, '[skip-bump]')"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Detect changed components
+        id: changes
+        run: |
+          # Get files changed in the last commit
+          FILES=$(git diff --name-only HEAD~1 HEAD 2>/dev/null || git diff --name-only HEAD~0)
+
+          API_CHANGED=false
+          WEB_CHANGED=false
+
+          if echo "$FILES" | grep -q '^api/'; then
+            API_CHANGED=true
+          fi
+          if echo "$FILES" | grep -q '^web/'; then
+            WEB_CHANGED=true
+          fi
+
+          echo "api_changed=$API_CHANGED" >> $GITHUB_OUTPUT
+          echo "web_changed=$WEB_CHANGED" >> $GITHUB_OUTPUT
+
+          echo "API changed: $API_CHANGED"
+          echo "WEB changed: $WEB_CHANGED"
+
+      - name: Set up Python
+        if: steps.changes.outputs.api_changed == 'true' || steps.changes.outputs.web_changed == 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Bump versions
+        if: steps.changes.outputs.api_changed == 'true' || steps.changes.outputs.web_changed == 'true'
+        run: |
+          API_CHANGED="${{ steps.changes.outputs.api_changed }}"
+          WEB_CHANGED="${{ steps.changes.outputs.web_changed }}"
+
+          if [ "$API_CHANGED" = "true" ] && [ "$WEB_CHANGED" = "true" ]; then
+            TARGET="both"
+          elif [ "$API_CHANGED" = "true" ]; then
+            TARGET="api"
+          else
+            TARGET="web"
+          fi
+
+          echo "Bumping $TARGET version (patch)"
+          python3 scripts/bump_version.py "$TARGET" patch
+
+      - name: Commit version bump
+        if: steps.changes.outputs.api_changed == 'true' || steps.changes.outputs.web_changed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add api/config.json web/src/lib/version.ts
+
+          # Check if there are changes to commit
+          if git diff --cached --quiet; then
+            echo "No version changes to commit"
+          else
+            git commit -m "chore: bump version [skip-bump]"
+            git push
+          fi

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { X, Users, Trophy, Calendar, Swords, Flag, TrendingUp, Clock } from 'lucide-react';
@@ -23,6 +23,15 @@ interface Props {
 
 export function Sidebar({ isOpen, onClose }: Props) {
   const pathname = usePathname();
+  const [apiVersion, setApiVersion] = useState<string | null>(null);
+
+  // Fetch API version on mount
+  useEffect(() => {
+    fetch('/api/proxy/version')
+      .then((r) => r.json())
+      .then((data) => setApiVersion(data.version))
+      .catch(() => setApiVersion('—'));
+  }, []);
 
   // Close on Escape key
   useEffect(() => {
@@ -101,7 +110,9 @@ export function Sidebar({ isOpen, onClose }: Props) {
 
         <div className="px-4 py-3 border-t border-gray-200 text-[11px] text-gray-400 leading-relaxed">
           <p>&copy; Marcos Rossini</p>
-          <p>onegoodarea &middot; v{VERSION}</p>
+          <p>
+            onegoodarea &middot; API v{apiVersion ?? '...'} &middot; WEB v{VERSION}
+          </p>
         </div>
       </aside>
     </>
