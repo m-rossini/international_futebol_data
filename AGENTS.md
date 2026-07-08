@@ -150,7 +150,7 @@ Do not:
 - Never Fix Tests by Changing production code, ALWAYS give the options and I decide which one to take
 - Never implement without asking me before
 - NEVER DOWNLOAD SOFTWARE
-- NEVER PUSH TO GIT, EVEN WHEN I ASK. NEVER.
+- NEVER PUSH TO VPS, EVEN WHEN I ASK. NEVER.
 - NEVER ACCESS FILES OUTSIDE THE BOUNDARIES OF CURRENT DIRECTORY.
 - NEVER DELETE FILES
 
@@ -159,5 +159,48 @@ Prefer minimal, targeted changes.
 ## Implementation Rules
 
 - You never touch MAIN branch
-- You checjk the branch you are in and make a new one for that task in hand
+- You check the branch you are in and make a new one for that task in hand
 - You create small commits for every stepp in the plan, the flow is execute, test, commit when done, next step, repeat
+- I work with worktrees, therefore:
+  - Update `main`
+
+  ```bash
+  cd ~/projetos/international_futebol_data
+
+  git checkout main
+  git fetch origin
+  git reset --hard origin/main
+  ```
+
+  - Create a feature worktree
+
+  ```bash
+  git worktree add \
+  ~/projetos/worktrees/international_futebol_data/<feature> \
+  -b <feature>
+  ```
+
+  - Start working
+
+  ```bash
+  cd ~/projetos/worktrees/international_futebol_data/<feature>
+  ```
+
+    - Launch the AI agent.
+    - Work only in this worktree.
+    - Commit whenever a logical unit is complete.
+
+    ```bash
+    git add .
+    git commit -m "Describe change"
+    ```
+
+  - Open a Pull Request from `<feature>` to `main`.
+
+- Rules
+
+  - One feature = one branch = one worktree = one AI agent = one Pull Request.
+  - Always create a worktree from an up-to-date `main`.
+  - Never merge or rebase inside a feature worktree.
+  - Never commit to `main`.
+  - Delete the worktree after the feature is merged.
