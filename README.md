@@ -228,6 +228,60 @@ Filter semantics: **OR** within each parameter, **AND** across parameters — e.
 └── scripts/                  Utility scripts (dashboard import, etc.)
 ```
 
+## Versioning
+
+API and WEB have independent version numbers since they can be deployed separately.
+
+| Component | Version Source | Format |
+|-----------|---------------|--------|
+| API | `api/config.json` | `MAJOR.MINOR.PATCH` |
+| WEB | `web/src/lib/version.ts` | `MAJOR.MINOR.PATCH` |
+
+The sidebar displays both versions: `API v1.0.6 · WEB v1.2.3`
+
+### Manual Version Bumps
+
+Use `make` targets to bump versions manually:
+
+```bash
+# Bump API only
+make bump-api-patch    # 1.0.6 → 1.0.7
+make bump-api-minor    # 1.0.6 → 1.1.0
+make bump-api-major    # 1.0.6 → 2.0.0
+
+# Bump WEB only
+make bump-web-patch    # 1.0.6 → 1.0.7
+make bump-web-minor    # 1.0.6 → 1.1.0
+make bump-web-major    # 1.0.6 → 2.0.0
+
+# Bump both together
+make bump-both-patch   # Both: 1.0.6 → 1.0.7
+make bump-both-minor   # Both: 1.0.6 → 1.1.0
+make bump-both-major   # Both: 1.0.6 → 2.0.0
+```
+
+### Automatic Version Bumps
+
+A GitHub Actions workflow (`.github/workflows/bump-version.yml`) automatically bumps the **patch** version on PR merge based on which files changed:
+
+- Changes in `api/` → API version bumps
+- Changes in `web/` → WEB version bumps
+- Changes in both → Both versions bump
+
+The workflow commits directly to `main` with the message `chore: bump version [skip-bump]`.
+
+**Skip auto-bump:** Add `[skip-bump]` to the PR title to prevent automatic version bumping.
+
+### Version Files
+
+| File | Purpose |
+|------|---------|
+| `api/config.json` | API version source (read at runtime by `/version` endpoint) |
+| `web/src/lib/version.ts` | WEB version (build-time constant displayed in sidebar) |
+| `scripts/bump_version.py` | Bump script (supports `api`, `web`, `both` targets) |
+
+---
+
 ## Development
 
 See individual READMEs for detailed development workflows:
