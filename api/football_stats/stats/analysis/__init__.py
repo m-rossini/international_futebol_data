@@ -60,6 +60,11 @@ from .country import (
     country_info,
 )
 
+from .years import (
+    yearly_overview,
+    yearly_matches,
+)
+
 from .winner import (
     biggest_wins_in_df,
     biggest_single_win,
@@ -106,6 +111,8 @@ __all__ = [
     "biggest_single_win",
     "biggest_wins",
     "_strip_accents",
+    "yearly_overview",
+    "yearly_matches",
 ]
 
 # ---------------------------------------------------------------------------

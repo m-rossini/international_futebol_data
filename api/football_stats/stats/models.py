@@ -547,6 +547,27 @@ class CountryInfoResponse(BaseModel):
 
 
 # ===========================================================================
+#  GET /years  &  GET /years/{year}
+# ===========================================================================
+
+
+class YearOverviewItem(BaseModel):
+    year: int
+    matches: int
+    goals: int
+    avg_goals: float
+    countries: int
+    cities: int
+    largest_margin: int
+    most_goals_match: int
+    goals_histogram: dict[int, int]
+
+
+class YearDetailResponse(YearOverviewItem):
+    matches_list: list[dict]
+
+
+# ===========================================================================
 #  GET /health
 # ===========================================================================
 

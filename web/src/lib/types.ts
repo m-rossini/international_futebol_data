@@ -229,3 +229,19 @@ export interface HeadToHeadResult {
   message?: string;
   [key: string]: unknown;
 }
+
+export interface YearOverviewItem {
+  year: number;
+  matches: number;
+  goals: number;
+  avg_goals: number;
+  countries: number;
+  cities: number;
+  largest_margin: number;
+  most_goals_match: number;
+  goals_histogram: Record<string, number>;
+}
+
+export interface YearDetail extends YearOverviewItem {
+  matches_list: MatchItem[];
+}
