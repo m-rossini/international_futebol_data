@@ -124,7 +124,12 @@ export function FilterBar({ fields, injectDefaults = true, children }: Props) {
     <div className="flex flex-wrap items-end gap-3 mb-4">
       {cfg.teams && (
         <div className="flex flex-col gap-1 min-w-0 max-w-[300px] flex-1">
-          <label className="text-xs font-medium text-gray-500">Teams</label>
+          <label
+            className="text-xs font-medium text-gray-500"
+            title="Type to search. Click to select multiple teams."
+          >
+            Teams
+          </label>
           <AutocompleteInput
             options={options.teams}
             selected={teams}
@@ -135,7 +140,12 @@ export function FilterBar({ fields, injectDefaults = true, children }: Props) {
       )}
       {cfg.tournaments && (
         <div className="flex flex-col gap-1 min-w-0 max-w-[300px] flex-1">
-          <label className="text-xs font-medium text-gray-500">Tournaments</label>
+          <label
+            className="text-xs font-medium text-gray-500"
+            title="Type to search. Click to select multiple tournaments."
+          >
+            Tournaments
+          </label>
           <AutocompleteInput
             options={options.tournaments}
             selected={tournaments}
@@ -146,7 +156,12 @@ export function FilterBar({ fields, injectDefaults = true, children }: Props) {
       )}
       {cfg.countries && (
         <div className="flex flex-col gap-1 min-w-0 max-w-[300px] flex-1">
-          <label className="text-xs font-medium text-gray-500">Countries</label>
+          <label
+            className="text-xs font-medium text-gray-500"
+            title="Type to search. Click to select multiple countries."
+          >
+            Countries
+          </label>
           <AutocompleteInput
             options={options.countries}
             selected={countries}

@@ -11,7 +11,7 @@ const API = '/api/proxy';
 
 function buildQs(params: URLSearchParams): string {
   const q = new URLSearchParams();
-  for (const key of ['tournaments', 'countries', 'date_from', 'date_to']) {
+  for (const key of ['teams', 'tournaments', 'countries', 'date_from', 'date_to']) {
     const v = params.get(key);
     if (v) q.set(key, v);
   }
@@ -122,7 +122,7 @@ export function YearsClient() {
   return (
     <div className="p-4 md:p-8">
       <h1 className="text-2xl font-bold text-gray-800 mb-4">Years</h1>
-      <FilterBar fields={{ teams: false }} injectDefaults={false} />
+      <FilterBar injectDefaults={false} />
       {loading ? (
         <p className="text-sm text-gray-400">Loading...</p>
       ) : error ? (
