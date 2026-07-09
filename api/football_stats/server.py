@@ -20,7 +20,7 @@ from fastapi import FastAPI, Request
 
 from football_stats.stats.log import logger
 
-from football_stats.routers.dependencies import state
+from football_stats.routers.dependencies import state, engine
 from football_stats.routers.meta import router as meta_router
 from football_stats.routers.teams import router as teams_router
 from football_stats.routers.matches import router as matches_router
@@ -29,6 +29,14 @@ from football_stats.routers.tournaments import router as tournaments_router
 from football_stats.routers.cities import router as cities_router
 from football_stats.routers.countries import router as countries_router
 from football_stats.routers.years import router as years_router
+from football_stats.routers.conversation import (
+    router as conversation_router,
+    set_conversation_service,
+)
+from football_stats.llm.config import LLMConfig
+from football_stats.llm.chain import ProviderChain
+from football_stats.llm.executor import ToolExecutor
+from football_stats.llm.service import ConversationService
 
 
 # ---------------------------------------------------------------------------
@@ -46,6 +54,21 @@ async def lifespan(application: FastAPI):
         info["former_names_loaded"],
         info["elo_ratings_loaded"],
     )
+
+    # Initialize LLM services
+    llm_config = LLMConfig.from_file()
+    if llm_config.primary is not None or llm_config.fallback is not None:
+        chain = ProviderChain(llm_config)
+        executor = ToolExecutor(engine)
+        conversation_service = ConversationService(chain, executor, llm_config)
+        set_conversation_service(conversation_service)
+        logger.info(
+            "LLM conversation service ready (provider=%s)",
+            chain.active_provider_name,
+        )
+    else:
+        logger.info("LLM conversation service disabled (no providers configured)")
+
     yield
     logger.info("Server shutting down")
 
@@ -90,6 +113,7 @@ app.include_router(tournaments_router)  # /tournaments, /tournament/{name}
 app.include_router(cities_router)  # /cities, /city/{name}
 app.include_router(countries_router)  # /countries, /country/{name}
 app.include_router(years_router)  # /years, /years/{year}
+app.include_router(conversation_router)  # /conversation
 
 
 # ---------------------------------------------------------------------------
