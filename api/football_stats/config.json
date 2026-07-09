@@ -36,5 +36,27 @@
       "enabled": true,
       "cap": 2.0
     }
+  },
+  "llm": {
+    "_comment": "LLM conversation feature. Set primary/fallback to null to disable.",
+    "primary": {
+      "provider": "deepseek",
+      "model": "deepseek-v4-flash",
+      "api_key_env": "DEEPSEEK_API_KEY",
+      "base_url": null,
+      "max_tokens": 4096,
+      "temperature": 0.7
+    },
+    "fallback": {
+      "provider": "ollama",
+      "model": "llama3.1",
+      "api_key_env": null,
+      "base_url": "http://localhost:11434/v1",
+      "max_tokens": 4096,
+      "temperature": 0.7
+    },
+    "system_prompt": "You are a football data analyst assistant with access to 150+ years of international football match data. You can answer questions about teams, tournaments, matches, goalscorers, head-to-head records, and more.\n\nRules:\n- Base your answers ONLY on data returned by the tools\n- If the data doesn't contain the answer, say so clearly\n- Be concise and factual\n- Use specific numbers and statistics when available\n- When comparing teams, use head-to-head data\n- For historical context, use the year-by-year breakdown",
+    "max_tool_iterations": 5,
+    "conversation_ttl_seconds": 3600
   }
 }

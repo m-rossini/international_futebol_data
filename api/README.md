@@ -96,6 +96,117 @@ Most list endpoints accept optional query parameters:
 
 ---
 
+## LLM Conversation
+
+The API supports natural language queries via an LLM-powered `/conversation` endpoint. Users can ask questions in plain English and receive data-driven answers based on the loaded football statistics.
+
+### Configuration
+
+LLM settings are in `football_stats/config.json` under the `llm` key:
+
+```json
+{
+  "llm": {
+    "primary": {
+      "provider": "deepseek",
+      "model": "deepseek-v4-flash",
+      "api_key_env": "DEEPSEEK_API_KEY",
+      "base_url": null,
+      "max_tokens": 4096,
+      "temperature": 0.7
+    },
+    "fallback": {
+      "provider": "ollama",
+      "model": "llama3.1",
+      "api_key_env": null,
+      "base_url": "http://localhost:11434/v1",
+      "max_tokens": 4096,
+      "temperature": 0.7
+    },
+    "system_prompt": "You are a football data analyst...",
+    "max_tool_iterations": 5,
+    "conversation_ttl_seconds": 3600
+  }
+}
+```
+
+#### Providers
+
+| Provider | SDK | API Key Env Var | Default Base URL |
+|----------|-----|-----------------|------------------|
+| `deepseek` | openai | `DEEPSEEK_API_KEY` | `https://api.deepseek.com` |
+| `anthropic` | anthropic | `ANTHROPIC_API_KEY` | N/A |
+| `ollama` | openai | None (local) | `http://localhost:11434/v1` |
+| `openai` | openai | `OPENAI_API_KEY` | `https://api.openai.com` |
+
+#### Fallback Behavior
+
+- If `primary` fails (timeout, API error, rate limit), `fallback` is tried automatically
+- Set either to `null` to disable it
+- If both are `null`, the `/conversation` endpoint returns 503
+
+### Environment Variables
+
+Set API keys before starting the server:
+
+```bash
+# Deepseek (primary by default)
+export DEEPSEEK_API_KEY="your-key-here"
+
+# Anthropic (if configured)
+export ANTHROPIC_API_KEY="your-key-here"
+
+# OpenAI (if configured)
+export OPENAI_API_KEY="your-key-here"
+
+# Ollama runs locally, no key needed
+```
+
+### Endpoint
+
+```
+POST /conversation
+```
+
+**Request:**
+```json
+{
+  "query": "How many goals has Brazil scored in World Cup history?",
+  "conversation_id": null
+}
+```
+
+**Response:**
+```json
+{
+  "answer": "Brazil has scored 237 goals in FIFA World Cup history across 109 matches...",
+  "conversation_id": "a1b2c3d4e5f6"
+}
+```
+
+**Follow-up (same conversation):**
+```json
+{
+  "query": "What about Argentina?",
+  "conversation_id": "a1b2c3d4e5f6"
+}
+```
+
+### Disabling the Feature
+
+Set both `primary` and `fallback` to `null` in config.json:
+
+```json
+{
+  "llm": {
+    "primary": null,
+    "fallback": null
+  }
+}
+```
+
+---
+
 ## Development
 
 ### Project Structure
@@ -111,7 +222,15 @@ api/
 │   │   ├── tournaments.py /tournaments
 │   │   ├── countries.py   /countries
 │   │   ├── cities.py      /cities
+│   │   ├── conversation.py /conversation (LLM)
 │   │   └── dependencies.py Shared state & query helpers
+│   ├── llm/               LLM conversation feature
+│   │   ├── config.py      Configuration dataclasses
+│   │   ├── providers.py   LLM provider implementations
+│   │   ├── tools.py       Tool definitions for function calling
+│   │   ├── executor.py    Tool execution via QueryEngine
+│   │   ├── chain.py       Primary/fallback provider chain
+│   │   └── service.py     Conversation service & history
 │   └── stats/             Query engine & data loading
 ├── tests/                 Pytest test suite
 ├── data/                  Dataset directory (symlink or copy)
