@@ -6,6 +6,7 @@ export const metadata: Metadata = {
   description: 'Release details and changelog.',
 };
 
-export default function ReleasePage({ params }: { params: Promise<{ version: string }> }) {
-  return <ReleaseDetailClient version={params.version} />;
+export default async function ReleasePage({ params }: { params: Promise<{ version: string }> }) {
+  const { version } = await params;
+  return <ReleaseDetailClient version={version} />;
 }

@@ -15,7 +15,7 @@ interface Release {
 }
 
 interface Props {
-  version: Promise<string>;
+  version: string;
 }
 
 function parseReleaseNotes(body: string) {
@@ -54,8 +54,7 @@ export function ReleaseDetailClient({ version }: Props) {
     let cancelled = false;
     async function load() {
       try {
-        const v = await version;
-        const res = await fetch(`/api/proxy/releases/${v}`);
+        const res = await fetch(`/api/proxy/releases/${version}`);
         if (!res.ok) {
           if (!cancelled) setError('Release not found');
           return;
