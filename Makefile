@@ -32,6 +32,9 @@ DOMAIN         ?= orbisplace.co.uk
         up down test test-cov install-hooks \
         vps-build vps-save vps-publish vps-release vps-deploy vps-provision \
         certbot-init certbot-renew \
+        bump-api-patch bump-api-minor bump-api-major \
+        bump-web-patch bump-web-minor bump-web-major \
+        bump-both-patch bump-both-minor bump-both-major \
         bump-patch bump-minor bump-major commit
 
 # ═══════════════════════════════════════════════════════════
@@ -79,10 +82,18 @@ help:
 	@echo "    make vps-provision  Full pipeline: build → save → publish → release → deploy"
 	@echo "    make certbot-init   Generate initial SSL certs (first time only)"
 	@echo "    make certbot-renew  Force cert renewal on VPS"
-	@echo "    make bump-patch     Bump patch version (1.0.1 → 1.0.2)"
-	@echo "    make bump-minor     Bump minor version (1.0.1 → 1.1.0)"
-	@echo "    make bump-major     Bump major version (1.0.1 → 2.0.0)"
-	@echo "    make commit MSG='..' Bump patch + commit (use MSG='...' for message)"
+	@echo ""
+	@echo "  VERSION BUMPING"
+	@echo "    make bump-api-patch    Bump API patch (1.0.6 → 1.0.7)"
+	@echo "    make bump-api-minor    Bump API minor (1.0.6 → 1.1.0)"
+	@echo "    make bump-api-major    Bump API major (1.0.6 → 2.0.0)"
+	@echo "    make bump-web-patch    Bump WEB patch (1.0.6 → 1.0.7)"
+	@echo "    make bump-web-minor    Bump WEB minor (1.0.6 → 1.1.0)"
+	@echo "    make bump-web-major    Bump WEB major (1.0.6 → 2.0.0)"
+	@echo "    make bump-both-patch   Bump both patch"
+	@echo "    make bump-both-minor   Bump both minor"
+	@echo "    make bump-both-major   Bump both major"
+	@echo "    make commit MSG='..'   Bump both patch + commit"
 	@echo ""
 
 # ═══════════════════════════════════════════════════════════
