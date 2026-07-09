@@ -1,15 +1,25 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { getAllMappedNames } from '@/lib/countryFlags';
 import { CountryFlag } from '@/components/shared/CountryFlag';
 import { logApiCall } from '@/lib/observability';
 
 const API = '/api/proxy';
 
+interface Release {
+  version: string;
+  tag: string;
+  name: string;
+  published_at: string;
+  body: string;
+}
+
 export function FlagReportClient() {
   const [teams, setTeams] = useState<string[]>([]);
   const [countries, setCountries] = useState<string[]>([]);
+  const [releases, setReleases] = useState<Release[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -19,14 +29,21 @@ export function FlagReportClient() {
     async function load() {
       const t0 = performance.now();
       try {
-        const res = await fetch(`${API}/filters`);
+        const [filtersRes, releasesRes] = await Promise.all([
+          fetch(`${API}/filters`),
+          fetch(`${API}/releases`),
+        ]);
         const duration = performance.now() - t0;
-        logApiCall('/filters', duration, res.status, { page: 'flag_report' });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
+        logApiCall('/filters', duration, filtersRes.status, { page: 'flag_report' });
+        if (!filtersRes.ok) throw new Error(`HTTP ${filtersRes.status}`);
+        const filtersData = await filtersRes.json();
+        if (releasesRes.ok) {
+          const releasesData = await releasesRes.json();
+          if (!cancelled) setReleases(releasesData);
+        }
         if (!cancelled) {
-          setTeams(data.teams || []);
-          setCountries(data.countries || []);
+          setTeams(filtersData.teams || []);
+          setCountries(filtersData.countries || []);
           setLoading(false);
         }
       } catch (err) {
@@ -189,6 +206,51 @@ export function FlagReportClient() {
             </table>
           </div>
         </div>
+      </div>
+
+      {/* Releases */}
+      <div className="border border-gray-200 rounded-lg bg-white p-6">
+        <h2 className="text-lg font-semibold text-gray-800 mb-2">Releases</h2>
+        <p className="text-sm text-gray-500 mb-4">
+          Version history and changelogs for the project.
+        </p>
+        {releases.length === 0 ? (
+          <p className="text-sm text-gray-400">
+            No releases yet. Releases are created automatically when versions are bumped.
+          </p>
+        ) : (
+          <div className="divide-y divide-gray-100">
+            {releases.map((release) => (
+              <Link
+                key={release.tag}
+                href={`/releases/${release.version}`}
+                className="block py-3 hover:bg-gray-50 -mx-2 px-2 rounded transition-colors"
+              >
+                <div className="flex items-baseline gap-3">
+                  <span className="font-medium text-gray-800">{release.tag}</span>
+                  <span className="text-xs text-gray-400">
+                    {release.published_at
+                      ? new Date(release.published_at).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                        })
+                      : ''}
+                  </span>
+                </div>
+                {release.body && (
+                  <p className="text-sm text-gray-500 mt-1 line-clamp-1">
+                    {release.body
+                      .split('\n')
+                      .filter((l) => l.startsWith('- '))
+                      .slice(0, 3)
+                      .join(' · ')}
+                  </p>
+                )}
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Flag Coverage Report */}
