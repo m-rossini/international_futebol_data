@@ -1,0 +1,126 @@
+name: Create Release
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'dashboards/**'
+      - 'scripts/**'
+      - '**.md'
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    if: contains(github.event.head_commit.message, 'chore:') && contains(github.event.head_commit.message, 'bump version')
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get version info
+        id: version
+        run: |
+          # Get current and previous versions
+          CURRENT_API=$(python3 -c "import json; print(json.load(open('api/config.json'))['version'])")
+          CURRENT_WEB=$(grep -oP "VERSION\s*=\s*['\"]([^'\"]+)['\"]" web/src/lib/version.ts | grep -oP "['\"]([^'\"]+)['\"]" | tr -d "'\"")
+
+          # Get previous commit's versions
+          PREV_API=$(git show HEAD~1:api/config.json 2>/dev/null | python3 -c "import json,sys; print(json.load(sys.stdin)['version'])" 2>/dev/null || echo "0.0.0")
+          PREV_WEB=$(git show HEAD~1:web/src/lib/version.ts 2>/dev/null | grep -oP "VERSION\s*=\s*['\"]([^'\"]+)['\"]" | grep -oP "['\"]([^'\"]+)['\"]" | tr -d "'\"" 2>/dev/null || echo "0.0.0")
+
+          echo "current_api=$CURRENT_API" >> $GITHUB_OUTPUT
+          echo "current_web=$CURRENT_WEB" >> $GITHUB_OUTPUT
+          echo "prev_api=$PREV_API" >> $GITHUB_OUTPUT
+          echo "prev_web=$PREV_WEB" >> $GITHUB_OUTPUT
+
+          # Determine which component changed
+          API_CHANGED=false
+          WEB_CHANGED=false
+          if [ "$CURRENT_API" != "$PREV_API" ]; then
+            API_CHANGED=true
+          fi
+          if [ "$CURRENT_WEB" != "$PREV_WEB" ]; then
+            WEB_CHANGED=true
+          fi
+
+          echo "api_changed=$API_CHANGED" >> $GITHUB_OUTPUT
+          echo "web_changed=$WEB_CHANGED" >> $GITHUB_OUTPUT
+
+          # Use the higher version for the tag
+          if [ "$API_CHANGED" = "true" ] && [ "$WEB_CHANGED" = "true" ]; then
+            VERSION=$CURRENT_API
+          elif [ "$API_CHANGED" = "true" ]; then
+            VERSION=$CURRENT_API
+          else
+            VERSION=$CURRENT_WEB
+          fi
+
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "tag=v$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Generate release notes
+        id: notes
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+
+          # Get previous tag
+          PREV_TAG=$(git tag -l 'v*' --sort=-version:refname | head -1)
+
+          if [ -z "$PREV_TAG" ]; then
+            # First release - get all commits
+            COMMITS=$(git log --pretty=format:"- %s (%h)" --no-merges)
+          else
+            # Get commits since last tag
+            COMMITS=$(git log --pretty=format:"- %s (%h)" --no-merges "$PREV_TAG"..HEAD)
+          fi
+
+          # Categorize commits
+          FEATURES=$(echo "$COMMITS" | grep -E "^- feat:" || true)
+          FIXES=$(echo "$COMMITS" | grep -E "^- fix:" || true)
+          CHORES=$(echo "$COMMITS" | grep -E "^- chore:" || true)
+          DOCS=$(echo "$COMMITS" | grep -E "^- docs:" || true)
+          REFACTORS=$(echo "$COMMITS" | grep -E "^- refactor:" || true)
+          OTHER=$(echo "$COMMITS" | grep -vE "^- (feat|fix|chore|docs|refactor):" || true)
+
+          # Build release notes
+          NOTES="## What's Changed\n\n"
+          NOTES+="**Version:** ${{ steps.version.outputs.version }}\n"
+          NOTES+="**API:** ${{ steps.version.outputs.current_api }}\n"
+          NOTES+="**WEB:** ${{ steps.version.outputs.current_web }}\n\n"
+
+          if [ -n "$FEATURES" ]; then
+            NOTES+="### 🚀 Features\n$FEATURES\n\n"
+          fi
+          if [ -n "$FIXES" ]; then
+            NOTES+="### 🐛 Bug Fixes\n$FIXES\n\n"
+          fi
+          if [ -n "$REFACTORS" ]; then
+            NOTES+="### ♻️ Refactors\n$REFACTORS\n\n"
+          fi
+          if [ -n "$DOCS" ]; then
+            NOTES+="### 📚 Documentation\n$DOCS\n\n"
+          fi
+          if [ -n "$CHORES" ]; then
+            NOTES+="### 📦 Chores\n$CHORES\n\n"
+          fi
+          if [ -n "$OTHER" ]; then
+            NOTES+="### 📝 Other Changes\n$OTHER\n\n"
+          fi
+
+          NOTES+="**Full Changelog**: https://github.com/${{ github.repository }}/compare/${PREV_TAG:-$(git rev-list --max-parents=0 HEAD | head -1)}...${{ steps.version.outputs.tag }}"
+
+          # Write to file for the release
+          echo -e "$NOTES" > /tmp/release-notes.md
+          cat /tmp/release-notes.md
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: Release ${{ steps.version.outputs.tag }}
+          body_path: /tmp/release-notes.md
+          draft: false
+          prerelease: false
