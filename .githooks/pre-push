@@ -31,6 +31,6 @@ if ! docker image inspect futebol-web:dev >/dev/null 2>&1; then
   make web-build
 fi
 
-make test 2>&1
+make local-test 2>&1
 
 echo "${GREEN}=== Pre-push: all tests passed ===${NC}"
