@@ -345,13 +345,11 @@ dev-release:
 dev-deploy:
 	@test -n "$(DEV_HOST)" || (echo "ERROR: DEV_HOST is not set." && exit 1)
 	@echo "Deploying on $(DEV_HOST)…"
-	@echo "  1/4 Stopping old containers…"
+	@echo "  1/3 Stopping old containers…"
 	ssh $(DEV_HOST) "cd $(DEV_DEPLOY_DIR) && $(DEV_COMPOSE) stop api mcp web openobserve 2>/dev/null || true"
-	@echo "  2/4 Loading new images…"
-	ssh $(DEV_HOST) "$(DEV_DOCKER) load < $(DEV_DEPLOY_DIR)/tmp/api.tar && $(DEV_DOCKER) load < $(DEV_DEPLOY_DIR)/tmp/web.tar"
-	@echo "  3/4 Decompressing data…"
+	@echo "  2/3 Decompressing data…"
 	ssh $(DEV_HOST) "cd $(DEV_DEPLOY_DIR) && mkdir -p data && tar xzf tmp/data.tar.gz -C data/ 2>/dev/null || true"
-	@echo "  4/4 Starting containers…"
+	@echo "  3/3 Starting containers…"
 	ssh $(DEV_HOST) "cd $(DEV_DEPLOY_DIR) && $(DEV_COMPOSE) up -d --no-deps --force-recreate nginx api mcp web openobserve"
 	@echo "  Verifying…"
 	ssh $(DEV_HOST) "cd $(DEV_DEPLOY_DIR) && $(DEV_COMPOSE) ps"
@@ -392,15 +390,13 @@ prod-release:
 prod-deploy:
 	@test -n "$(PROD_HOST)" || (echo "ERROR: PROD_HOST is not set." && exit 1)
 	@echo "Deploying on $(PROD_HOST)…"
-	@echo "  1/5 Stopping old containers…"
+	@echo "  1/4 Stopping old containers…"
 	ssh $(PROD_HOST) "cd $(PROD_DEPLOY_DIR) && $(PROD_COMPOSE) stop api mcp web openobserve 2>/dev/null || true"
-	@echo "  2/5 Loading new images…"
-	ssh $(PROD_HOST) "$(PROD_DOCKER) load < $(PROD_DEPLOY_DIR)/tmp/api.tar && $(PROD_DOCKER) load < $(PROD_DEPLOY_DIR)/tmp/web.tar"
-	@echo "  3/5 Decompressing data…"
+	@echo "  2/4 Decompressing data…"
 	ssh $(PROD_HOST) "cd $(PROD_DEPLOY_DIR) && mkdir -p data && tar xzf tmp/data.tar.gz -C data/ 2>/dev/null || true"
-	@echo "  4/5 Starting containers…"
+	@echo "  3/4 Starting containers…"
 	ssh $(PROD_HOST) "cd $(PROD_DEPLOY_DIR) && $(PROD_COMPOSE) up -d --no-deps --force-recreate nginx api mcp web openobserve"
-	@echo "  5/5 Restoring HTTPS config if certs exist…"
+	@echo "  4/4 Restoring HTTPS config if certs exist…"
 	ssh $(PROD_HOST) "test -f $(PROD_DEPLOY_DIR)/nginx/conf.d/futebol.conf && $(PROD_DOCKER) exec futebol-nginx test -f /etc/letsencrypt/live/futebol.$(DOMAIN)/fullchain.pem && cp $(PROD_DEPLOY_DIR)/nginx/conf.d/futebol.conf $(PROD_DEPLOY_DIR)/nginx/conf.d/futebol-active.conf && $(PROD_DOCKER) exec futebol-nginx nginx -s reload" || true
 	@echo "  Verifying…"
 	ssh $(PROD_HOST) "cd $(PROD_DEPLOY_DIR) && $(PROD_COMPOSE) ps"
