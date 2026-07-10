@@ -10,6 +10,7 @@ from typing import Optional
 from fastapi import Depends, HTTPException, Query, Request
 
 from football_stats.llm.service import ConversationService
+from football_stats.stats.analysis.ranking import STAT_LABELS, VALID_STATS
 from football_stats.stats.engine import QueryEngine
 from football_stats.stats.filters import FilterParams, build_filters
 from football_stats.stats.state import DataState
@@ -113,34 +114,14 @@ class FilterParamsDep:
 # ---------------------------------------------------------------------------
 
 
-class MostStat(str, Enum):
-    """Stat options for the /most/{stat} endpoint."""
+# MostStat is derived from the single stat registry in
+# ``football_stats.stats.analysis.ranking`` so the API surface and the
+# engine's validation can never drift apart.
+MostStat = Enum(
+    "MostStat",
+    {s: s for s in sorted(VALID_STATS)},
+    type=str,
+)
 
-    wins = "wins"
-    losses = "losses"
-    draws = "draws"
-    win_rate = "win_rate"
-    loss_rate = "loss_rate"
-    goals_pro = "goals_pro"
-    goals_against = "goals_against"
-    matches = "matches"
-    country = "country"
-    countries = "countries"
-    city = "city"
-    cities = "cities"
-
-
-_MOST_VALID_STATS: dict[str, str] = {
-    "wins": "Most wins",
-    "losses": "Most losses",
-    "draws": "Most draws",
-    "win_rate": "Highest win rate (min 10 matches)",
-    "loss_rate": "Highest loss rate (min 10 matches)",
-    "goals_pro": "Most goals scored (goals for)",
-    "goals_against": "Most goals conceded",
-    "matches": "Most matches played",
-    "country": "Most matches hosted by a country",
-    "countries": "Alias for 'country'",
-    "city": "Most matches hosted by a city",
-    "cities": "Alias for 'city'",
-}
+# Human-readable labels for the valid stats (single source in ranking.py).
+_MOST_VALID_STATS = STAT_LABELS

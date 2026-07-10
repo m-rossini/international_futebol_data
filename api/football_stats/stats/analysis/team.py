@@ -3,19 +3,9 @@
 import pandas as pd
 
 from .advanced_stats import series_stats
+from .ranking import TEAM_STAT_COLUMNS
 
 _MIN_MATCHES_FOR_RATES = 10
-
-_MOST_TEAM_STATS = {
-    "wins": "wins",
-    "losses": "losses",
-    "draws": "draws",
-    "win_rate": "win_rate",
-    "loss_rate": "loss_rate",
-    "goals_pro": "goals_for",
-    "goals_against": "goals_against",
-    "matches": "matches_played",
-}
 
 
 def team_yearly(results: pd.DataFrame, team: str) -> list[dict]:
@@ -491,11 +481,11 @@ def most_teams(results: pd.DataFrame, stat: str, top_n: int = 20) -> list:
     if results.empty:
         return []
 
-    if stat not in _MOST_TEAM_STATS:
-        valid = ", ".join(_MOST_TEAM_STATS)
+    if stat not in TEAM_STAT_COLUMNS:
+        valid = ", ".join(TEAM_STAT_COLUMNS)
         raise ValueError(f"Unknown stat '{stat}'. Valid: {valid}")
 
-    col = _MOST_TEAM_STATS[stat]
+    col = TEAM_STAT_COLUMNS[stat]
     agg = _team_aggregate(results)
 
     if agg.empty:

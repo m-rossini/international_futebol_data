@@ -13,6 +13,7 @@ from .engine_helpers import (
     merge_elo,
     resolve_team_name,
 )
+from .analysis.ranking import DIMENSION_ALIASES, TEAM_STAT_COLUMNS, VALID_STATS
 from .analysis import (
     biggest_wins,
     top_scorers,
@@ -165,16 +166,20 @@ class QueryEngine:
 
         r = self._filtered_results(filters)
 
-        if stat in ("country", "countries"):
-            return {"stat": stat, "top_n": top_n, "ranking": most_countries(r, top_n)}
-        elif stat in ("city", "cities"):
-            return {"stat": stat, "top_n": top_n, "ranking": most_cities(r, top_n)}
-        else:
-            try:
-                ranking = most_teams(r, stat, top_n)
-            except ValueError as e:
-                return {"error": True, "message": str(e)}
+        if stat in DIMENSION_ALIASES or stat in DIMENSION_ALIASES.values():
+            if stat in ("country", "countries"):
+                ranking = most_countries(r, top_n)
+            else:
+                ranking = most_cities(r, top_n)
             return {"stat": stat, "top_n": top_n, "ranking": ranking}
+
+        if stat not in TEAM_STAT_COLUMNS:
+            valid = ", ".join(sorted(VALID_STATS))
+            return {
+                "error": True,
+                "message": f"Unknown stat '{stat}'. Valid: {valid}",
+            }
+        return {"stat": stat, "top_n": top_n, "ranking": most_teams(r, stat, top_n)}
 
     def tournaments(self, filters: Optional[FilterParams] = None) -> list:
         """List all tournaments with comprehensive aggregate stats."""
