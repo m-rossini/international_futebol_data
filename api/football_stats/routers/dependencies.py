@@ -11,7 +11,7 @@ from fastapi import HTTPException, Query
 
 from football_stats.stats.state import DataState
 from football_stats.stats.engine import QueryEngine
-from football_stats.stats.filters import FilterParams
+from football_stats.stats.filters import FilterParams, build_filters
 
 # ---------------------------------------------------------------------------
 #  Shared state & engine (created once, imported by all routers)
@@ -73,21 +73,10 @@ class FilterParamsDep:
         date_from: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
         date_to: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
     ):
-        def _split(v: Optional[list[str]]) -> Optional[list[str]]:
-            """Normalise: split comma-separated strings into a flat list."""
-            if v is None:
-                return None
-            if isinstance(v, str):
-                v = [v]
-            result: list[str] = []
-            for item in v:
-                result.extend(s.strip() for s in item.split(",") if s.strip())
-            return result or None
-
-        self._inner = FilterParams(
-            teams=_split(teams),
-            tournaments=_split(tournaments),
-            countries=_split(countries),
+        self._inner = build_filters(
+            teams=teams,
+            tournaments=tournaments,
+            countries=countries,
             date_from=date_from,
             date_to=date_to,
         )

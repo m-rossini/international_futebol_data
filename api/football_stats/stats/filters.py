@@ -44,6 +44,50 @@ class FilterParams:
         )
 
 
+def _normalize_list(value: Optional["list[str] | str"]) -> Optional[list[str]]:
+    """Normalize a filter value that may arrive as a comma-separated string,
+    a list of strings, or ``None`` into a flat list of trimmed tokens.
+
+    ``"A,B"`` -> ``["A", "B"]``; ``["A", "B,C"]`` -> ``["A", "B", "C"]``;
+    ``None``/``""`` -> ``None``.
+    """
+    if value is None:
+        return None
+    if isinstance(value, str):
+        items = [value]
+    else:
+        items = list(value)
+    tokens: list[str] = []
+    for item in items:
+        tokens.extend(t.strip() for t in str(item).split(",") if t.strip())
+    return tokens or None
+
+
+def build_filters(
+    *,
+    teams: Optional["list[str] | str"] = None,
+    tournaments: Optional["list[str] | str"] = None,
+    countries: Optional["list[str] | str"] = None,
+    date_from: Optional[str] = None,
+    date_to: Optional[str] = None,
+) -> Optional[FilterParams]:
+    """Single entry point for constructing ``FilterParams`` from raw inputs.
+
+    Accepts both repeated query parameters (``list[str]``) and
+    comma-separated strings (e.g. from the LLM executor / MCP server),
+    normalizing them consistently. Returns ``None`` when no filter is set
+    so callers can keep using ``None`` as the "no filter" sentinel.
+    """
+    params = FilterParams(
+        teams=_normalize_list(teams),
+        tournaments=_normalize_list(tournaments),
+        countries=_normalize_list(countries),
+        date_from=date_from.strip() if date_from else None,
+        date_to=date_to.strip() if date_to else None,
+    )
+    return None if params.is_empty else params
+
+
 def apply_filters(df: pd.DataFrame, filters: Optional[FilterParams]) -> pd.DataFrame:
     """Apply ``filters`` to the results DataFrame.
 
