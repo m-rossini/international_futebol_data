@@ -1,0 +1,16 @@
+services:
+  openobserve:
+    image: openobserve/openobserve:latest
+    container_name: futebol-observe
+    volumes:
+      - oo_data:/data
+    environment:
+      - ZO_ROOT_USER_EMAIL=admin@futebol.local
+      - ZO_ROOT_USER_PASSWORD=Futebol@123
+      - ZO_DATA_DIR=/data
+      - ZO_COMPACT_ENABLED=true
+      - ZO_COMPACT_INTERVAL=60
+    restart: unless-stopped
+
+volumes:
+  oo_data:
