@@ -43,8 +43,8 @@ DOMAIN         ?= orbisplace.co.uk
         web-test web-test-cov \
         local-up local-down local-test local-test-cov install-hooks \
         build save \
-        dev-build dev-save dev-publish dev-release dev-deploy dev-provision \
-        prod-build prod-save prod-publish prod-release prod-deploy prod-provision \
+        dev-build dev-save dev-publish dev-release dev-deploy dev-down dev-provision \
+        prod-build prod-save prod-publish prod-release prod-deploy prod-down prod-provision \
         prod-certbot-init prod-certbot-renew \
         bump-patch bump-minor bump-major commit
 
@@ -94,6 +94,7 @@ help:
 	@echo "    make dev-publish        SCP images + compose + nginx + data to dev host"
 	@echo "    make dev-release        Load images on dev host via SSH"
 	@echo "    make dev-deploy         Rolling restart on dev host"
+	@echo "    make dev-down           Stop all services and remove volumes on dev host"
 	@echo "    make dev-provision      Full pipeline: build → save → publish → release → deploy"
 	@echo ""
 	@echo "  PROD (remote VPS — requires PROD_HOST=user@host)"
@@ -102,6 +103,7 @@ help:
 	@echo "    make prod-publish       SCP images + compose + nginx + data to prod host"
 	@echo "    make prod-release       Load images on prod host via SSH"
 	@echo "    make prod-deploy        Rolling restart on prod host"
+	@echo "    make prod-down          Stop all services and remove volumes on prod host"
 	@echo "    make prod-provision     Full pipeline: build → save → publish → release → deploy"
 	@echo "    make prod-certbot-init  Generate initial SSL certs (first time only)"
 	@echo "    make prod-certbot-renew Force cert renewal"
@@ -360,6 +362,12 @@ dev-deploy:
 	ssh $(DEV_HOST) "rm -rf $(DEV_DEPLOY_DIR)/tmp"
 	@echo "Deploy complete"
 
+dev-down:
+	@test -n "$(DEV_HOST)" || (echo "ERROR: DEV_HOST is not set." && exit 1)
+	@echo "Bringing down all services on $(DEV_HOST)…"
+	ssh $(DEV_HOST) "cd $(DEV_DEPLOY_DIR) && $(DEV_COMPOSE) down -v 2>/dev/null || true"
+	@echo "Dev services stopped"
+
 dev-provision: build save dev-publish dev-release dev-deploy
 	@echo "Dev provision complete"
 
@@ -412,6 +420,12 @@ prod-deploy:
 	ssh $(PROD_HOST) "cd $(PROD_DEPLOY_DIR) && $(PROD_COMPOSE) ps"
 	ssh $(PROD_HOST) "rm -rf $(PROD_DEPLOY_DIR)/tmp"
 	@echo "Deploy complete"
+
+prod-down:
+	@test -n "$(PROD_HOST)" || (echo "ERROR: PROD_HOST is not set. Usage: make prod-down PROD_HOST=user@host" && exit 1)
+	@echo "Bringing down all services on $(PROD_HOST)…"
+	ssh $(PROD_HOST) "cd $(PROD_DEPLOY_DIR) && $(PROD_COMPOSE) down -v 2>/dev/null || true"
+	@echo "Prod services stopped"
 
 prod-provision: build save prod-publish prod-release prod-deploy
 	@echo "Full prod provision complete (run: make prod-certbot-init for SSL)"
