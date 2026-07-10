@@ -23,6 +23,8 @@ publish-images:
 	cat $(COMPOSE_FILE) | ssh $(HOST) "cat > $(DEPLOY_DIR)/docker-compose.yml"
 	cat .env.vps.example | ssh $(HOST) "cat > $(DEPLOY_DIR)/.env"
 	cat $(NGINX_SRC) | ssh $(HOST) "cat > $(DEPLOY_DIR)/nginx/conf.d/$(NGINX_DST)"
+	ssh $(HOST) "mkdir -p $(DEPLOY_DIR)/compose"
+	cat compose/shared.yml | ssh $(HOST) "cat > $(DEPLOY_DIR)/compose/shared.yml"
 	$(POST_PUBLISH)
 	@echo "Compressing data…"
 	@tar czf $(STAGING)/data.tar.gz -C "$(DATA_VOLUME)" .
