@@ -307,7 +307,7 @@ build:
 	@echo "Production images built:"
 	@$(DOCKER) images --format "table {{.Repository}}:{{.Tag}}\t{{.Size}}" | grep -E "$(IMG_API_PROD)|$(IMG_WEB_PROD)"
 
-save: build
+save:
 	@echo "Saving images to $(STAGING)/…"
 	@mkdir -p $(STAGING)
 	$(DOCKER) save $(IMG_API_PROD) -o $(STAGING)/api.tar
@@ -322,8 +322,9 @@ dev-build: build
 
 dev-save: save
 
-dev-publish: save
+dev-publish:
 	@test -n "$(DEV_HOST)" || (echo "ERROR: DEV_HOST is not set." && exit 1)
+	@test -f "$(STAGING)/api.tar" || ($(MAKE) save)
 	@echo "Publishing to $(DEV_HOST):$(DEV_DEPLOY_DIR)…"
 	@ssh -t $(DEV_HOST) "sudo mkdir -p $(DEV_DEPLOY_DIR)/data $(DEV_DEPLOY_DIR)/nginx/conf.d $(DEV_DEPLOY_DIR)/tmp && sudo chown -R $(DEV_USER):$(DEV_USER) $(DEV_DEPLOY_DIR)"
 	cat $(STAGING)/api.tar | ssh $(DEV_HOST) "cat > $(DEV_DEPLOY_DIR)/tmp/api.tar"
@@ -356,7 +357,7 @@ dev-deploy:
 	ssh $(DEV_HOST) "rm -rf $(DEV_DEPLOY_DIR)/tmp"
 	@echo "Deploy complete"
 
-dev-provision: dev-publish dev-release dev-deploy
+dev-provision: build save dev-publish dev-release dev-deploy
 	@echo "Dev provision complete"
 
 # ═══════════════════════════════════════════════════════════
@@ -366,8 +367,9 @@ prod-build: build
 
 prod-save: save
 
-prod-publish: save
+prod-publish:
 	@test -n "$(PROD_HOST)" || (echo "ERROR: PROD_HOST is not set. Usage: make prod-provision PROD_HOST=user@host" && exit 1)
+	@test -f "$(STAGING)/api.tar" || ($(MAKE) save)
 	@echo "Publishing to $(PROD_HOST):$(PROD_DEPLOY_DIR)…"
 	@ssh $(PROD_HOST) "mkdir -p $(PROD_DEPLOY_DIR)/data $(PROD_DEPLOY_DIR)/nginx/conf.d $(PROD_DEPLOY_DIR)/tmp"
 	cat $(STAGING)/api.tar | ssh $(PROD_HOST) "cat > $(PROD_DEPLOY_DIR)/tmp/api.tar"
@@ -403,7 +405,7 @@ prod-deploy:
 	ssh $(PROD_HOST) "rm -rf $(PROD_DEPLOY_DIR)/tmp"
 	@echo "Deploy complete"
 
-prod-provision: prod-publish prod-release prod-deploy
+prod-provision: build save prod-publish prod-release prod-deploy
 	@echo "Full prod provision complete (run: make prod-certbot-init for SSL)"
 
 # ── SSL / Let's Encrypt ───────────────────────────────────
