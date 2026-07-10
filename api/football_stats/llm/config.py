@@ -73,10 +73,26 @@ class LLMConfig:
         return cls(
             primary=_parse_provider_config(llm_data.get("primary")),
             fallback=_parse_provider_config(llm_data.get("fallback")),
-            system_prompt=llm_data.get("system_prompt", cls.system_prompt),
+            system_prompt=_coerce_prompt(
+                llm_data.get("system_prompt"), cls.system_prompt
+            ),
             max_tool_iterations=llm_data.get("max_tool_iterations", 5),
             conversation_ttl_seconds=llm_data.get("conversation_ttl_seconds", 3600),
         )
+
+
+def _coerce_prompt(value: Any, default: str) -> str:
+    """Normalize a system_prompt config value into a string.
+
+    Accepts either a plain string (backward compatible) or a list of
+    strings (one per line), which are joined with newlines so the
+    prompt can be written readably across multiple config lines.
+    """
+    if value is None:
+        return default
+    if isinstance(value, list):
+        return "\n".join(str(line) for line in value)
+    return str(value)
 
 
 def _parse_provider_config(data: dict[str, Any] | None) -> LLMProviderConfig | None:
