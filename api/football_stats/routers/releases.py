@@ -13,8 +13,24 @@ logger = logging.getLogger("stats.server.releases")
 
 router = APIRouter(tags=["Releases"])
 
-# Path to releases directory (from api/football_stats/routers/releases.py -> ../../.. -> api/ -> ../ -> project root)
-RELEASES_DIR = Path(__file__).resolve().parent.parent.parent.parent / "releases"
+
+def _get_releases_dir() -> Path:
+    """Find releases/ directory, works both locally and in Docker.
+
+    Locally (project root): 4 levels up from routers/
+    Docker (/app root):     3 levels up (api/ mounts as /app)
+    """
+    here = Path(__file__).resolve().parent
+
+    local = here.parents[3] / "releases"
+    if local.exists():
+        return local
+
+    docker = here.parents[2] / "releases"
+    if docker.exists():
+        return docker
+
+    return local  # fallback — caller handles existence check
 
 
 def _parse_version(version_str: str) -> tuple:
@@ -75,12 +91,13 @@ def _parse_markdown_file(filepath: Path) -> Optional[dict]:
 
 def _load_all_releases() -> list[dict]:
     """Load all releases from the releases/ directory."""
-    if not RELEASES_DIR.exists():
-        logger.warning("Releases directory not found: %s", RELEASES_DIR)
+    releases_dir = _get_releases_dir()
+    if not releases_dir.exists():
+        logger.warning("Releases directory not found: %s", releases_dir)
         return []
 
     releases = []
-    for filepath in RELEASES_DIR.glob("*.md"):
+    for filepath in releases_dir.glob("*.md"):
         release = _parse_markdown_file(filepath)
         if release:
             releases.append(release)
