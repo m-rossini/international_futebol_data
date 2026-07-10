@@ -8,7 +8,7 @@ ENV PATH="$PNPM_HOME:$PATH"
 RUN corepack enable && corepack prepare pnpm@10 --activate
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl make \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 COPY .npmrc package.json ./
