@@ -4,8 +4,13 @@ __pycache__
 .pytest_cache
 .ruff_cache
 .mypy_cache
+.coverage
+.env
+dist/
+htmlcov/
 tests/
 debugpy*
 Makefile
 .venv
 .mcp_cache
+*.md

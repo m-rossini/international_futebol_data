@@ -37,7 +37,7 @@ services:
       timeout: 5s
       retries: 3
       start_interval: 5s
-      start_period: 30s
+      start_period: 10s
     restart: unless-stopped
 
   mcp:
@@ -74,7 +74,7 @@ services:
       timeout: 5s
       retries: 3
       start_interval: 5s
-      start_period: 30s
+      start_period: 10s
     restart: unless-stopped
 
   openobserve:
