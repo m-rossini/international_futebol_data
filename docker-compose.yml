@@ -39,11 +39,11 @@ services:
         condition: service_started
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:7531/health"]
-      interval: 3m
+      interval: 30s
       timeout: 5s
       retries: 3
       start_interval: 5s
-      start_period: 10s
+      start_period: 30s
     restart: unless-stopped
 
   mcp:
