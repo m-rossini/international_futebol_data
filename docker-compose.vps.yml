@@ -36,6 +36,7 @@ services:
     container_name: futebol-api
     volumes:
       - ./data:/data:ro
+      - ./releases:/app/releases:ro
     environment:
       - DATA_DIR=/data
       - OTEL_SERVICE_NAME=futebol-api

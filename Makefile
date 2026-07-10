@@ -150,6 +150,7 @@ api-test: api-build
 		-e DATA_DIR=/data \
 		-e FORCE_COLOR=1 \
 		-v $(CURDIR)/api:/app \
+		-v $(CURDIR)/releases:/app/releases:ro \
 		-v $(DATA_VOLUME):/data:ro \
 		$(IMG_API):dev \
 		sh -c "uv sync && PYTHONPATH=football_stats uv run pytest tests/ -v --color=yes"
@@ -159,6 +160,7 @@ api-test-cov: api-build
 		-e DATA_DIR=/data \
 		-e FORCE_COLOR=1 \
 		-v $(CURDIR)/api:/app \
+		-v $(CURDIR)/releases:/app/releases:ro \
 		-v $(DATA_VOLUME):/data:ro \
 		$(IMG_API):dev \
 		sh -c "uv sync && PYTHONPATH=football_stats uv run pytest tests/ -v --color=yes --cov=football_stats --cov-report=term-missing"
@@ -168,6 +170,7 @@ api-mcp: api-build
 		-p 7532:7532 \
 		-e API_BASE_URL=http://host.docker.internal:7531 \
 		-v $(CURDIR)/api:/app \
+		-v $(CURDIR)/releases:/app/releases:ro \
 		$(IMG_API):dev \
 		uv run python football_stats/mcp_server.py --transport sse --port 7532
 
@@ -381,7 +384,10 @@ prod-publish:
 	@echo "Compressing data…"
 	@tar czf $(STAGING)/data.tar.gz -C "$(DATA_VOLUME)" .
 	cat $(STAGING)/data.tar.gz | ssh $(PROD_HOST) "cat > $(PROD_DEPLOY_DIR)/tmp/data.tar.gz"
-	@echo "Published images, compose, nginx, env, and data to $(PROD_HOST)"
+	@echo "Compressing releases…"
+	@tar czf $(STAGING)/releases.tar.gz releases
+	cat $(STAGING)/releases.tar.gz | ssh $(PROD_HOST) "cat > $(PROD_DEPLOY_DIR)/tmp/releases.tar.gz"
+	@echo "Published images, compose, nginx, env, data, and releases to $(PROD_HOST)"
 
 prod-release:
 	@test -n "$(PROD_HOST)" || (echo "ERROR: PROD_HOST is not set." && exit 1)
@@ -396,6 +402,8 @@ prod-deploy:
 	ssh $(PROD_HOST) "cd $(PROD_DEPLOY_DIR) && $(PROD_COMPOSE) stop api mcp web openobserve 2>/dev/null || true"
 	@echo "  2/4 Decompressing data…"
 	ssh $(PROD_HOST) "cd $(PROD_DEPLOY_DIR) && mkdir -p data && tar xzf tmp/data.tar.gz -C data/ 2>/dev/null || true"
+	@echo "  2b/4 Decompressing releases…"
+	ssh $(PROD_HOST) "cd $(PROD_DEPLOY_DIR) && tar xzf tmp/releases.tar.gz 2>/dev/null || true"
 	@echo "  3/4 Starting containers…"
 	ssh $(PROD_HOST) "cd $(PROD_DEPLOY_DIR) && $(PROD_COMPOSE) up -d --no-deps --force-recreate nginx api mcp web openobserve"
 	@echo "  4/4 Restoring HTTPS config if certs exist…"
