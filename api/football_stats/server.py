@@ -29,8 +29,9 @@ from football_stats.routers.tournaments import router as tournaments_router
 from football_stats.routers.cities import router as cities_router
 from football_stats.routers.countries import router as countries_router
 from football_stats.routers.years import router as years_router
-from football_stats.routers.conversation import (
-    router as conversation_router,
+from football_stats.routers.conversation import router as conversation_router
+from football_stats.routers.profile import (
+    router as profile_router,
     set_conversation_service,
 )
 from football_stats.routers.releases import router as releases_router
@@ -56,19 +57,29 @@ async def lifespan(application: FastAPI):
         info["elo_ratings_loaded"],
     )
 
-    # Initialize LLM services
     llm_config = LLMConfig.from_file()
-    if llm_config.primary is not None or llm_config.fallback is not None:
+    if llm_config.is_enabled:
         chain = ProviderChain(llm_config)
         executor = ToolExecutor(engine)
         conversation_service = ConversationService(chain, executor, llm_config)
         set_conversation_service(conversation_service)
-        logger.info(
-            "LLM conversation service ready (provider=%s)",
-            chain.active_provider_name,
-        )
+
+        if chain.is_available:
+            active = chain.active_profile_name
+            total = len(llm_config.profiles)
+            logger.info("LLM chain ready (%d profile(s), active=%s)", total, active)
+            for name, profile in llm_config.chain:
+                logger.info(
+                    "  [pri=%d] %s — %s/%s",
+                    profile.priority,
+                    name,
+                    profile.provider,
+                    profile.model,
+                )
+        else:
+            logger.warning("LLM chain built but no profiles could be initialized")
     else:
-        logger.info("LLM conversation service disabled (no providers configured)")
+        logger.info("LLM conversation service disabled (no profiles configured)")
 
     yield
     logger.info("Server shutting down")
@@ -115,6 +126,7 @@ app.include_router(cities_router)  # /cities, /city/{name}
 app.include_router(countries_router)  # /countries, /country/{name}
 app.include_router(years_router)  # /years, /years/{year}
 app.include_router(conversation_router)  # /conversation
+app.include_router(profile_router)  # /llm/profile
 app.include_router(releases_router)  # /releases
 
 

@@ -7,20 +7,11 @@ from fastapi import APIRouter, HTTPException
 from football_stats.llm.service import (
     ConversationRequest,
     ConversationResponse,
-    ConversationService,
 )
 from football_stats.routers.dependencies import require_data
+from football_stats.routers.profile import get_conversation_service
 
 router = APIRouter()
-
-# This will be set by server.py during startup
-_conversation_service: ConversationService | None = None
-
-
-def set_conversation_service(service: ConversationService) -> None:
-    """Inject the conversation service at startup."""
-    global _conversation_service
-    _conversation_service = service
 
 
 @router.post(
@@ -37,20 +28,21 @@ def set_conversation_service(service: ConversationService) -> None:
 async def conversation(request: ConversationRequest) -> ConversationResponse:
     require_data()
 
-    if _conversation_service is None:
+    svc = get_conversation_service()
+    if svc is None:
         raise HTTPException(
             status_code=503,
             detail="LLM service not configured. Add an 'llm' section to config.json.",
         )
 
-    if not _conversation_service.is_available:
+    if not svc.is_available:
         raise HTTPException(
             status_code=503,
             detail="No LLM providers available. Check API keys and configuration.",
         )
 
     try:
-        return await _conversation_service.chat(request)
+        return await svc.chat(request)
     except RuntimeError as e:
         raise HTTPException(status_code=503, detail=str(e))
     except Exception as e:

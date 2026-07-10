@@ -1,7 +1,7 @@
 """LLM conversation feature — providers, tools, and conversation service."""
 
 from .chain import ProviderChain
-from .config import LLMConfig, LLMProviderConfig
+from .config import LLMConfig, LLMProfileConfig
 from .executor import ToolExecutor
 from .providers import (
     ChatResponse,
@@ -25,7 +25,7 @@ __all__ = [
     "ConversationStore",
     "LLMConfig",
     "LLMProvider",
-    "LLMProviderConfig",
+    "LLMProfileConfig",
     "ProviderChain",
     "ToolCall",
     "ToolExecutor",
