@@ -7,6 +7,7 @@ the public facade and delegates to these helpers.
 """
 
 from .elo_merge import merge_elo
+from .errors import wrap_value_errors
 from .matching import match_goalscorers
 from .resolution import resolve_team_name, teams_set
 from .shootout import enrich_shootouts
@@ -17,4 +18,5 @@ __all__ = [
     "resolve_team_name",
     "teams_set",
     "enrich_shootouts",
+    "wrap_value_errors",
 ]

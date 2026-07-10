@@ -12,6 +12,7 @@ from .engine_helpers import (
     match_goalscorers,
     merge_elo,
     resolve_team_name,
+    wrap_value_errors,
 )
 from .analysis.ranking import DIMENSION_ALIASES, TEAM_STAT_COLUMNS, VALID_STATS
 from .analysis import (
@@ -95,15 +96,10 @@ class QueryEngine:
             self._state.elo_config,
         )
 
+    @wrap_value_errors
     def team(self, team_name: str, filters: Optional[FilterParams] = None) -> dict:
         logger.debug("Team stats requested: %s", team_name)
-        try:
-            canonical = resolve_team_name(team_name, self._state.results)
-        except ValueError:
-            return {
-                "error": True,
-                "message": f"Team '{team_name}' not found in the data.",
-            }
+        canonical = resolve_team_name(team_name, self._state.results)
         r = self._enriched_filtered(filters)
         result = team_win_rate(r, canonical)
         result["yearly"] = team_yearly(r, canonical)
@@ -116,18 +112,13 @@ class QueryEngine:
             "worst_defeats",
         )
 
+    @wrap_value_errors
     def team_matches(
         self, team_name: str, year: int, filters: Optional[FilterParams] = None
     ) -> dict:
         """Return all matches for a given team in a given year."""
         logger.debug("Team matches requested: %s in %d", team_name, year)
-        try:
-            canonical = resolve_team_name(team_name, self._state.results)
-        except ValueError:
-            return {
-                "error": True,
-                "message": f"Team '{team_name}' not found in the data.",
-            }
+        canonical = resolve_team_name(team_name, self._state.results)
         r = self._enriched_filtered(filters)
         matches = team_matches_by_year(r, canonical, year)
         enrich_shootouts(
@@ -140,15 +131,13 @@ class QueryEngine:
             "matches_list": matches,
         }
 
+    @wrap_value_errors
     def head_to_head(
         self, team1: str, team2: str, filters: Optional[FilterParams] = None
     ) -> dict:
         logger.debug("Head-to-head: %s vs %s", team1, team2)
-        try:
-            t1 = resolve_team_name(team1, self._state.results)
-            t2 = resolve_team_name(team2, self._state.results)
-        except ValueError as e:
-            return {"error": True, "message": str(e)}
+        t1 = resolve_team_name(team1, self._state.results)
+        t2 = resolve_team_name(team2, self._state.results)
         result = team_vs_team(self._enriched_filtered(filters), t1, t2)
         return enrich_shootouts(
             result,
@@ -189,26 +178,20 @@ class QueryEngine:
         logger.debug("Tournaments list", extra={"source": "live"})
         return tournaments_list(self._filtered_results(filters))
 
+    @wrap_value_errors
     def tournament(self, name: str, filters: Optional[FilterParams] = None) -> dict:
         """Comprehensive stats for a specific tournament."""
         logger.debug("Tournament info requested: %s", name)
-        try:
-            return tournament_info(self._enriched_filtered(filters), name)
-        except ValueError as e:
-            return {"error": True, "message": str(e)}
+        return tournament_info(self._enriched_filtered(filters), name)
 
+    @wrap_value_errors
     def season(
         self, tournament_name: str, year: int, filters: Optional[FilterParams] = None
     ) -> dict:
         """Detailed stats for a specific tournament edition (season)."""
         logger.debug("Season info requested: %s / %d", tournament_name, year)
-        try:
-            result = season_info(
-                self._enriched_filtered(filters), tournament_name, year
-            )
-            return enrich_shootouts(result, self._state.shootouts, "matches_list")
-        except ValueError as e:
-            return {"error": True, "message": str(e)}
+        result = season_info(self._enriched_filtered(filters), tournament_name, year)
+        return enrich_shootouts(result, self._state.shootouts, "matches_list")
 
     # ------------------------------------------------------------------
     #  City queries
@@ -222,13 +205,11 @@ class QueryEngine:
         logger.debug("Cities list", extra={"source": "live"})
         return cities_list(self._filtered_results(filters))
 
+    @wrap_value_errors
     def city(self, name: str, filters: Optional[FilterParams] = None) -> dict:
         """Comprehensive stats for a specific city."""
         logger.debug("City info requested: %s", name)
-        try:
-            return city_info(self._enriched_filtered(filters), name)
-        except ValueError as e:
-            return {"error": True, "message": str(e)}
+        return city_info(self._enriched_filtered(filters), name)
 
     # ------------------------------------------------------------------
     #  Country queries
@@ -242,13 +223,11 @@ class QueryEngine:
         logger.debug("Countries list", extra={"source": "live"})
         return countries_list(self._filtered_results(filters))
 
+    @wrap_value_errors
     def country(self, name: str, filters: Optional[FilterParams] = None) -> dict:
         """Comprehensive stats for a specific country."""
         logger.debug("Country info requested: %s", name)
-        try:
-            return country_info(self._enriched_filtered(filters), name)
-        except ValueError as e:
-            return {"error": True, "message": str(e)}
+        return country_info(self._enriched_filtered(filters), name)
 
     # ------------------------------------------------------------------
     #  Year queries

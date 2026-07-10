@@ -22,4 +22,4 @@ def resolve_team_name(name: str, results: pd.DataFrame) -> str:
     for team in teams:
         if strip_accents(team).lower() == name_key:
             return team
-    raise ValueError(f"Unknown team: '{name}'")
+    raise ValueError(f"Team '{name}' not found in the data.")
