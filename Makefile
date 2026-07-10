@@ -14,13 +14,25 @@ PART      ?= patch
 -include .env
 export DATA_VOLUME
 
-# ── VPS deployment variables ─────────────────────────────
-VPS_HOST       ?=
-VPS_DEPLOY_DIR ?= /opt/futebol
-VPS_DATA_DIR   ?= $(VPS_DEPLOY_DIR)/data
-IMG_API_PROD   = $(IMG_API):prod
-IMG_WEB_PROD   = $(IMG_WEB):prod
-STAGING        = /tmp/futebol-vps
+# ── Shared deployment variables ───────────────────────────
+IMG_API_PROD = $(IMG_API):prod
+IMG_WEB_PROD = $(IMG_WEB):prod
+STAGING      = /tmp/futebol-vps
+
+# ── Dev environment (local network — e.g. boyz) ──────────
+DEV_HOST       ?= boyz@192.168.1.198
+DEV_USER       = $(firstword $(subst @, ,$(DEV_HOST)))
+DEV_DEPLOY_DIR ?= /opt/futebol
+DEV_DOCKER      = podman
+DEV_COMPOSE     = podman-compose
+DEV_COMPOSE_FILE = docker-compose.vps-internal.yml
+
+# ── Prod environment (remote VPS — e.g. IONOS) ───────────
+PROD_HOST       ?=
+PROD_DEPLOY_DIR ?= /opt/futebol
+PROD_DOCKER     ?= docker
+PROD_COMPOSE    ?= docker compose
+PROD_COMPOSE_FILE = docker-compose.vps.yml
 DOMAIN         ?= orbisplace.co.uk
 
 # ── Phony targets ─────────────────────────────────────────
@@ -29,9 +41,11 @@ DOMAIN         ?= orbisplace.co.uk
         api-test api-test-cov api-mcp \
         web-build web-up web-down web-run web-shell web-logs \
         web-test web-test-cov \
-        up down test test-cov install-hooks \
-        vps-build vps-save vps-publish vps-release vps-deploy vps-provision \
-        certbot-init certbot-renew \
+        local-up local-down local-test local-test-cov install-hooks \
+        build save \
+        dev-build dev-save dev-publish dev-release dev-deploy dev-provision \
+        prod-build prod-save prod-publish prod-release prod-deploy prod-provision \
+        prod-certbot-init prod-certbot-renew \
         bump-patch bump-minor bump-major commit
 
 # ═══════════════════════════════════════════════════════════
@@ -42,47 +56,61 @@ help:
 	@echo "  International Football Stats"
 	@echo "  ─────────────────────────────"
 	@echo ""
-	@echo "  FULL STACK (docker compose)"
-	@echo "    make up             Start api + web + nginx"
-	@echo "    make down           Stop all"
-	@echo "    make test           Run api + web test suites"
-	@echo "    make test-cov       Run api + web test suites with coverage"
-	@echo "    make install-hooks  Install git hooks (pre-commit + pre-push)"
+	@echo "  LOCAL (this machine)"
+	@echo "    make local-up           Start api + web + nginx"
+	@echo "    make local-down         Stop all"
+	@echo "    make local-test         Run api + web test suites"
+	@echo "    make local-test-cov     Run api + web test suites with coverage"
+	@echo "    make install-hooks      Install git hooks (pre-commit + pre-push)"
 	@echo ""
 	@echo "  API (dev container — attach VS Code)"
-	@echo "    make api-build      Build image"
-	@echo "    make api-up         Start container (sleep, attach)"
-	@echo "    make api-down       Stop & remove container"
-	@echo "    make api-run        Start server inside container"
-	@echo "    make api-shell      Open shell inside container"
-	@echo "    make api-logs       Tail container logs"
-	@echo "    make api-test       Run pytest (ephemeral)"
-	@echo "    make api-test-cov   Run pytest with coverage"
-	@echo "    make api-mcp        Run MCP server via SSE (ephemeral, port 7532, needs API running)"
+	@echo "    make api-build          Build image"
+	@echo "    make api-up             Start container (sleep, attach)"
+	@echo "    make api-down           Stop & remove container"
+	@echo "    make api-run            Start server inside container"
+	@echo "    make api-shell          Open shell inside container"
+	@echo "    make api-logs           Tail container logs"
+	@echo "    make api-test           Run pytest (ephemeral)"
+	@echo "    make api-test-cov       Run pytest with coverage"
+	@echo "    make api-mcp            Run MCP server via SSE (ephemeral, port 7532, needs API running)"
 	@echo ""
 	@echo "  WEB (dev container — attach VS Code)"
-	@echo "    make web-build      Build image"
-	@echo "    make web-up         Start container (sleep, attach)"
-	@echo "    make web-down       Stop & remove container"
-	@echo "    make web-run        Start dev server inside container"
-	@echo "    make web-shell      Open shell inside container"
-	@echo "    make web-logs       Tail container logs"
-	@echo "    make web-test       Run vitest + lint (ephemeral)"
-	@echo "    make web-test-cov   Run vitest with coverage (ephemeral)"
+	@echo "    make web-build          Build image"
+	@echo "    make web-up             Start container (sleep, attach)"
+	@echo "    make web-down           Stop & remove container"
+	@echo "    make web-run            Start dev server inside container"
+	@echo "    make web-shell          Open shell inside container"
+	@echo "    make web-logs           Tail container logs"
+	@echo "    make web-test           Run vitest + lint (ephemeral)"
+	@echo "    make web-test-cov       Run vitest with coverage (ephemeral)"
 	@echo ""
-	@echo "  VPS DEPLOYMENT (requires VPS_HOST=user@host)"
-	@echo "    make vps-build      Build production images (slim, no dev tools)"
-	@echo "    make vps-save       Save images to tarballs in $(STAGING)/"
-	@echo "    make vps-publish    SCP images + compose + nginx + data to VPS"
-	@echo "    make vps-release    Load images on VPS via SSH"
-	@echo "    make vps-deploy     Rolling restart on VPS (stop → start → verify)"
-	@echo "    make vps-provision  Full pipeline: build → save → publish → release → deploy"
-	@echo "    make certbot-init   Generate initial SSL certs (first time only)"
-	@echo "    make certbot-renew  Force cert renewal on VPS"
-	@echo "    make bump-patch     Bump patch version (1.0.1 → 1.0.2)"
-	@echo "    make bump-minor     Bump minor version (1.0.1 → 1.1.0)"
-	@echo "    make bump-major     Bump major version (1.0.1 → 2.0.0)"
-	@echo "    make commit MSG='..' Bump patch + commit (use MSG='...' for message)"
+	@echo "  SHARED (env-agnostic, always local)"
+	@echo "    make build              Build production images (slim, no dev tools)"
+	@echo "    make save               Save images to tarballs in $(STAGING)/"
+	@echo ""
+	@echo "  DEV (local network — defaults: $(DEV_HOST))"
+	@echo "    make dev-build          Alias: build"
+	@echo "    make dev-save           Alias: save"
+	@echo "    make dev-publish        SCP images + compose + nginx + data to dev host"
+	@echo "    make dev-release        Load images on dev host via SSH"
+	@echo "    make dev-deploy         Rolling restart on dev host"
+	@echo "    make dev-provision      Full pipeline: build → save → publish → release → deploy"
+	@echo ""
+	@echo "  PROD (remote VPS — requires PROD_HOST=user@host)"
+	@echo "    make prod-build         Alias: build"
+	@echo "    make prod-save          Alias: save"
+	@echo "    make prod-publish       SCP images + compose + nginx + data to prod host"
+	@echo "    make prod-release       Load images on prod host via SSH"
+	@echo "    make prod-deploy        Rolling restart on prod host"
+	@echo "    make prod-provision     Full pipeline: build → save → publish → release → deploy"
+	@echo "    make prod-certbot-init  Generate initial SSL certs (first time only)"
+	@echo "    make prod-certbot-renew Force cert renewal"
+	@echo ""
+	@echo "  VERSIONING"
+	@echo "    make bump-patch         Bump patch version (1.0.1 → 1.0.2)"
+	@echo "    make bump-minor         Bump minor version (1.0.1 → 1.1.0)"
+	@echo "    make bump-major         Bump major version (1.0.1 → 2.0.0)"
+	@echo "    make commit MSG='..'    Bump patch + commit (use MSG='...' for message)"
 	@echo ""
 
 # ═══════════════════════════════════════════════════════════
@@ -253,34 +281,33 @@ commit:
 	@if [ -n "$(MSG)" ]; then git commit -m "$$MSG"; else git commit; fi
 
 # ═══════════════════════════════════════════════════════════
-#  Full stack (docker compose)
+#  Local (this machine — docker compose)
 # ═══════════════════════════════════════════════════════════
-up:
+local-up:
 	$(COMPOSE) up -d --build
 
-down:
+local-down:
 	$(COMPOSE) down
 
-test:
+local-test:
 	$(MAKE) api-test
 	$(MAKE) web-test
 
-test-cov:
+local-test-cov:
 	$(MAKE) api-test-cov
 	$(MAKE) web-test-cov
 
 # ═══════════════════════════════════════════════════════════
-#  VPS deployment
+#  Shared (env-agnostic — always runs locally)
 # ═══════════════════════════════════════════════════════════
-
-vps-build:
+build:
 	@echo "Building production images…"
 	$(DOCKER) build -f api/Dockerfile --target production -t $(IMG_API_PROD) api/
 	$(DOCKER) build -f web/Dockerfile --target production -t $(IMG_WEB_PROD) web/
 	@echo "Production images built:"
 	@$(DOCKER) images --format "table {{.Repository}}:{{.Tag}}\t{{.Size}}" | grep -E "$(IMG_API_PROD)|$(IMG_WEB_PROD)"
 
-vps-save: vps-build
+save:
 	@echo "Saving images to $(STAGING)/…"
 	@mkdir -p $(STAGING)
 	$(DOCKER) save $(IMG_API_PROD) -o $(STAGING)/api.tar
@@ -288,57 +315,108 @@ vps-save: vps-build
 	@echo "Saved:"
 	@ls -lh $(STAGING)/*.tar
 
-vps-publish: vps-save
-	@test -n "$(VPS_HOST)" || (echo "ERROR: VPS_HOST is not set. Usage: make vps-provision VPS_HOST=user@host" && exit 1)
-	@echo "Publishing to $(VPS_HOST):$(VPS_DEPLOY_DIR)…"
-	@ssh $(VPS_HOST) "mkdir -p $(VPS_DEPLOY_DIR)/data $(VPS_DEPLOY_DIR)/nginx/conf.d $(VPS_DEPLOY_DIR)/tmp"
-	cat $(STAGING)/api.tar | ssh $(VPS_HOST) "cat > $(VPS_DEPLOY_DIR)/tmp/api.tar"
-	cat $(STAGING)/web.tar | ssh $(VPS_HOST) "cat > $(VPS_DEPLOY_DIR)/tmp/web.tar"
-	cat docker-compose.vps.yml | ssh $(VPS_HOST) "cat > $(VPS_DEPLOY_DIR)/docker-compose.yml"
-	cat .env.vps.example | ssh $(VPS_HOST) "cat > $(VPS_DEPLOY_DIR)/.env"
-	cat nginx/conf.d/futebol.conf | ssh $(VPS_HOST) "cat > $(VPS_DEPLOY_DIR)/nginx/conf.d/futebol.conf"
+# ═══════════════════════════════════════════════════════════
+#  Dev (local network — podman)
+# ═══════════════════════════════════════════════════════════
+dev-build: build
+
+dev-save: save
+
+dev-publish:
+	@test -n "$(DEV_HOST)" || (echo "ERROR: DEV_HOST is not set." && exit 1)
+	@test -f "$(STAGING)/api.tar" || ($(MAKE) save)
+	@echo "Publishing to $(DEV_HOST):$(DEV_DEPLOY_DIR)…"
+	@ssh -t $(DEV_HOST) "sudo mkdir -p $(DEV_DEPLOY_DIR)/data $(DEV_DEPLOY_DIR)/nginx/conf.d $(DEV_DEPLOY_DIR)/tmp && sudo chown -R $(DEV_USER):$(DEV_USER) $(DEV_DEPLOY_DIR)"
+	cat $(STAGING)/api.tar | ssh $(DEV_HOST) "cat > $(DEV_DEPLOY_DIR)/tmp/api.tar"
+	cat $(STAGING)/web.tar | ssh $(DEV_HOST) "cat > $(DEV_DEPLOY_DIR)/tmp/web.tar"
+	cat $(DEV_COMPOSE_FILE) | ssh $(DEV_HOST) "cat > $(DEV_DEPLOY_DIR)/docker-compose.yml"
+	cat .env.vps.example | ssh $(DEV_HOST) "cat > $(DEV_DEPLOY_DIR)/.env"
+	cat nginx/conf.d/futebol-vps.conf | ssh $(DEV_HOST) "cat > $(DEV_DEPLOY_DIR)/nginx/conf.d/futebol-vps.conf"
 	@echo "Compressing data…"
 	@tar czf $(STAGING)/data.tar.gz -C "$(DATA_VOLUME)" .
-	cat $(STAGING)/data.tar.gz | ssh $(VPS_HOST) "cat > $(VPS_DEPLOY_DIR)/tmp/data.tar.gz"
-	@echo "Published images, compose, nginx, env, and data to $(VPS_HOST)"
+	cat $(STAGING)/data.tar.gz | ssh $(DEV_HOST) "cat > $(DEV_DEPLOY_DIR)/tmp/data.tar.gz"
+	@echo "Published images, compose, nginx, env, and data to $(DEV_HOST)"
 
-vps-release:
-	@test -n "$(VPS_HOST)" || (echo "ERROR: VPS_HOST is not set. Usage: make vps-provision VPS_HOST=user@host" && exit 1)
-	@echo "Loading images on $(VPS_HOST)…"
-	ssh $(VPS_HOST) "docker load < $(VPS_DEPLOY_DIR)/tmp/api.tar && docker load < $(VPS_DEPLOY_DIR)/tmp/web.tar"
-	@echo "Images loaded on VPS"
+dev-release:
+	@test -n "$(DEV_HOST)" || (echo "ERROR: DEV_HOST is not set." && exit 1)
+	@echo "Loading images on $(DEV_HOST)…"
+	ssh $(DEV_HOST) "$(DEV_DOCKER) load < $(DEV_DEPLOY_DIR)/tmp/api.tar && $(DEV_DOCKER) load < $(DEV_DEPLOY_DIR)/tmp/web.tar"
+	@echo "Images loaded on dev host"
 
-vps-deploy:
-	@test -n "$(VPS_HOST)" || (echo "ERROR: VPS_HOST is not set. Usage: make vps-provision VPS_HOST=user@host" && exit 1)
-	@echo "Deploying on $(VPS_HOST)…"
-	@echo "  1/5 Stopping old containers…"
-	ssh $(VPS_HOST) "cd $(VPS_DEPLOY_DIR) && docker compose stop api mcp web openobserve 2>/dev/null || true"
-	@echo "  2/5 Loading new images…"
-	ssh $(VPS_HOST) "docker load < $(VPS_DEPLOY_DIR)/tmp/api.tar && docker load < $(VPS_DEPLOY_DIR)/tmp/web.tar"
-	@echo "  3/5 Decompressing data…"
-	ssh $(VPS_HOST) "cd $(VPS_DEPLOY_DIR) && mkdir -p data && tar xzf tmp/data.tar.gz -C data/ 2>/dev/null || true"
-	@echo "  4/5 Starting containers…"
-	ssh $(VPS_HOST) "cd $(VPS_DEPLOY_DIR) && docker compose up -d --no-deps --force-recreate api mcp web openobserve"
-	@echo "  5/5 Restoring HTTPS config if certs exist…"
-	ssh $(VPS_HOST) "test -f $(VPS_DEPLOY_DIR)/nginx/conf.d/futebol.conf && docker exec futebol-nginx test -f /etc/letsencrypt/live/futebol.orbisplace.co.uk/fullchain.pem && cp $(VPS_DEPLOY_DIR)/nginx/conf.d/futebol.conf $(VPS_DEPLOY_DIR)/nginx/conf.d/futebol-active.conf && docker exec futebol-nginx nginx -s reload" || true
-	@echo "  6/6 Verifying…"
-	ssh $(VPS_HOST) "cd $(VPS_DEPLOY_DIR) && docker compose ps"
-	@echo "Cleaning up temp files on VPS…"
-	ssh $(VPS_HOST) "rm -rf $(VPS_DEPLOY_DIR)/tmp"
+dev-deploy:
+	@test -n "$(DEV_HOST)" || (echo "ERROR: DEV_HOST is not set." && exit 1)
+	@echo "Deploying on $(DEV_HOST)…"
+	@echo "  1/3 Stopping old containers…"
+	ssh $(DEV_HOST) "cd $(DEV_DEPLOY_DIR) && $(DEV_COMPOSE) stop api mcp web openobserve 2>/dev/null || true"
+	@echo "  2/3 Decompressing data…"
+	ssh $(DEV_HOST) "cd $(DEV_DEPLOY_DIR) && mkdir -p data && tar xzf tmp/data.tar.gz -C data/ 2>/dev/null || true"
+	@echo "  3/3 Starting containers…"
+	ssh $(DEV_HOST) "cd $(DEV_DEPLOY_DIR) && $(DEV_COMPOSE) up -d --no-deps --force-recreate nginx api mcp web openobserve"
+	@echo "  Verifying…"
+	ssh $(DEV_HOST) "cd $(DEV_DEPLOY_DIR) && $(DEV_COMPOSE) ps"
+	ssh $(DEV_HOST) "rm -rf $(DEV_DEPLOY_DIR)/tmp"
 	@echo "Deploy complete"
 
-vps-provision: vps-publish vps-release vps-deploy
-	@echo "Full VPS provision complete (run: make certbot-init for SSL)"
+dev-provision: build save dev-publish dev-release dev-deploy
+	@echo "Dev provision complete"
+
+# ═══════════════════════════════════════════════════════════
+#  Prod (remote VPS — docker, SSL)
+# ═══════════════════════════════════════════════════════════
+prod-build: build
+
+prod-save: save
+
+prod-publish:
+	@test -n "$(PROD_HOST)" || (echo "ERROR: PROD_HOST is not set. Usage: make prod-provision PROD_HOST=user@host" && exit 1)
+	@test -f "$(STAGING)/api.tar" || ($(MAKE) save)
+	@echo "Publishing to $(PROD_HOST):$(PROD_DEPLOY_DIR)…"
+	@ssh $(PROD_HOST) "mkdir -p $(PROD_DEPLOY_DIR)/data $(PROD_DEPLOY_DIR)/nginx/conf.d $(PROD_DEPLOY_DIR)/tmp"
+	cat $(STAGING)/api.tar | ssh $(PROD_HOST) "cat > $(PROD_DEPLOY_DIR)/tmp/api.tar"
+	cat $(STAGING)/web.tar | ssh $(PROD_HOST) "cat > $(PROD_DEPLOY_DIR)/tmp/web.tar"
+	cat $(PROD_COMPOSE_FILE) | ssh $(PROD_HOST) "cat > $(PROD_DEPLOY_DIR)/docker-compose.yml"
+	cat .env.vps.example | ssh $(PROD_HOST) "cat > $(PROD_DEPLOY_DIR)/.env"
+	cat nginx/conf.d/futebol.conf | ssh $(PROD_HOST) "cat > $(PROD_DEPLOY_DIR)/nginx/conf.d/futebol.conf"
+	ssh $(PROD_HOST) "test -f $(PROD_DEPLOY_DIR)/nginx/conf.d/futebol-active.conf || echo 'server { listen 80; server_name _; location /.well-known/acme-challenge/ { root /var/www/certbot; } location / { return 200 \"ok\"; } }' > $(PROD_DEPLOY_DIR)/nginx/conf.d/futebol-active.conf"
+	@echo "Compressing data…"
+	@tar czf $(STAGING)/data.tar.gz -C "$(DATA_VOLUME)" .
+	cat $(STAGING)/data.tar.gz | ssh $(PROD_HOST) "cat > $(PROD_DEPLOY_DIR)/tmp/data.tar.gz"
+	@echo "Published images, compose, nginx, env, and data to $(PROD_HOST)"
+
+prod-release:
+	@test -n "$(PROD_HOST)" || (echo "ERROR: PROD_HOST is not set." && exit 1)
+	@echo "Loading images on $(PROD_HOST)…"
+	ssh $(PROD_HOST) "$(PROD_DOCKER) load < $(PROD_DEPLOY_DIR)/tmp/api.tar && $(PROD_DOCKER) load < $(PROD_DEPLOY_DIR)/tmp/web.tar"
+	@echo "Images loaded on prod host"
+
+prod-deploy:
+	@test -n "$(PROD_HOST)" || (echo "ERROR: PROD_HOST is not set." && exit 1)
+	@echo "Deploying on $(PROD_HOST)…"
+	@echo "  1/4 Stopping old containers…"
+	ssh $(PROD_HOST) "cd $(PROD_DEPLOY_DIR) && $(PROD_COMPOSE) stop api mcp web openobserve 2>/dev/null || true"
+	@echo "  2/4 Decompressing data…"
+	ssh $(PROD_HOST) "cd $(PROD_DEPLOY_DIR) && mkdir -p data && tar xzf tmp/data.tar.gz -C data/ 2>/dev/null || true"
+	@echo "  3/4 Starting containers…"
+	ssh $(PROD_HOST) "cd $(PROD_DEPLOY_DIR) && $(PROD_COMPOSE) up -d --no-deps --force-recreate nginx api mcp web openobserve"
+	@echo "  4/4 Restoring HTTPS config if certs exist…"
+	ssh $(PROD_HOST) "test -f $(PROD_DEPLOY_DIR)/nginx/conf.d/futebol.conf && $(PROD_DOCKER) exec futebol-nginx test -f /etc/letsencrypt/live/futebol.$(DOMAIN)/fullchain.pem && cp $(PROD_DEPLOY_DIR)/nginx/conf.d/futebol.conf $(PROD_DEPLOY_DIR)/nginx/conf.d/futebol-active.conf && $(PROD_DOCKER) exec futebol-nginx nginx -s reload" || true
+	@echo "  Verifying…"
+	ssh $(PROD_HOST) "cd $(PROD_DEPLOY_DIR) && $(PROD_COMPOSE) ps"
+	ssh $(PROD_HOST) "rm -rf $(PROD_DEPLOY_DIR)/tmp"
+	@echo "Deploy complete"
+
+prod-provision: build save prod-publish prod-release prod-deploy
+	@echo "Full prod provision complete (run: make prod-certbot-init for SSL)"
 
 # ── SSL / Let's Encrypt ───────────────────────────────────
 
-certbot-init:
-	@test -n "$(VPS_HOST)" || (echo "ERROR: VPS_HOST is not set. Usage: make certbot-init VPS_HOST=user@host" && exit 1)
-	@test -f "$(STAGING)/api.tar" || ($(MAKE) vps-save)
+prod-certbot-init:
+	@test -n "$(PROD_HOST)" || (echo "ERROR: PROD_HOST is not set. Usage: make prod-certbot-init PROD_HOST=user@host" && exit 1)
+	@test -f "$(STAGING)/api.tar" || ($(MAKE) save)
 	@echo "=== Step 1: Starting nginx with HTTP-only config ==="
-	ssh $(VPS_HOST) "cd $(VPS_DEPLOY_DIR) && docker compose up -d --no-deps nginx"
+	ssh $(PROD_HOST) "cd $(PROD_DEPLOY_DIR) && $(PROD_COMPOSE) up -d --no-deps nginx"
 	@echo "=== Step 2: Generating SSL certificates ==="
-	ssh $(VPS_HOST) "cd $(VPS_DEPLOY_DIR) && docker compose run --rm certbot certonly --webroot -w /var/www/certbot \
+	ssh $(PROD_HOST) "cd $(PROD_DEPLOY_DIR) && $(PROD_COMPOSE) --profile renewal run --rm certbot certonly --webroot -w /var/www/certbot \
 		-d futebol.$(DOMAIN) \
 		-d futebol-observe.$(DOMAIN) \
 		-d futebol-mcp.$(DOMAIN) \
@@ -346,16 +424,16 @@ certbot-init:
 		--agree-tos \
 		--no-eff-email"
 	@echo "=== Step 3: Switching to HTTPS config ==="
-	ssh $(VPS_HOST) "cd $(VPS_DEPLOY_DIR) && cp nginx/conf.d/futebol.conf nginx/conf.d/futebol-active.conf"
-	ssh $(VPS_HOST) "cd $(VPS_DEPLOY_DIR) && docker compose restart nginx"
+	ssh $(PROD_HOST) "cd $(PROD_DEPLOY_DIR) && cp nginx/conf.d/futebol.conf nginx/conf.d/futebol-active.conf"
+	ssh $(PROD_HOST) "cd $(PROD_DEPLOY_DIR) && $(PROD_COMPOSE) restart nginx"
 	@echo "=== SSL setup complete ==="
 	@echo "Verify: https://futebol.$(DOMAIN)"
 	@echo "Verify: https://futebol-observe.$(DOMAIN)"
 	@echo "Verify: https://futebol-mcp.$(DOMAIN)"
 
-certbot-renew:
-	@test -n "$(VPS_HOST)" || (echo "ERROR: VPS_HOST is not set. Usage: make certbot-renew VPS_HOST=user@host" && exit 1)
-	@echo "Renewing SSL certificates on $(VPS_HOST)…"
-	ssh $(VPS_HOST) "cd $(VPS_DEPLOY_DIR) && docker compose run --rm certbot renew"
-	ssh $(VPS_HOST) "cd $(VPS_DEPLOY_DIR) && docker compose restart nginx"
+prod-certbot-renew:
+	@test -n "$(PROD_HOST)" || (echo "ERROR: PROD_HOST is not set. Usage: make prod-certbot-renew PROD_HOST=user@host" && exit 1)
+	@echo "Renewing SSL certificates on $(PROD_HOST)…"
+	ssh $(PROD_HOST) "cd $(PROD_DEPLOY_DIR) && $(PROD_COMPOSE) --profile renewal run --rm certbot renew"
+	ssh $(PROD_HOST) "cd $(PROD_DEPLOY_DIR) && $(PROD_COMPOSE) restart nginx"
 	@echo "SSL certificates renewed"
