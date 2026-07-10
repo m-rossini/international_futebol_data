@@ -33,11 +33,11 @@ services:
         condition: service_started
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:7531/health')"]
-      interval: 3m
+      interval: 30s
       timeout: 5s
       retries: 3
       start_interval: 5s
-      start_period: 10s
+      start_period: 30s
     restart: unless-stopped
 
   mcp:
@@ -70,11 +70,11 @@ services:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:3000/"]
-      interval: 3m
+      interval: 30s
       timeout: 5s
       retries: 3
       start_interval: 5s
-      start_period: 10s
+      start_period: 30s
     restart: unless-stopped
 
   openobserve:

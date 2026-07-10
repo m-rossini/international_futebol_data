@@ -20,8 +20,10 @@ _DATA_DIR = os.environ.get("DATA_DIR") or os.path.join(
     os.path.dirname(__file__), "..", "..", "data"
 )
 
-# Precomputed cache paths
-_CACHE_DIR = os.path.join(_DATA_DIR, "precomputed")
+# Precomputed cache paths — use a writable location (not DATA_DIR which may be read-only)
+_CACHE_DIR = os.path.join(
+    os.path.dirname(__file__), "..", "..", ".cache", "precomputed"
+)
 _CACHE_META = os.path.join(_CACHE_DIR, "cache_meta.json")
 _CACHE_ENRICHED = os.path.join(_CACHE_DIR, "enriched.pkl")
 _CACHE_TEAMS = os.path.join(_CACHE_DIR, "teams_list.pkl")
