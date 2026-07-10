@@ -2,6 +2,9 @@
 # Used for: boyz local network testing
 # Data directory must exist at: ./data/
 
+include:
+  - compose/shared.yml
+
 services:
   nginx:
     image: nginx:alpine
@@ -76,19 +79,3 @@ services:
       start_interval: 5s
       start_period: 30s
     restart: unless-stopped
-
-  openobserve:
-    image: docker.io/openobserve/openobserve:latest
-    container_name: futebol-observe
-    volumes:
-      - oo_data:/data
-    environment:
-      - ZO_ROOT_USER_EMAIL=admin@futebol.local
-      - ZO_ROOT_USER_PASSWORD=Futebol@123
-      - ZO_DATA_DIR=/data
-      - ZO_COMPACT_ENABLED=true
-      - ZO_COMPACT_INTERVAL=60
-    restart: unless-stopped
-
-volumes:
-  oo_data:
