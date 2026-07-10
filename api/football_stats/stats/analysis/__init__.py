@@ -109,16 +109,6 @@ __all__ = [
     "country_info",
     "biggest_wins_in_df",
     "biggest_single_win",
-    "biggest_wins",
-    "_strip_accents",
     "yearly_overview",
     "yearly_matches",
 ]
-
-# ---------------------------------------------------------------------------
-#  Backward-compatible aliases
-# ---------------------------------------------------------------------------
-# engine.py imports `biggest_wins` (the old function name)
-# and `_strip_accents` (with leading underscore)
-biggest_wins = biggest_wins_in_df
-_strip_accents = strip_accents

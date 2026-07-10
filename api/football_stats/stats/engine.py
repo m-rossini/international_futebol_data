@@ -16,7 +16,7 @@ from .engine_helpers import (
 )
 from .analysis.ranking import DIMENSION_ALIASES, TEAM_STAT_COLUMNS, VALID_STATS
 from .analysis import (
-    biggest_wins,
+    biggest_wins_in_df as biggest_wins,
     top_scorers,
     team_win_rate,
     team_yearly,
