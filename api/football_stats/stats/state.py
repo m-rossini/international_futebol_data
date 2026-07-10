@@ -1,8 +1,6 @@
 """Holds the application state: loaded DataFrames and config."""
 
-import json
 import os
-import pickle
 
 import pandas as pd
 
@@ -10,6 +8,8 @@ from .loader import load_all_data
 from .log import get_logger
 from .elo import calculate_elo_ratings
 from .elo_config import load_elo_config
+from .config import load_config
+from .cache import cache_is_valid, load_from_disk, save_to_disk
 
 logger = get_logger("state")
 
@@ -19,17 +19,6 @@ CONFIG_PATH = os.path.join(os.path.dirname(__file__), "..", "config.json")
 _DATA_DIR = os.environ.get("DATA_DIR") or os.path.join(
     os.path.dirname(__file__), "..", "..", "data"
 )
-
-# Precomputed cache paths — use a writable location (not DATA_DIR which may be read-only)
-_CACHE_DIR = os.path.join(
-    os.path.dirname(__file__), "..", "..", ".cache", "precomputed"
-)
-_CACHE_META = os.path.join(_CACHE_DIR, "cache_meta.json")
-_CACHE_ENRICHED = os.path.join(_CACHE_DIR, "enriched.pkl")
-_CACHE_TEAMS = os.path.join(_CACHE_DIR, "teams_list.pkl")
-_CACHE_TOURNAMENTS = os.path.join(_CACHE_DIR, "tournaments_list.pkl")
-_CACHE_COUNTRIES = os.path.join(_CACHE_DIR, "countries_list.pkl")
-_CACHE_CITIES = os.path.join(_CACHE_DIR, "cities_list.pkl")
 
 
 def _drop_future_rows(df: pd.DataFrame, label: str) -> pd.DataFrame:
@@ -101,92 +90,6 @@ class DataState:
             raise RuntimeError("Precomputed caches not loaded. Call reload() first.")
         return self._cache_cities_list
 
-    def _get_csv_sizes(self) -> dict[str, int]:
-        """Get file sizes of all source CSVs for staleness detection."""
-        sizes: dict[str, int] = {}
-        for name in [
-            "results.csv",
-            "goalscorers.csv",
-            "shootouts.csv",
-            "former_names.csv",
-        ]:
-            path = os.path.join(_DATA_DIR, name)
-            try:
-                sizes[name] = os.path.getsize(path)
-            except OSError:
-                sizes[name] = 0
-        return sizes
-
-    def _cache_is_valid(self) -> bool:
-        """Check if disk cache exists and matches current CSV file sizes."""
-        if not os.path.exists(_CACHE_META):
-            return False
-        if not all(
-            os.path.exists(p)
-            for p in [
-                _CACHE_ENRICHED,
-                _CACHE_TEAMS,
-                _CACHE_TOURNAMENTS,
-                _CACHE_COUNTRIES,
-                _CACHE_CITIES,
-            ]
-        ):
-            return False
-        try:
-            with open(_CACHE_META) as f:
-                cached_sizes = json.load(f)
-            return cached_sizes == self._get_csv_sizes()
-        except (json.JSONDecodeError, OSError):
-            return False
-
-    def _load_from_disk_cache(self) -> None:
-        """Load precomputed DataFrames from disk cache. Returns False on failure."""
-        try:
-            logger.info("Loading precomputed caches from disk …")
-            with open(_CACHE_ENRICHED, "rb") as f:
-                self._cache_enriched = pickle.load(f)
-            with open(_CACHE_TEAMS, "rb") as f:
-                self._cache_teams_list = pickle.load(f)
-            with open(_CACHE_TOURNAMENTS, "rb") as f:
-                self._cache_tournaments_list = pickle.load(f)
-            with open(_CACHE_COUNTRIES, "rb") as f:
-                self._cache_countries_list = pickle.load(f)
-            with open(_CACHE_CITIES, "rb") as f:
-                self._cache_cities_list = pickle.load(f)
-            logger.info(
-                "Disk cache loaded: %d teams, %d tournaments, %d countries, %d cities",
-                len(self._cache_teams_list),
-                len(self._cache_tournaments_list),
-                len(self._cache_countries_list),
-                len(self._cache_cities_list),
-            )
-            return True
-        except (OSError, pickle.UnpicklingError, KeyError) as e:
-            logger.warning("Failed to load disk cache, will recompute: %s", e)
-            return False
-
-    def _save_to_disk_cache(self) -> None:
-        """Save precomputed DataFrames to disk cache. Silently skips if read-only."""
-        try:
-            os.makedirs(_CACHE_DIR, exist_ok=True)
-
-            with open(_CACHE_ENRICHED, "wb") as f:
-                pickle.dump(self._cache_enriched, f)
-            with open(_CACHE_TEAMS, "wb") as f:
-                pickle.dump(self._cache_teams_list, f)
-            with open(_CACHE_TOURNAMENTS, "wb") as f:
-                pickle.dump(self._cache_tournaments_list, f)
-            with open(_CACHE_COUNTRIES, "wb") as f:
-                pickle.dump(self._cache_countries_list, f)
-            with open(_CACHE_CITIES, "wb") as f:
-                pickle.dump(self._cache_cities_list, f)
-            with open(_CACHE_META, "w") as f:
-                json.dump(self._get_csv_sizes(), f)
-
-            logger.info("Precomputed caches saved to disk.")
-        except OSError as e:
-            logger.warning("Could not save precomputed caches to disk: %s", e)
-
     def _compute_caches(self) -> None:
         """Compute all precomputed list DataFrames from raw results."""
         from .analysis.city import cities_list
@@ -209,6 +112,17 @@ class DataState:
             len(self._cache_cities_list),
         )
 
+    def _persist_caches(self) -> None:
+        """Save the precomputed caches to disk (best-effort)."""
+        save_to_disk(
+            self._cache_enriched,
+            self._cache_teams_list,
+            self._cache_tournaments_list,
+            self._cache_countries_list,
+            self._cache_cities_list,
+            _DATA_DIR,
+        )
+
     def reload(self) -> dict:
         """(Re)load all CSV files and the config file. Returns a summary dict."""
         logger.info("Reloading data from CSV files...")
@@ -224,8 +138,7 @@ class DataState:
 
         # Load config BEFORE ELO calculation so elo_config is available
         if os.path.exists(CONFIG_PATH):
-            with open(CONFIG_PATH) as f:
-                self.config = json.load(f)
+            self.config = load_config(CONFIG_PATH)
             logger.debug("Config loaded from %s", CONFIG_PATH)
         else:
             self.config = {}
@@ -245,13 +158,30 @@ class DataState:
 
         # Load or compute precomputed list caches
         if self.results is not None and not self.results.empty:
-            if self._cache_is_valid():
-                if not self._load_from_disk_cache():
+            if cache_is_valid(_DATA_DIR):
+                caches = load_from_disk()
+                if caches is not None:
+                    (
+                        self._cache_enriched,
+                        self._cache_teams_list,
+                        self._cache_tournaments_list,
+                        self._cache_countries_list,
+                        self._cache_cities_list,
+                    ) = caches
+                    logger.info(
+                        "Disk cache loaded: %d teams, %d tournaments, "
+                        "%d countries, %d cities",
+                        len(self._cache_teams_list),
+                        len(self._cache_tournaments_list),
+                        len(self._cache_countries_list),
+                        len(self._cache_cities_list),
+                    )
+                else:
                     self._compute_caches()
-                    self._save_to_disk_cache()
+                    self._persist_caches()
             else:
                 self._compute_caches()
-                self._save_to_disk_cache()
+                self._persist_caches()
 
         summary = {
             "status": "ok",
