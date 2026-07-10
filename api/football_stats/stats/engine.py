@@ -7,6 +7,12 @@ import pandas as pd
 from .log import get_logger
 from .state import DataState
 from .filters import FilterParams, apply_filters
+from .engine_helpers import (
+    enrich_shootouts,
+    match_goalscorers,
+    merge_elo,
+    resolve_team_name,
+)
 from .analysis import (
     biggest_wins,
     top_scorers,
@@ -33,10 +39,7 @@ from .analysis import (
     country_info,
     yearly_overview,
     yearly_matches,
-    _strip_accents,
 )
-from .analysis.enrich import build_shootout_lookup, mark_shootouts
-from .elo import calculate_elo_for_filters, get_latest_elo
 
 logger = get_logger("engine")
 
@@ -46,28 +49,6 @@ class QueryEngine:
 
     def __init__(self, state: DataState):
         self._state = state
-
-    # ------------------------------------------------------------------
-    #  Team name resolution (case-insensitive)
-    # ------------------------------------------------------------------
-
-    def _teams_set(self) -> set[str]:
-        """Return the full set of known team names from results."""
-        return set(self._state.results["home_team"].unique()) | set(
-            self._state.results["away_team"].unique()
-        )
-
-    def _resolve_team_name(self, name: str) -> str:
-        """Find the canonical team name from a case-insensitive input.
-
-        Raises ValueError if no match is found.
-        """
-        teams = self._teams_set()
-        name_key = _strip_accents(name).strip().lower()
-        for team in teams:
-            if _strip_accents(team).lower() == name_key:
-                return team
-        raise ValueError(f"Unknown team: '{name}'")
 
     # ------------------------------------------------------------------
     #  Structured queries (used by REST endpoints)
@@ -105,53 +86,18 @@ class QueryEngine:
         else:
             logger.debug("Teams list", extra={"source": "live"})
             result = teams_list(self._filtered_results(filters))
-        return self._merge_elo(result, filters)
-
-    def _merge_elo(
-        self, teams: list[dict], filters: Optional[FilterParams] = None
-    ) -> list[dict]:
-        """Add elo_rating and elo_ranking to each team dict.
-
-        When filters are active, ELO is recomputed from the filtered match
-        subset so that ratings and rankings reflect the selected scope
-        (tournament, date range, countries, etc.).
-        """
-        if not self._no_filters(filters):
-            elo_history = calculate_elo_for_filters(
-                self._state.results, filters, elo_config=self._state.elo_config
-            )
-        else:
-            elo_history = self._state.elo_ratings
-
-        if elo_history is None or elo_history.empty:
-            for t in teams:
-                t["elo_rating"] = None
-                t["elo_ranking"] = None
-            return teams
-
-        latest = get_latest_elo(elo_history, top_n=500)
-        elo_lookup: dict[str, dict] = {}
-        for _, row in latest.iterrows():
-            elo_lookup[row["team"]] = {
-                "elo_rating": round(row["elo_rating"]),
-                "elo_ranking": int(row["ranking"]),
-            }
-
-        for t in teams:
-            elo = elo_lookup.get(t["team"])
-            if elo:
-                t["elo_rating"] = elo["elo_rating"]
-                t["elo_ranking"] = elo["elo_ranking"]
-            else:
-                t["elo_rating"] = None
-                t["elo_ranking"] = None
-
-        return teams
+        return merge_elo(
+            result,
+            self._state.results,
+            filters,
+            self._state.elo_ratings,
+            self._state.elo_config,
+        )
 
     def team(self, team_name: str, filters: Optional[FilterParams] = None) -> dict:
         logger.debug("Team stats requested: %s", team_name)
         try:
-            canonical = self._resolve_team_name(team_name)
+            canonical = resolve_team_name(team_name, self._state.results)
         except ValueError:
             return {
                 "error": True,
@@ -161,12 +107,13 @@ class QueryEngine:
         result = team_win_rate(r, canonical)
         result["yearly"] = team_yearly(r, canonical)
         result["matches_list"] = team_matches_all(r, canonical)
-        # Mark shootouts
-        sl = build_shootout_lookup(self._state.shootouts)
-        mark_shootouts(result["matches_list"], sl)
-        mark_shootouts(result.get("biggest_wins", []), sl)
-        mark_shootouts(result.get("worst_defeats", []), sl)
-        return result
+        return enrich_shootouts(
+            result,
+            self._state.shootouts,
+            "matches_list",
+            "biggest_wins",
+            "worst_defeats",
+        )
 
     def team_matches(
         self, team_name: str, year: int, filters: Optional[FilterParams] = None
@@ -174,7 +121,7 @@ class QueryEngine:
         """Return all matches for a given team in a given year."""
         logger.debug("Team matches requested: %s in %d", team_name, year)
         try:
-            canonical = self._resolve_team_name(team_name)
+            canonical = resolve_team_name(team_name, self._state.results)
         except ValueError:
             return {
                 "error": True,
@@ -182,7 +129,9 @@ class QueryEngine:
             }
         r = self._enriched_filtered(filters)
         matches = team_matches_by_year(r, canonical, year)
-        mark_shootouts(matches, build_shootout_lookup(self._state.shootouts))
+        enrich_shootouts(
+            {"matches_list": matches}, self._state.shootouts, "matches_list"
+        )
         return {
             "team": canonical,
             "year": year,
@@ -195,17 +144,18 @@ class QueryEngine:
     ) -> dict:
         logger.debug("Head-to-head: %s vs %s", team1, team2)
         try:
-            t1 = self._resolve_team_name(team1)
-            t2 = self._resolve_team_name(team2)
+            t1 = resolve_team_name(team1, self._state.results)
+            t2 = resolve_team_name(team2, self._state.results)
         except ValueError as e:
             return {"error": True, "message": str(e)}
         result = team_vs_team(self._enriched_filtered(filters), t1, t2)
-        # Mark shootouts in match list and biggest wins
-        sl = build_shootout_lookup(self._state.shootouts)
-        mark_shootouts(result.get("matches_list", []), sl)
-        mark_shootouts(result.get(f"{t1}_biggest_wins", []), sl)
-        mark_shootouts(result.get(f"{t2}_biggest_wins", []), sl)
-        return result
+        return enrich_shootouts(
+            result,
+            self._state.shootouts,
+            "matches_list",
+            f"{t1}_biggest_wins",
+            f"{t2}_biggest_wins",
+        )
 
     def most(
         self, stat: str, top_n: int = 20, filters: Optional[FilterParams] = None
@@ -251,11 +201,7 @@ class QueryEngine:
             result = season_info(
                 self._enriched_filtered(filters), tournament_name, year
             )
-            mark_shootouts(
-                result.get("matches_list", []),
-                build_shootout_lookup(self._state.shootouts),
-            )
-            return result
+            return enrich_shootouts(result, self._state.shootouts, "matches_list")
         except ValueError as e:
             return {"error": True, "message": str(e)}
 
@@ -342,69 +288,11 @@ class QueryEngine:
     def match_goalscorers(self, date: str, home_team: str, away_team: str) -> dict:
         """Return goalscorers and shootout info for a specific match."""
         logger.debug("Match goalscorers: %s %s vs %s", date, home_team, away_team)
-
-        ts = pd.Timestamp(date)
-
-        # Goalscorers for this match
-        gs = self._state.goalscorers
-        mask = (
-            (gs["date"] == ts)
-            & (gs["home_team"] == home_team)
-            & (gs["away_team"] == away_team)
+        return match_goalscorers(
+            date,
+            home_team,
+            away_team,
+            self._state.goalscorers,
+            self._state.shootouts,
+            self._state.results,
         )
-        scorers_df = gs.loc[
-            mask, ["team", "scorer", "minute", "own_goal", "penalty"]
-        ].copy()
-        scorers_df = scorers_df.sort_values("minute")
-        scorers = scorers_df.to_dict(orient="records")
-        # Convert minute to int for clean JSON
-        for s in scorers:
-            s["minute"] = int(s["minute"]) if pd.notna(s["minute"]) else None
-            s["own_goal"] = bool(s["own_goal"])
-            s["penalty"] = bool(s["penalty"])
-
-        # Shootout info
-        shootouts = self._state.shootouts
-        s_mask = (
-            (shootouts["date"] == ts)
-            & (shootouts["home_team"] == home_team)
-            & (shootouts["away_team"] == away_team)
-        )
-        shootout_info = None
-        if s_mask.any():
-            s_row = shootouts.loc[s_mask].iloc[0]
-            shootout_info = {
-                "winner": s_row.get("winner"),
-                "first_shooter": s_row.get("first_shooter") or None,
-            }
-
-        # Match info from results
-        results = self._state.results
-        r_mask = (
-            (results["date"] == ts)
-            & (results["home_team"] == home_team)
-            & (results["away_team"] == away_team)
-        )
-        if r_mask.any():
-            r_row = results.loc[r_mask].iloc[0]
-            return {
-                "date": date,
-                "home_team": home_team,
-                "away_team": away_team,
-                "home_score": int(r_row["home_score"]),
-                "away_score": int(r_row["away_score"]),
-                "tournament": r_row.get("tournament"),
-                "city": r_row.get("city"),
-                "country": r_row.get("country"),
-                "scorers": scorers,
-                "shootout": shootout_info,
-            }
-
-        # Fallback if match not found in results (shouldn't happen)
-        return {
-            "date": date,
-            "home_team": home_team,
-            "away_team": away_team,
-            "scorers": scorers,
-            "shootout": shootout_info,
-        }
