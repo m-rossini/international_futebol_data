@@ -1,4 +1,4 @@
-"""Shared dependencies: app state, query engine, guards, filter-param extraction."""
+"""Shared dependencies: app-state providers, guards, filter-param extraction."""
 
 from __future__ import annotations
 
@@ -7,17 +7,32 @@ import os
 from enum import Enum
 from typing import Optional
 
-from fastapi import HTTPException, Query
+from fastapi import Depends, HTTPException, Query, Request
 
-from football_stats.stats.state import DataState
+from football_stats.llm.service import ConversationService
 from football_stats.stats.engine import QueryEngine
 from football_stats.stats.filters import FilterParams, build_filters
+from football_stats.stats.state import DataState
 
 # ---------------------------------------------------------------------------
-#  Shared state & engine (created once, imported by all routers)
+#  App-state providers (populated by server.py lifespan)
 # ---------------------------------------------------------------------------
-state = DataState()
-engine = QueryEngine(state)
+
+
+def get_state(request: Request) -> DataState:
+    """Return the application ``DataState`` (set during lifespan)."""
+    return request.app.state.state
+
+
+def get_engine(request: Request) -> QueryEngine:
+    """Return the application ``QueryEngine`` (set during lifespan)."""
+    return request.app.state.engine
+
+
+def get_conversation_service(request: Request) -> ConversationService | None:
+    """Return the LLM conversation service, or ``None`` if not configured."""
+    return getattr(request.app.state, "conversation_service", None)
+
 
 # ---------------------------------------------------------------------------
 #  Config helpers
@@ -38,7 +53,7 @@ def load_version() -> str:
 # ---------------------------------------------------------------------------
 #  Guard
 # ---------------------------------------------------------------------------
-def require_data() -> None:
+def require_data(state: DataState = Depends(get_state)) -> None:
     """Raise HTTP 503 if data has not been loaded yet."""
     if not state.is_loaded:
         raise HTTPException(503, "Data not loaded yet. Call POST /reload first.")
@@ -73,12 +88,19 @@ class FilterParamsDep:
         date_from: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
         date_to: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
     ):
-        self._inner = build_filters(
-            teams=teams,
-            tournaments=tournaments,
-            countries=countries,
-            date_from=date_from,
-            date_to=date_to,
+        # build_filters returns None when empty; the router contract expects a
+        # (possibly empty) FilterParams object so callers can access .inner
+        # attributes unconditionally. The engine treats an empty FilterParams
+        # the same as None.
+        self._inner = (
+            build_filters(
+                teams=teams,
+                tournaments=tournaments,
+                countries=countries,
+                date_from=date_from,
+                date_to=date_to,
+            )
+            or FilterParams()
         )
 
     @property

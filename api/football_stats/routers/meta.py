@@ -2,10 +2,14 @@
 
 import logging
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import RedirectResponse
 
-from football_stats.routers.dependencies import load_version, require_data, state
+from football_stats.routers.dependencies import (
+    get_state,
+    load_version,
+    require_data,
+)
 from football_stats.stats.elo import clear_elo_cache
 from football_stats.stats.models import (
     FilterOptionsResponse,
@@ -13,6 +17,7 @@ from football_stats.stats.models import (
     ReloadResponse,
     VersionResponse,
 )
+from football_stats.stats.state import DataState
 
 logger = logging.getLogger("stats.server.meta")
 
@@ -21,6 +26,7 @@ router = APIRouter(tags=["Meta"])
 
 @router.post("/reload", response_model=ReloadResponse)
 async def reload_endpoint(
+    state: DataState = Depends(get_state),
     force_elo_recalc: bool = Query(
         False, description="Clear ELO cache and force recalculation from matches"
     ),
@@ -48,7 +54,7 @@ async def reload_endpoint(
 
 
 @router.get("/health", response_model=HealthResponse)
-async def health():
+async def health(state: DataState = Depends(get_state)):
     """Health check endpoint for container orchestration probes."""
     return {
         "status": "ok",
@@ -63,11 +69,13 @@ async def version():
 
 
 @router.get("/filters", response_model=FilterOptionsResponse)
-async def filter_options():
+async def filter_options(
+    state: DataState = Depends(get_state),
+    _: None = Depends(require_data),
+):
     """Return distinct filter values (tournaments, countries, cities) populated
     from the cached data. Useful for pre-populating UI dropdowns.
     """
-    require_data()
     results = state.results
     return {
         "tournaments": sorted(results["tournament"].dropna().unique().tolist()),

@@ -19,8 +19,9 @@ import uvicorn
 from fastapi import FastAPI, Request
 
 from football_stats.stats.log import logger
+from football_stats.stats.state import DataState
+from football_stats.stats.engine import QueryEngine
 
-from football_stats.routers.dependencies import state, engine
 from football_stats.routers.meta import router as meta_router
 from football_stats.routers.teams import router as teams_router
 from football_stats.routers.matches import router as matches_router
@@ -29,10 +30,7 @@ from football_stats.routers.tournaments import router as tournaments_router
 from football_stats.routers.cities import router as cities_router
 from football_stats.routers.countries import router as countries_router
 from football_stats.routers.years import router as years_router
-from football_stats.routers.conversation import (
-    router as conversation_router,
-    set_conversation_service,
-)
+from football_stats.routers.conversation import router as conversation_router
 from football_stats.routers.releases import router as releases_router
 from football_stats.llm.config import LLMConfig
 from football_stats.llm.chain import ProviderChain
@@ -46,7 +44,11 @@ from football_stats.llm.service import ConversationService
 @asynccontextmanager
 async def lifespan(application: FastAPI):
     logger.info("Starting server — loading data...")
+    state = DataState()
     info = state.reload()
+    engine = QueryEngine(state)
+    application.state.state = state
+    application.state.engine = engine
     logger.info(
         "Data loaded: %d matches, %d goalscorers, %d shootouts, %d former names, %d elo rows",
         info["matches_loaded"],
@@ -62,7 +64,7 @@ async def lifespan(application: FastAPI):
         chain = ProviderChain(llm_config)
         executor = ToolExecutor(engine)
         conversation_service = ConversationService(chain, executor, llm_config)
-        set_conversation_service(conversation_service)
+        application.state.conversation_service = conversation_service
         logger.info(
             "LLM conversation service ready (provider=%s)",
             chain.active_provider_name,

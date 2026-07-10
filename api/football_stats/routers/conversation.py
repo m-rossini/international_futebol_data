@@ -2,25 +2,19 @@
 
 from __future__ import annotations
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
 from football_stats.llm.service import (
     ConversationRequest,
     ConversationResponse,
     ConversationService,
 )
-from football_stats.routers.dependencies import require_data
+from football_stats.routers.dependencies import (
+    get_conversation_service,
+    require_data,
+)
 
 router = APIRouter()
-
-# This will be set by server.py during startup
-_conversation_service: ConversationService | None = None
-
-
-def set_conversation_service(service: ConversationService) -> None:
-    """Inject the conversation service at startup."""
-    global _conversation_service
-    _conversation_service = service
 
 
 @router.post(
@@ -34,23 +28,25 @@ def set_conversation_service(service: ConversationService) -> None:
         "a previous conversation."
     ),
 )
-async def conversation(request: ConversationRequest) -> ConversationResponse:
-    require_data()
-
-    if _conversation_service is None:
+async def conversation(
+    request: ConversationRequest,
+    service: ConversationService | None = Depends(get_conversation_service),
+    _: None = Depends(require_data),
+) -> ConversationResponse:
+    if service is None:
         raise HTTPException(
             status_code=503,
             detail="LLM service not configured. Add an 'llm' section to config.json.",
         )
 
-    if not _conversation_service.is_available:
+    if not service.is_available:
         raise HTTPException(
             status_code=503,
             detail="No LLM providers available. Check API keys and configuration.",
         )
 
     try:
-        return await _conversation_service.chat(request)
+        return await service.chat(request)
     except RuntimeError as e:
         raise HTTPException(status_code=503, detail=str(e))
     except Exception as e:
