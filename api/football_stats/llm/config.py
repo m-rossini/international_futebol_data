@@ -116,8 +116,9 @@ class LLMConfig:
             raise KeyError(name)
 
         target = self.profiles[name]
+        target_priority = target.priority
         for p in self.profiles.values():
-            if p.priority <= target.priority:
+            if p.priority <= target_priority:
                 p.priority += 1
         target.priority = 1
 
