@@ -17,16 +17,17 @@ router = APIRouter(tags=["Releases"])
 def _get_releases_dir() -> Path:
     """Find releases/ directory, works both locally and in Docker.
 
-    Locally (project root): 4 levels up from routers/
-    Docker (/app root):     3 levels up (api/ mounts as /app)
+    From ``routers/`` directory:
+      Local: 3 up → project root → releases/
+      Docker: 2 up → /app/ → releases/
     """
     here = Path(__file__).resolve().parent
 
-    local = here.parents[3] / "releases"
+    local = here.parent.parent.parent / "releases"
     if local.exists():
         return local
 
-    docker = here.parents[2] / "releases"
+    docker = here.parent.parent / "releases"
     if docker.exists():
         return docker
 
