@@ -23,6 +23,7 @@ services:
       - "5678:5678"
     volumes:
       - ./api:/app
+      - /app/.venv
       # Set DATA_VOLUME in .env to point to your CSV directory
       - ${DATA_VOLUME}:/data:ro
     environment:
@@ -42,7 +43,7 @@ services:
       timeout: 5s
       retries: 3
       start_interval: 5s
-      start_period: 90s
+      start_period: 10s
     restart: unless-stopped
 
   mcp:
@@ -84,7 +85,7 @@ services:
       - NEXT_PUBLIC_OO_STREAM=web_events
     depends_on:
       api:
-        condition: service_healthy
+        condition: service_started
     restart: unless-stopped
 
   openobserve:
