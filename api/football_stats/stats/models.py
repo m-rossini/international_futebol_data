@@ -630,3 +630,28 @@ class RootResponse(BaseModel):
     available_stats: dict[str, str]
     filter_params: dict[str, str]
     data_loaded: bool
+
+
+# ===========================================================================
+#  GET /releases
+# ===========================================================================
+
+
+class ReleaseListItem(BaseModel):
+    version: str
+    tag: str
+    name: str
+    published_at: str
+    author: str
+    body: str
+    html_url: str
+
+
+class ReleaseDetailResponse(BaseModel):
+    version: str
+    tag: str
+    name: str
+    published_at: str
+    author: str
+    body: str
+    html_url: str

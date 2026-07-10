@@ -33,6 +33,7 @@ from football_stats.routers.conversation import (
     router as conversation_router,
     set_conversation_service,
 )
+from football_stats.routers.releases import router as releases_router
 from football_stats.llm.config import LLMConfig
 from football_stats.llm.chain import ProviderChain
 from football_stats.llm.executor import ToolExecutor
@@ -114,6 +115,7 @@ app.include_router(cities_router)  # /cities, /city/{name}
 app.include_router(countries_router)  # /countries, /country/{name}
 app.include_router(years_router)  # /years, /years/{year}
 app.include_router(conversation_router)  # /conversation
+app.include_router(releases_router)  # /releases
 
 
 # ---------------------------------------------------------------------------
