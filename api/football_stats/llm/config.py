@@ -183,10 +183,14 @@ class LLMConfig:
             config_path = Path(config_path)
 
         full = cls.load_full_config(config_path)
-        full["llm"] = llm_config.to_llm_dict()
+        existing_llm = full.get("llm", {})
+        new_llm = llm_config.to_llm_dict()
+        if "_comment" in existing_llm:
+            new_llm["_comment"] = existing_llm["_comment"]
+        full["llm"] = new_llm
         with open(config_path, "w") as f:
             json.dump(full, f, indent=2)
-        f.close()  # Ensure flush
+        f.close()
 
 
 # ---------------------------------------------------------------------------
