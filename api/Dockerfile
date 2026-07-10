@@ -23,6 +23,7 @@ CMD ["uv", "run", "python", "-m", "debugpy", "--listen", "0.0.0.0:5678", "footba
 FROM python:3.14-slim-bookworm AS production
 WORKDIR /app
 COPY --from=deps /app/.venv /app/.venv
+COPY --from=releases . /app/releases/
 COPY . .
 ENV PATH="/app/.venv/bin:$PATH"
 ENV PYTHONUNBUFFERED=1

@@ -305,7 +305,7 @@ local-test-cov:
 # ═══════════════════════════════════════════════════════════
 build:
 	@echo "Building production images…"
-	$(DOCKER) build -f api/Dockerfile --target production -t $(IMG_API_PROD) api/
+	$(DOCKER) build -f api/Dockerfile --build-context releases=./releases --target production -t $(IMG_API_PROD) api/
 	$(DOCKER) build -f web/Dockerfile --target production -t $(IMG_WEB_PROD) web/
 	@echo "Production images built:"
 	@$(DOCKER) images --format "table {{.Repository}}:{{.Tag}}\t{{.Size}}" | grep -E "$(IMG_API_PROD)|$(IMG_WEB_PROD)"
@@ -384,10 +384,7 @@ prod-publish:
 	@echo "Compressing data…"
 	@tar czf $(STAGING)/data.tar.gz -C "$(DATA_VOLUME)" .
 	cat $(STAGING)/data.tar.gz | ssh $(PROD_HOST) "cat > $(PROD_DEPLOY_DIR)/tmp/data.tar.gz"
-	@echo "Compressing releases…"
-	@tar czf $(STAGING)/releases.tar.gz releases
-	cat $(STAGING)/releases.tar.gz | ssh $(PROD_HOST) "cat > $(PROD_DEPLOY_DIR)/tmp/releases.tar.gz"
-	@echo "Published images, compose, nginx, env, data, and releases to $(PROD_HOST)"
+	@echo "Published images, compose, nginx, env, and data to $(PROD_HOST)"
 
 prod-release:
 	@test -n "$(PROD_HOST)" || (echo "ERROR: PROD_HOST is not set." && exit 1)
@@ -398,15 +395,12 @@ prod-release:
 prod-deploy:
 	@test -n "$(PROD_HOST)" || (echo "ERROR: PROD_HOST is not set." && exit 1)
 	@echo "Deploying on $(PROD_HOST)…"
-	@echo "  1/4 Stopping old containers…"
+	@echo "  1/3 Stopping old containers…"
 	ssh $(PROD_HOST) "cd $(PROD_DEPLOY_DIR) && $(PROD_COMPOSE) stop api mcp web openobserve 2>/dev/null || true"
-	@echo "  2/4 Decompressing data…"
+	@echo "  2/3 Decompressing data…"
 	ssh $(PROD_HOST) "cd $(PROD_DEPLOY_DIR) && mkdir -p data && tar xzf tmp/data.tar.gz -C data/ 2>/dev/null || true"
-	@echo "  2b/4 Decompressing releases…"
-	ssh $(PROD_HOST) "cd $(PROD_DEPLOY_DIR) && tar xzf tmp/releases.tar.gz 2>/dev/null || true"
-	@echo "  3/4 Starting containers…"
+	@echo "  3/3 Starting containers…"
 	ssh $(PROD_HOST) "cd $(PROD_DEPLOY_DIR) && $(PROD_COMPOSE) up -d --no-deps --force-recreate nginx api mcp web openobserve"
-	@echo "  4/4 Restoring HTTPS config if certs exist…"
 	ssh $(PROD_HOST) "test -f $(PROD_DEPLOY_DIR)/nginx/conf.d/futebol.conf && $(PROD_DOCKER) exec futebol-nginx test -f /etc/letsencrypt/live/futebol.$(DOMAIN)/fullchain.pem && cp $(PROD_DEPLOY_DIR)/nginx/conf.d/futebol.conf $(PROD_DEPLOY_DIR)/nginx/conf.d/futebol-active.conf && $(PROD_DOCKER) exec futebol-nginx nginx -s reload" || true
 	@echo "  Verifying…"
 	ssh $(PROD_HOST) "cd $(PROD_DEPLOY_DIR) && $(PROD_COMPOSE) ps"
@@ -424,7 +418,7 @@ prod-certbot-init:
 	@echo "=== Step 1: Starting nginx with HTTP-only config ==="
 	ssh $(PROD_HOST) "cd $(PROD_DEPLOY_DIR) && $(PROD_COMPOSE) up -d --no-deps nginx"
 	@echo "=== Step 2: Generating SSL certificates ==="
-	ssh $(PROD_HOST) "cd $(PROD_DEPLOY_DIR) && $(PROD_COMPOSE) --profile renewal run --rm certbot certonly --webroot -w /var/www/certbot \
+	ssh $(PROD_HOST) "cd $(PROD_DEPLOY_DIR) && $(PROD_COMPOSE) --profile renewal run --rm --entrypoint certbot certbot certonly --webroot -w /var/www/certbot \
 		-d futebol.$(DOMAIN) \
 		-d futebol-observe.$(DOMAIN) \
 		-d futebol-mcp.$(DOMAIN) \
@@ -442,6 +436,6 @@ prod-certbot-init:
 prod-certbot-renew:
 	@test -n "$(PROD_HOST)" || (echo "ERROR: PROD_HOST is not set. Usage: make prod-certbot-renew PROD_HOST=user@host" && exit 1)
 	@echo "Renewing SSL certificates on $(PROD_HOST)…"
-	ssh $(PROD_HOST) "cd $(PROD_DEPLOY_DIR) && $(PROD_COMPOSE) --profile renewal run --rm certbot renew"
+	ssh $(PROD_HOST) "cd $(PROD_DEPLOY_DIR) && $(PROD_COMPOSE) --profile renewal run --rm --entrypoint certbot certbot renew"
 	ssh $(PROD_HOST) "cd $(PROD_DEPLOY_DIR) && $(PROD_COMPOSE) restart nginx"
 	@echo "SSL certificates renewed"
