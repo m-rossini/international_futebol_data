@@ -8,6 +8,7 @@ import { FilterBar } from '@/components/shared/FilterBar';
 import { CountryFlag } from '@/components/shared/CountryFlag';
 import { YearlyChart } from '@/components/shared/chart/YearlyChart';
 import { CumulativeGoalsChart } from '@/components/shared/chart/CumulativeGoalsChart';
+import { GoalsHistogramChart } from '@/components/shared/chart/GoalsHistogramChart';
 import { MatchLadderChart } from '@/components/shared/chart/MatchLadderChart';
 import { BiggestWinsCard } from '@/components/shared/BiggestWinsCard';
 import { MatchTable } from '@/components/shared/MatchTable';
@@ -118,6 +119,21 @@ export function TeamDetailClient({ teamName }: Props) {
   const [error, setError] = useState<string | null>(null);
 
   const qs = useMemo(() => buildQs(sp), [sp]);
+
+  const ageHistogram = useMemo<Record<string, number> | null>(() => {
+    if (!detail || detail.matches_list.length === 0) return null;
+
+    const years = detail.matches_list.map((m) => new Date(m.date).getUTCFullYear());
+    const debutYear = Math.min(...years);
+
+    const buckets: Record<string, number> = {};
+    for (const y of years) {
+      const bucket = debutYear + Math.floor((y - debutYear) / 5) * 5;
+      const key = String(bucket);
+      buckets[key] = (buckets[key] ?? 0) + 1;
+    }
+    return buckets;
+  }, [detail]);
 
   useEffect(() => {
     let cancelled = false;
@@ -271,6 +287,11 @@ export function TeamDetailClient({ teamName }: Props) {
                 <div className="bg-white rounded-lg border border-gray-200 p-4">
                   <MatchLadderChart matches={detail.matches_list} team={teamName} height={200} />
                 </div>
+                {ageHistogram && (
+                  <div className="bg-white rounded-lg border border-gray-200 p-4">
+                    <GoalsHistogramChart data={ageHistogram} unit="matches" height={200} />
+                  </div>
+                )}
               </div>
             </div>
           )}
