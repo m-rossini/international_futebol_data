@@ -26,6 +26,7 @@ services:
       - ./data:/data:ro
     environment:
       - DATA_DIR=/data
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
       - OTEL_SERVICE_NAME=futebol-api
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://openobserve:5080/api/default
       - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
