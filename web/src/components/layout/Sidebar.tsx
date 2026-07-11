@@ -3,17 +3,34 @@
 import { useEffect, useCallback, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { X, Users, Trophy, Calendar, Swords, Flag, TrendingUp, Clock } from 'lucide-react';
+import {
+  X,
+  Users,
+  Trophy,
+  Calendar,
+  Swords,
+  Flag,
+  TrendingUp,
+  Clock,
+  MessageSquare,
+} from 'lucide-react';
 import { VERSION } from '@/lib/version';
 
-const navItems = [
-  { href: '/teams', label: 'Teams', icon: Users },
-  { href: '/tournaments', label: 'Tournaments', icon: Trophy },
-  { href: '/years', label: 'Years', icon: Calendar },
-  { href: '/head-to-head', label: 'Head to Head', icon: Swords },
-  { href: '/elo-ranking', label: 'ELO Rankings', icon: TrendingUp },
-  { href: '/decade-leaders', label: 'Decade Leaders', icon: Clock },
-  { href: '/flag-report', label: 'House Keeping', icon: Flag },
+type NavItem =
+  { type: 'item'; href: string; label: string; icon: typeof Users } | { type: 'separator' };
+
+const navItems: NavItem[] = [
+  { type: 'item', href: '/teams', label: 'Teams', icon: Users },
+  { type: 'item', href: '/tournaments', label: 'Tournaments', icon: Trophy },
+  { type: 'item', href: '/years', label: 'Years', icon: Calendar },
+  { type: 'item', href: '/head-to-head', label: 'Head to Head', icon: Swords },
+  { type: 'separator' },
+  { type: 'item', href: '/elo-ranking', label: 'ELO Rankings', icon: TrendingUp },
+  { type: 'item', href: '/decade-leaders', label: 'Decade Leaders', icon: Clock },
+  { type: 'separator' },
+  { type: 'item', href: '/askme', label: 'Ask Me', icon: MessageSquare },
+  { type: 'separator' },
+  { type: 'item', href: '/flag-report', label: 'House Keeping', icon: Flag },
 ];
 
 interface Props {
@@ -88,7 +105,10 @@ export function Sidebar({ isOpen, onClose }: Props) {
         </div>
 
         <nav className="flex-1 px-3 py-3 space-y-1">
-          {navItems.map((item) => {
+          {navItems.map((item, idx) => {
+            if (item.type === 'separator') {
+              return <hr key={`sep-${idx}`} className="my-2 border-gray-200" />;
+            }
             const isActive = pathname.startsWith(item.href);
             return (
               <Link
