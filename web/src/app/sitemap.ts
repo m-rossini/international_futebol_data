@@ -13,8 +13,20 @@ async function fetchFilters(): Promise<{ teams: string[]; tournaments: string[] 
   }
 }
 
+async function fetchYears(): Promise<number[]> {
+  try {
+    const res = await fetch(`${API_URL}/years`, { next: { revalidate: 3600 } });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.map((y: { year: number }) => y.year);
+  } catch {
+    return [];
+  }
+}
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const { teams, tournaments } = await fetchFilters();
+  const [filters, years] = await Promise.all([fetchFilters(), fetchYears()]);
+  const { teams, tournaments } = filters;
 
   const staticPages: MetadataRoute.Sitemap = [
     { url: BASE_URL, lastModified: new Date(), changeFrequency: 'daily', priority: 1 },
@@ -55,6 +67,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.5,
     },
     {
+      url: `${BASE_URL}/askme`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly',
+      priority: 0.6,
+    },
+    {
       url: `${BASE_URL}/about`,
       lastModified: new Date(),
       changeFrequency: 'yearly',
@@ -69,6 +87,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
+  const teamYearPages: MetadataRoute.Sitemap = teams.flatMap((team) =>
+    years.map((year) => ({
+      url: `${BASE_URL}/teams/${encodeURIComponent(team)}/${year}`,
+      lastModified: new Date(),
+      changeFrequency: 'monthly' as const,
+      priority: 0.5,
+    })),
+  );
+
   const tournamentPages: MetadataRoute.Sitemap = tournaments.map((tournament) => ({
     url: `${BASE_URL}/tournaments/${encodeURIComponent(tournament)}`,
     lastModified: new Date(),
@@ -76,5 +103,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
-  return [...staticPages, ...teamPages, ...tournamentPages];
+  return [...staticPages, ...teamPages, ...teamYearPages, ...tournamentPages];
 }
