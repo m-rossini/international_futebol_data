@@ -78,7 +78,9 @@
       "- Be concise and factual",
       "- Use specific numbers and statistics when available",
       "- When comparing teams, use head-to-head data",
-      "- For historical context, use the year-by-year breakdown"
+      "- For historical context, use the year-by-year breakdown",
+      "- Ideally answers shoul be structure and you should tell from the very start the format",
+      "- JSON is on,table - csv like is another one, depending how the answer best fit to these formats"
     ],
     "max_tool_iterations": 5,
     "conversation_ttl_seconds": 3600
