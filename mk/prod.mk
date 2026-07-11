@@ -8,6 +8,7 @@ prod-publish: NGINX_SRC = nginx/conf.d/futebol.conf
 prod-publish: NGINX_DST = futebol.conf
 prod-publish: DOCKER_CMD = $(PROD_DOCKER)
 prod-publish: COMPOSE_CMD = $(PROD_COMPOSE)
+prod-publish: ENV_FILE = .env.prod
 prod-publish: PRE_MKDIR = @ssh $(PROD_HOST) "mkdir -p $(PROD_DEPLOY_DIR)/data $(PROD_DEPLOY_DIR)/nginx/conf.d $(PROD_DEPLOY_DIR)/tmp"
 prod-publish: POST_PUBLISH = @ssh $(PROD_HOST) "test -f $(PROD_DEPLOY_DIR)/nginx/conf.d/futebol-active.conf || echo 'server { listen 80; server_name _; location /.well-known/acme-challenge/ { root /var/www/certbot; } location / { return 200 \"ok\"; } }' > $(PROD_DEPLOY_DIR)/nginx/conf.d/futebol-active.conf"
 prod-publish: POST_DEPLOY = @ssh $(PROD_HOST) "test -f $(PROD_DEPLOY_DIR)/nginx/conf.d/futebol.conf && $(PROD_DOCKER) exec futebol-nginx test -f /etc/letsencrypt/live/futebol.$(DOMAIN)/fullchain.pem && cp $(PROD_DEPLOY_DIR)/nginx/conf.d/futebol.conf $(PROD_DEPLOY_DIR)/nginx/conf.d/futebol-active.conf && $(PROD_DOCKER) exec futebol-nginx nginx -s reload" || true

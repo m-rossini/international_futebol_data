@@ -21,7 +21,7 @@ publish-images:
 	cat $(STAGING)/api.tar | ssh $(HOST) "cat > $(DEPLOY_DIR)/tmp/api.tar"
 	cat $(STAGING)/web.tar | ssh $(HOST) "cat > $(DEPLOY_DIR)/tmp/web.tar"
 	cat $(COMPOSE_FILE) | ssh $(HOST) "cat > $(DEPLOY_DIR)/docker-compose.yml"
-	cat .env.vps.example | ssh $(HOST) "cat > $(DEPLOY_DIR)/.env"
+	cat $(ENV_FILE) | ssh $(HOST) "cat > $(DEPLOY_DIR)/.env"
 	cat $(NGINX_SRC) | ssh $(HOST) "cat > $(DEPLOY_DIR)/nginx/conf.d/$(NGINX_DST)"
 	ssh $(HOST) "mkdir -p $(DEPLOY_DIR)/compose"
 	cat compose/shared.yml | ssh $(HOST) "cat > $(DEPLOY_DIR)/compose/shared.yml"

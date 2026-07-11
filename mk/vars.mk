@@ -26,3 +26,4 @@ PROD_DOCKER     ?= docker
 PROD_COMPOSE    ?= docker compose
 PROD_COMPOSE_FILE = docker-compose.vps.yml
 DOMAIN         ?= orbisplace.co.uk
+ENV_FILE       ?= .env.vps.example
