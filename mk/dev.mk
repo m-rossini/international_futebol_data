@@ -8,6 +8,7 @@ dev-publish: NGINX_SRC = nginx/conf.d/futebol-dev.conf
 dev-publish: NGINX_DST = futebol-dev.conf
 dev-publish: DOCKER_CMD = $(DEV_DOCKER)
 dev-publish: COMPOSE_CMD = $(DEV_COMPOSE)
+dev-publish: ENV_FILE = .env.dev
 dev-publish: PRE_MKDIR = @ssh -t $(DEV_HOST) "sudo mkdir -p $(DEV_DEPLOY_DIR)/data $(DEV_DEPLOY_DIR)/nginx/conf.d $(DEV_DEPLOY_DIR)/tmp && sudo chown -R $(DEV_USER):$(DEV_USER) $(DEV_DEPLOY_DIR)"
 dev-publish: POST_PUBLISH =
 dev-publish: POST_DEPLOY =
