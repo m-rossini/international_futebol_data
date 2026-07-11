@@ -1,4 +1,4 @@
-"""Provider chain — tries primary provider, falls back to secondary on failure."""
+"""Provider chain — tries profiles in priority order (lowest first)."""
 
 from __future__ import annotations
 
@@ -12,56 +12,73 @@ logger = logging.getLogger("llm.chain")
 
 
 class ProviderChain:
-    """Tries the primary provider, falls back to the secondary on failure.
-
-    Either primary or secondary (or both) can be None. If both are None,
-    all calls will raise an error.
-    """
+    """Tries profiles in priority order, falling through to the next on failure."""
 
     def __init__(self, config: LLMConfig):
         self._config = config
-        self._primary: LLMProvider | None = None
-        self._fallback: LLMProvider | None = None
-        self._init_providers()
+        self._providers: list[tuple[str, LLMProvider]] = []
+        self._init_chain()
 
-    def _init_providers(self) -> None:
-        if self._config.primary is not None:
+    # ------------------------------------------------------------------
+    #  Initialization
+    # ------------------------------------------------------------------
+
+    def _init_chain(self) -> None:
+        self._providers = []
+        for name, profile in self._config.chain:
             try:
-                self._primary = create_provider(self._config.primary)
+                provider = create_provider(profile)
+                self._providers.append((name, provider))
                 logger.info(
-                    "LLM primary provider ready: %s (%s)",
-                    self._config.primary.provider,
-                    self._config.primary.model,
+                    "LLM profile ready [pri=%d]: %s (%s/%s)",
+                    profile.priority,
+                    name,
+                    profile.provider,
+                    profile.model,
                 )
             except Exception as e:
-                logger.error("Failed to init primary provider: %s", e)
-                self._primary = None
-
-        if self._config.fallback is not None:
-            try:
-                self._fallback = create_provider(self._config.fallback)
-                logger.info(
-                    "LLM fallback provider ready: %s (%s)",
-                    self._config.fallback.provider,
-                    self._config.fallback.model,
+                logger.error(
+                    "Failed to init profile [pri=%d]: %s — %s",
+                    profile.priority,
+                    name,
+                    e,
                 )
-            except Exception as e:
-                logger.error("Failed to init fallback provider: %s", e)
-                self._fallback = None
+
+    def rebuild(self, config: LLMConfig) -> None:
+        """Rebuild the chain with a new config (e.g. after profile switch)."""
+        self._config = config
+        self._init_chain()
+
+    # ------------------------------------------------------------------
+    #  Properties
+    # ------------------------------------------------------------------
 
     @property
     def is_available(self) -> bool:
-        """Return True if at least one provider is configured."""
-        return self._primary is not None or self._fallback is not None
+        return len(self._providers) > 0
 
     @property
-    def active_provider_name(self) -> str | None:
-        """Return the name of the active provider, or None."""
-        if self._primary is not None:
-            return self._config.primary.provider if self._config.primary else None
-        if self._fallback is not None:
-            return self._config.fallback.provider if self._config.fallback else None
-        return None
+    def active_profile_name(self) -> str | None:
+        return self._config.active_profile_name
+
+    @property
+    def chain_state(self) -> list[dict[str, Any]]:
+        """Return the chain for API responses: active full details, fallbacks name+priority."""
+        result = []
+        for i, (name, _) in enumerate(self._providers):
+            profile = self._config.profiles[name]
+            item: dict[str, Any] = {
+                "name": name,
+                "priority": profile.priority,
+                "active": i == 0,
+            }
+            item.update(profile.safe_summary())
+            result.append(item)
+        return result
+
+    # ------------------------------------------------------------------
+    #  Chat
+    # ------------------------------------------------------------------
 
     async def chat_with_tools(
         self,
@@ -69,41 +86,25 @@ class ProviderChain:
         tools: list[dict[str, Any]],
         model: str | None = None,
     ) -> ChatResponse:
-        """Send a chat request, trying primary then fallback.
+        """Send a chat request, trying profiles in priority order.
 
         Raises:
-            RuntimeError: If no providers are available or both fail.
+            RuntimeError: If no providers are available or all fail.
         """
         errors: list[str] = []
 
-        if self._primary is not None:
+        for name, provider in self._providers:
             try:
-                return await self._primary.chat_with_tools(messages, tools, model)
+                return await provider.chat_with_tools(messages, tools, model)
             except Exception as e:
-                primary_name = (
-                    self._config.primary.provider if self._config.primary else "primary"
-                )
-                logger.warning("Primary provider failed (%s): %s", primary_name, e)
-                errors.append(f"{primary_name}: {e}")
-
-        if self._fallback is not None:
-            try:
-                return await self._fallback.chat_with_tools(messages, tools, model)
-            except Exception as e:
-                fallback_name = (
-                    self._config.fallback.provider
-                    if self._config.fallback
-                    else "fallback"
-                )
-                logger.warning("Fallback provider failed (%s): %s", fallback_name, e)
-                errors.append(f"{fallback_name}: {e}")
+                logger.warning("Profile '%s' failed: %s", name, e)
+                errors.append(f"{name}: {e}")
 
         if not errors:
             raise RuntimeError(
-                "No LLM providers configured. Set at least one provider in config.json."
+                "No LLM profiles configured. Add at least one profile in config.json."
             )
 
         raise RuntimeError(
-            "All LLM providers failed. Errors:\n"
-            + "\n".join(f"  - {e}" for e in errors)
+            "All LLM profiles failed. Errors:\n" + "\n".join(f"  - {e}" for e in errors)
         )

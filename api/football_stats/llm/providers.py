@@ -16,7 +16,7 @@ from typing import Any, Protocol
 
 from pydantic import BaseModel, Field
 
-from .config import LLMProviderConfig
+from .config import LLMProfileConfig
 
 logger = logging.getLogger("llm.providers")
 
@@ -79,7 +79,7 @@ class LLMProvider(Protocol):
 class OpenAICompatibleProvider(ABC):
     """Base class for providers that use the OpenAI SDK."""
 
-    def __init__(self, config: LLMProviderConfig):
+    def __init__(self, config: LLMProfileConfig):
         self._config = config
         self._client = None
 
@@ -160,7 +160,9 @@ class OpenAICompatibleProvider(ABC):
 class DeepseekProvider(OpenAICompatibleProvider):
     """Deepseek API (OpenAI-compatible)."""
 
-    def __init__(self, config: LLMProviderConfig):
+    provider_name = "deepseek"
+
+    def __init__(self, config: LLMProfileConfig):
         super().__init__(config)
         if not self._config.base_url:
             self._config.base_url = "https://api.deepseek.com"
@@ -172,7 +174,9 @@ class DeepseekProvider(OpenAICompatibleProvider):
 class OllamaProvider(OpenAICompatibleProvider):
     """Ollama local server (OpenAI-compatible endpoint)."""
 
-    def __init__(self, config: LLMProviderConfig):
+    provider_name = "ollama"
+
+    def __init__(self, config: LLMProfileConfig):
         super().__init__(config)
         if not self._config.base_url:
             self._config.base_url = "http://localhost:11434/v1"
@@ -184,6 +188,8 @@ class OllamaProvider(OpenAICompatibleProvider):
 class OpenAIProvider(OpenAICompatibleProvider):
     """OpenAI API."""
 
+    provider_name = "openai"
+
     def _resolve_model(self, model_override: str | None) -> str:
         return model_override or self._config.model
 
@@ -191,7 +197,9 @@ class OpenAIProvider(OpenAICompatibleProvider):
 class AnthropicProvider:
     """Anthropic Claude API (uses its own SDK)."""
 
-    def __init__(self, config: LLMProviderConfig):
+    provider_name = "anthropic"
+
+    def __init__(self, config: LLMProfileConfig):
         self._config = config
         self._client = None
 
@@ -295,7 +303,7 @@ _PROVIDERS: dict[str, type] = {
 }
 
 
-def create_provider(config: LLMProviderConfig) -> LLMProvider:
+def create_provider(config: LLMProfileConfig) -> LLMProvider:
     """Instantiate an LLMProvider from config.
 
     Raises:
