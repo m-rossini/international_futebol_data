@@ -1,10 +1,11 @@
 """LLM provider abstraction and implementations.
 
 Defines a ``LLMProvider`` protocol that all providers must implement, plus
-four concrete implementations: Deepseek, Anthropic, Ollama, and OpenAI.
+concrete implementations: Deepseek, Anthropic, Ollama, OpenAI, OpenRouter,
+Cerebras, and GitHub Models.
 
-OpenAI-compatible providers (Deepseek, Ollama, OpenAI) share a common base
-class to reduce duplication.
+OpenAI-compatible providers (Deepseek, Ollama, OpenAI, OpenRouter, Cerebras,
+GitHub Models) share a common base class to reduce duplication.
 """
 
 from __future__ import annotations
@@ -194,6 +195,48 @@ class OpenAIProvider(OpenAICompatibleProvider):
         return model_override or self._config.model
 
 
+class OpenRouterProvider(OpenAICompatibleProvider):
+    """OpenRouter aggregator — routes to multiple free model providers."""
+
+    provider_name = "openrouter"
+
+    def __init__(self, config: LLMProfileConfig):
+        super().__init__(config)
+        if not self._config.base_url:
+            self._config.base_url = "https://openrouter.ai/api/v1"
+
+    def _resolve_model(self, model_override: str | None) -> str:
+        return model_override or self._config.model
+
+
+class CerebrasProvider(OpenAICompatibleProvider):
+    """Cerebras ultra-fast inference (OpenAI-compatible)."""
+
+    provider_name = "cerebras"
+
+    def __init__(self, config: LLMProfileConfig):
+        super().__init__(config)
+        if not self._config.base_url:
+            self._config.base_url = "https://api.cerebras.ai/v1"
+
+    def _resolve_model(self, model_override: str | None) -> str:
+        return model_override or self._config.model
+
+
+class GitHubModelsProvider(OpenAICompatibleProvider):
+    """GitHub Models — free tier via GitHub account token."""
+
+    provider_name = "github-models"
+
+    def __init__(self, config: LLMProfileConfig):
+        super().__init__(config)
+        if not self._config.base_url:
+            self._config.base_url = "https://models.inference.ai.azure.com"
+
+    def _resolve_model(self, model_override: str | None) -> str:
+        return model_override or self._config.model
+
+
 class AnthropicProvider:
     """Anthropic Claude API (uses its own SDK)."""
 
@@ -300,6 +343,9 @@ _PROVIDERS: dict[str, type] = {
     "anthropic": AnthropicProvider,
     "ollama": OllamaProvider,
     "openai": OpenAIProvider,
+    "openrouter": OpenRouterProvider,
+    "cerebras": CerebrasProvider,
+    "github-models": GitHubModelsProvider,
 }
 
 

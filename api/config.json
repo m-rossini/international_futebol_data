@@ -1,3 +1,25 @@
 {
-  "version": "1.2.4"
+  "version": "1.2.4",
+  "llm": {
+    "profiles": {
+      "openrouter-free": {
+        "provider": "openrouter",
+        "model": "meta-llama/llama-3.3-70b-instruct:free",
+        "priority": 1,
+        "api_key_env": "OPENROUTER_API_KEY"
+      },
+      "cerebras-free": {
+        "provider": "cerebras",
+        "model": "llama-3.3-70b",
+        "priority": 2,
+        "api_key_env": "CEREBRAS_API_KEY"
+      },
+      "github-models-free": {
+        "provider": "github-models",
+        "model": "gpt-4o-mini",
+        "priority": 3,
+        "api_key_env": "GITHUB_TOKEN"
+      }
+    }
+  }
 }
