@@ -4,8 +4,8 @@ dev-save: save
 dev-publish: HOST = $(DEV_HOST)
 dev-publish: DEPLOY_DIR = $(DEV_DEPLOY_DIR)
 dev-publish: COMPOSE_FILE = $(DEV_COMPOSE_FILE)
-dev-publish: NGINX_SRC = nginx/conf.d/futebol-vps.conf
-dev-publish: NGINX_DST = futebol-vps.conf
+dev-publish: NGINX_SRC = nginx/conf.d/futebol-dev.conf
+dev-publish: NGINX_DST = futebol-dev.conf
 dev-publish: DOCKER_CMD = $(DEV_DOCKER)
 dev-publish: COMPOSE_CMD = $(DEV_COMPOSE)
 dev-publish: PRE_MKDIR = @ssh -t $(DEV_HOST) "sudo mkdir -p $(DEV_DEPLOY_DIR)/data $(DEV_DEPLOY_DIR)/nginx/conf.d $(DEV_DEPLOY_DIR)/tmp && sudo chown -R $(DEV_USER):$(DEV_USER) $(DEV_DEPLOY_DIR)"
