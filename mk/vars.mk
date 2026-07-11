@@ -18,11 +18,11 @@ DEV_USER       = $(firstword $(subst @, ,$(DEV_HOST)))
 DEV_DEPLOY_DIR ?= /opt/futebol
 DEV_DOCKER      = podman
 DEV_COMPOSE     = podman-compose
-DEV_COMPOSE_FILE = docker-compose.vps-internal.yml
+DEV_COMPOSE_FILE = docker-compose.dev.yml
 
 PROD_HOST       ?=
 PROD_DEPLOY_DIR ?= /opt/futebol
 PROD_DOCKER     ?= docker
 PROD_COMPOSE    ?= docker compose
-PROD_COMPOSE_FILE = docker-compose.vps.yml
+PROD_COMPOSE_FILE = docker-compose.prod.yml
 DOMAIN         ?= orbisplace.co.uk

@@ -1,5 +1,5 @@
-# Internal testing compose (HTTP only, no SSL).
-# Used for: boyz local network testing
+# Production compose.
+# Images must be pre-loaded via: make prod-release
 # Data directory must exist at: ./data/
 
 include:
@@ -11,13 +11,28 @@ services:
     container_name: futebol-nginx
     ports:
       - "80:80"
+      - "443:443"
     volumes:
-      - ./nginx/conf.d/futebol-vps.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./nginx/conf.d/futebol-active.conf:/etc/nginx/conf.d/default.conf:ro
+      - certs:/etc/letsencrypt:ro
+      - certbot_webroot:/var/www/certbot
     depends_on:
       - web
       - mcp
       - openobserve
     restart: unless-stopped
+
+  certbot:
+    image: certbot/certbot
+    container_name: futebol-certbot
+    volumes:
+      - certs:/etc/letsencrypt
+      - certbot_webroot:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do sleep 12h & wait $${!}; certbot renew --webroot -w /var/www/certbot; done;'"
+    depends_on:
+      - nginx
+    profiles:
+      - renewal
 
   api:
     image: international-futebol-data:prod
@@ -79,3 +94,7 @@ services:
       start_interval: 5s
       start_period: 30s
     restart: unless-stopped
+
+volumes:
+  certs:
+  certbot_webroot:
