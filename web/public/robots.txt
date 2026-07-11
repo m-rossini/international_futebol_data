@@ -1,4 +1,11 @@
 User-agent: *
 Allow: /
+Disallow: /api/
 
 Sitemap: https://futebol.orbisplace.co.uk/sitemap.xml
+
+# API endpoints for programmatic access
+# /api/proxy/teams - List all teams
+# /api/proxy/tournaments - List all tournaments
+# /api/proxy/matches - List matches
+# /api/proxy/years - List available years
