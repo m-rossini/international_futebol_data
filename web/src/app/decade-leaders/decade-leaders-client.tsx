@@ -235,7 +235,7 @@ export function DecadeLeadersClient() {
                           </td>
                           <td className="py-3">
                             <Link
-                              href={`/team-ranking-comparison?team=${encodeURIComponent(team.team)}`}
+                              href={`/teams/${encodeURIComponent(team.team)}`}
                               className="text-sm font-medium text-gray-800 hover:text-violet-600 transition-colors flex items-center gap-2"
                             >
                               <CountryFlag countryName={team.team} size={16} />
