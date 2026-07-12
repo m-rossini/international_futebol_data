@@ -29,4 +29,4 @@ ENV PATH="/app/.venv/bin:$PATH"
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONPATH="/app"
 EXPOSE 7531
-CMD ["python", "football_stats/server.py", "--host", "0.0.0.0", "--port", "7531"]
+CMD ["opentelemetry-instrument", "python", "football_stats/server.py", "--host", "0.0.0.0", "--port", "7531"]
