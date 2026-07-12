@@ -53,7 +53,9 @@ def bump(version: str, part: str) -> str:
 
 
 def write_api_version(version: str) -> None:
-    API_CONFIG.write_text(json.dumps({"version": version}, indent=2) + "\n")
+    data = json.loads(API_CONFIG.read_text())
+    data["version"] = version
+    API_CONFIG.write_text(json.dumps(data, indent=2) + "\n")
 
 
 def write_web_version(version: str) -> None:
