@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { Send, Copy, Check, RotateCcw } from 'lucide-react';
 import { logApiCall, logUserAction } from '@/lib/observability';
 
@@ -45,7 +47,9 @@ function ChatBubble({
             : 'bg-white border border-gray-200 text-gray-800 rounded-bl-md'
         }`}
       >
-        <div className="whitespace-pre-wrap break-words font-sans">{message.content}</div>
+        <div className="markdown-content break-words font-sans">
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.content}</ReactMarkdown>
+        </div>
 
         {!isUser && (
           <div className="mt-2 flex justify-end">
