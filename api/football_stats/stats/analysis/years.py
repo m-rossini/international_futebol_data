@@ -56,12 +56,16 @@ def yearly_matches(year: int, results: pd.DataFrame) -> list[dict]:
     if subset.empty:
         return []
 
+    # Drop matches with missing scores (scheduled/future matches)
+    score_cols = [c for c in ("home_score", "away_score") if c in subset.columns]
+    if score_cols:
+        subset = subset.dropna(subset=score_cols)
+
     subset = subset.drop(columns=["year"], errors="ignore")
     # Convert date to string for JSON serialization
     subset["date"] = subset["date"].dt.strftime("%Y-%m-%d")
     # Ensure numeric columns are Python native types
-    for col in ("home_score", "away_score"):
-        if col in subset.columns:
-            subset[col] = subset[col].astype(int)
+    for col in score_cols:
+        subset[col] = subset[col].astype(int)
 
     return subset.to_dict(orient="records")
