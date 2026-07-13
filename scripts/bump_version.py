@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-"""Bump semver version in api/config.json and/or web/src/lib/version.ts.
+"""Bump semver version in api/config.json, web/src/lib/version.ts, and/or infra/VERSION.
 
 Usage:
-    python scripts/bump_version.py api patch   # Bump API only: 1.0.6 → 1.0.7
-    python scripts/bump_version.py web minor   # Bump WEB only: 1.0.6 → 1.1.0
-    python scripts/bump_version.py both major  # Bump both:     1.0.6 → 2.0.0
-    python scripts/bump_version.py patch       # Backward compat: bumps both
+    python scripts/bump_version.py api patch     # Bump API only
+    python scripts/bump_version.py web minor     # Bump WEB only
+    python scripts/bump_version.py infra major   # Bump Infra only
+    python scripts/bump_version.py all patch     # Bump all modules
+    python scripts/bump_version.py patch         # Backward compat: bumps api+web
 """
 
 import json
@@ -16,6 +17,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 API_CONFIG = ROOT / "api" / "config.json"
 WEB_VERSION = ROOT / "web" / "src" / "lib" / "version.ts"
+INFRA_VERSION = ROOT / "infra" / "VERSION"
 
 SEMVER_RE = re.compile(r"^(\d+)\.(\d+)\.(\d+)$")
 
@@ -31,6 +33,13 @@ def read_web_version() -> str:
     if not m:
         raise ValueError(f"Could not parse version from {WEB_VERSION}")
     return m.group(1)
+
+
+def read_infra_version() -> str:
+    content = INFRA_VERSION.read_text().strip()
+    if not SEMVER_RE.match(content):
+        raise ValueError(f"Invalid semver in {INFRA_VERSION}: {content}")
+    return content
 
 
 def bump(version: str, part: str) -> str:
@@ -62,13 +71,17 @@ def write_web_version(version: str) -> None:
     WEB_VERSION.write_text(f"export const VERSION = '{version}';\n")
 
 
+def write_infra_version(version: str) -> None:
+    INFRA_VERSION.write_text(f"{version}\n")
+
+
 def main() -> None:
-    valid_targets = ("api", "web", "both")
+    valid_targets = ("api", "web", "infra", "all", "both")
     valid_parts = ("patch", "minor", "major")
 
     # Parse arguments: support both formats
     # New: target part (e.g., "api patch")
-    # Legacy: part only (e.g., "patch") - defaults to "both"
+    # Legacy: part only (e.g., "patch") - defaults to "both" (api+web)
     if len(sys.argv) == 2 and sys.argv[1] in valid_parts:
         target = "both"
         part = sys.argv[1]
@@ -81,17 +94,23 @@ def main() -> None:
 
     results = []
 
-    if target in ("api", "both"):
+    if target in ("api", "both", "all"):
         current = read_api_version()
         new = bump(current, part)
         write_api_version(new)
         results.append(f"api: {current} → {new}")
 
-    if target in ("web", "both"):
+    if target in ("web", "both", "all"):
         current = read_web_version()
         new = bump(current, part)
         write_web_version(new)
         results.append(f"web: {current} → {new}")
+
+    if target in ("infra", "all"):
+        current = read_infra_version()
+        new = bump(current, part)
+        write_infra_version(new)
+        results.append(f"infra: {current} → {new}")
 
     print("\n".join(results))
 

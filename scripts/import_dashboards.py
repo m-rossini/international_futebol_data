@@ -3,9 +3,10 @@
 Import dashboard JSON definitions into OpenObserve via the REST API.
 
 Usage:
-    python scripts/import_dashboards.py
+    python scripts/import_dashboards.py [--base-url URL] [--user USER] [--password PASS]
 """
 
+import argparse
 import json
 import os
 import sys
@@ -14,20 +15,27 @@ import urllib.request
 import urllib.error
 import base64
 
-BASE_URL = "http://localhost:5080/api/default"
-AUTH = base64.b64encode(b"admin@futebol.local:Futebol@123").decode()
-HEADERS = {
-    "Content-Type": "application/json",
-    "Authorization": f"Basic {AUTH}",
-}
+BASE_URL = os.environ.get("OO_BASE_URL", "http://localhost:5080")
+OO_USER = os.environ.get("OO_USER", "admin@futebol.local")
+OO_PASS = os.environ.get("OO_PASS", "Futebol@123")
+
+
+def _build_auth(user: str, password: str) -> str:
+    return base64.b64encode(f"{user}:{password}".encode()).decode()
+
 
 DASHBOARDS_DIR = os.path.join(os.path.dirname(__file__), "..", "dashboards")
 
 
 def api_request(method, path, body=None):
-    url = f"{BASE_URL}{path}"
+    url = f"{BASE_URL}/api/default{path}"
+    AUTH = _build_auth(OO_USER, OO_PASS)
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Basic {AUTH}",
+    }
     data = json.dumps(body).encode() if body else None
-    req = urllib.request.Request(url, data=data, headers=HEADERS, method=method)
+    req = urllib.request.Request(url, data=data, headers=headers, method=method)
     try:
         with urllib.request.urlopen(req) as resp:
             return json.loads(resp.read().decode())
@@ -328,13 +336,13 @@ def create_or_update_dashboard(definition):
     dashboard_id, dash_hash = find_existing_dashboard(title)
 
     if dashboard_id:
-        print(f"  Updating existing dashboard...")
+        print("  Updating existing dashboard...")
     else:
-        print(f"  Creating new dashboard...")
+        print("  Creating new dashboard...")
         dashboard_id, dash_hash = create_dashboard(title, description, tabs_def)
 
     if not dashboard_id:
-        print(f"  ERROR: Failed to get dashboard ID")
+        print("  ERROR: Failed to get dashboard ID")
         return
 
     print(f"  Dashboard ID: {dashboard_id}")
@@ -353,6 +361,21 @@ def create_or_update_dashboard(definition):
 
 
 def main():
+    global BASE_URL, OO_USER, OO_PASS
+
+    parser = argparse.ArgumentParser(description="Import dashboards into OpenObserve")
+    parser.add_argument("--base-url", help="OpenObserve base URL (no /api/... suffix)")
+    parser.add_argument("--user", help="OpenObserve username")
+    parser.add_argument("--password", help="OpenObserve password")
+    args = parser.parse_args()
+
+    if args.base_url:
+        BASE_URL = args.base_url
+    if args.user:
+        OO_USER = args.user
+    if args.password:
+        OO_PASS = args.password
+
     if not os.path.isdir(DASHBOARDS_DIR):
         print(f"Dashboards directory not found: {DASHBOARDS_DIR}")
         sys.exit(1)

@@ -40,13 +40,15 @@ release-images:
 deploy-stack:
 	@test -n "$(HOST)" || (echo "ERROR: HOST is not set." && exit 1)
 	@echo "Deploying on $(HOST)…"
-	@echo "  1/3 Stopping old containers…"
+	@echo "  1/4 Stopping old containers…"
 	ssh $(HOST) "cd $(DEPLOY_DIR) && $(COMPOSE_CMD) stop api mcp web openobserve 2>/dev/null || true"
-	@echo "  2/3 Decompressing data…"
+	@echo "  2/4 Decompressing data…"
 	ssh $(HOST) "cd $(DEPLOY_DIR) && mkdir -p data && tar xzf tmp/data.tar.gz -C data/ 2>/dev/null || true"
-	@echo "  3/3 Starting containers…"
+	@echo "  3/4 Starting containers…"
 	ssh $(HOST) "cd $(DEPLOY_DIR) && $(COMPOSE_CMD) up -d --no-deps --force-recreate nginx api mcp web openobserve"
 	$(POST_DEPLOY)
+	@echo "  4/4 Initializing observability…"
+	ssh $(HOST) "cd $(DEPLOY_DIR) && bash scripts/init-observability.sh 2>&1 || true"
 	@echo "  Verifying…"
 	ssh $(HOST) "cd $(DEPLOY_DIR) && $(COMPOSE_CMD) ps"
 	ssh $(HOST) "rm -rf $(DEPLOY_DIR)/tmp"

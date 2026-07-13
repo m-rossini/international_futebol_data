@@ -69,7 +69,7 @@ services:
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://openobserve:5080/api/default
       - OTEL_EXPORTER_OTLP_PROTOCOL=http/protobuf
       - OTEL_EXPORTER_OTLP_HEADERS=Authorization=Basic YWRtaW5AZnV0ZWJvbC5sb2NhbDpGdXRlYm9sQDEyMw==,stream-name=mcp_logs
-    command: ["python", "football_stats/mcp_server.py", "--transport", "sse", "--port", "7532"]
+    command: ["opentelemetry-instrument", "python", "football_stats/mcp_server.py", "--transport", "sse", "--port", "7532"]
     depends_on:
       api:
         condition: service_healthy

@@ -1,6 +1,15 @@
-bump-patch: bump-both-patch
-bump-minor: bump-both-minor
-bump-major: bump-both-major
+bump-patch: bump-all-patch
+bump-minor: bump-all-minor
+bump-major: bump-all-major
+
+bump-all-patch:
+	python3 scripts/bump_version.py all patch
+
+bump-all-minor:
+	python3 scripts/bump_version.py all minor
+
+bump-all-major:
+	python3 scripts/bump_version.py all major
 
 bump-both-patch:
 	python3 scripts/bump_version.py both patch
@@ -28,6 +37,15 @@ bump-web-minor:
 
 bump-web-major:
 	python3 scripts/bump_version.py web major
+
+bump-infra-patch:
+	python3 scripts/bump_version.py infra patch
+
+bump-infra-minor:
+	python3 scripts/bump_version.py infra minor
+
+bump-infra-major:
+	python3 scripts/bump_version.py infra major
 
 commit:
 	python3 scripts/bump_version.py both patch
