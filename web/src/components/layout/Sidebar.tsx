@@ -137,10 +137,10 @@ export function Sidebar({ isOpen, onClose }: Props) {
 
         <div className="px-4 py-3 border-t border-gray-200 text-[11px] text-gray-400 leading-relaxed">
           <p>&copy; Marcos Rossini</p>
-          <p>
-            onegoodarea &middot; API v{apiVersion ?? '...'} &middot; INFRA v{infraVersion ?? '...'}{' '}
-            &middot; WEB v{VERSION}
-          </p>
+          <p>onegoodarea</p>
+          <p>API v{apiVersion ?? '...'}</p>
+          <p>INFRA v{infraVersion ?? '...'}</p>
+          <p>WEB v{VERSION}</p>
         </div>
       </aside>
     </>
