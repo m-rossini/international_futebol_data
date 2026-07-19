@@ -1,4 +1,4 @@
-# WEB v1.4.0
+# WEB v1.3.3
 
 **Released:** July 19, 2026
 **Feature:** Infra Version in Sidebar
