@@ -41,13 +41,20 @@ interface Props {
 export function Sidebar({ isOpen, onClose }: Props) {
   const pathname = usePathname();
   const [apiVersion, setApiVersion] = useState<string | null>(null);
+  const [infraVersion, setInfraVersion] = useState<string | null>(null);
 
-  // Fetch API version on mount
+  // Fetch API and infra versions on mount
   useEffect(() => {
     fetch('/api/proxy/version')
       .then((r) => r.json())
-      .then((data) => setApiVersion(data.version))
-      .catch(() => setApiVersion('—'));
+      .then((data) => {
+        setApiVersion(data.version);
+        setInfraVersion(data.infra_version);
+      })
+      .catch(() => {
+        setApiVersion('—');
+        setInfraVersion('—');
+      });
   }, []);
 
   // Close on Escape key
@@ -131,7 +138,8 @@ export function Sidebar({ isOpen, onClose }: Props) {
         <div className="px-4 py-3 border-t border-gray-200 text-[11px] text-gray-400 leading-relaxed">
           <p>&copy; Marcos Rossini</p>
           <p>
-            onegoodarea &middot; API v{apiVersion ?? '...'} &middot; WEB v{VERSION}
+            onegoodarea &middot; API v{apiVersion ?? '...'} &middot; INFRA v{infraVersion ?? '...'}{' '}
+            &middot; WEB v{VERSION}
           </p>
         </div>
       </aside>
