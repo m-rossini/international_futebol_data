@@ -30,11 +30,9 @@ def load_infra_version() -> str:
     here = os.path.dirname(__file__)
     for candidate in (
         os.path.join(
-            here, "..", "..", "..", "infra", "VERSION"
+            here, "..", "..", "infra", "VERSION"
         ),  # Docker: /app/infra/VERSION
-        os.path.join(
-            here, "..", "..", "..", "..", "infra", "VERSION"
-        ),  # Local: project root
+        os.path.join(here, "..", "..", "..", "infra", "VERSION"),  # Local: project root
     ):
         path = os.path.abspath(candidate)
         if os.path.exists(path):
