@@ -5,7 +5,12 @@ import logging
 from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import RedirectResponse
 
-from football_stats.routers.dependencies import load_version, require_data, state
+from football_stats.routers.dependencies import (
+    load_infra_version,
+    load_version,
+    require_data,
+    state,
+)
 from football_stats.stats.elo import clear_elo_cache
 from football_stats.stats.models import (
     FilterOptionsResponse,
@@ -58,8 +63,8 @@ async def health():
 
 @router.get("/version", response_model=VersionResponse)
 async def version():
-    """Return the current application version."""
-    return {"version": load_version()}
+    """Return the current application version and infra version."""
+    return {"version": load_version(), "infra_version": load_infra_version()}
 
 
 @router.get("/filters", response_model=FilterOptionsResponse)
