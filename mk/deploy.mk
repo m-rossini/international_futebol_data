@@ -1,6 +1,6 @@
 build:
 	@echo "Building production images…"
-	$(DOCKER) build -f api/Dockerfile --build-context releases=./releases --target production -t $(IMG_API_PROD) api/
+	$(DOCKER) build -f api/Dockerfile --build-context releases=./releases --build-context infra=./infra --target production -t $(IMG_API_PROD) api/
 	$(DOCKER) build -f web/Dockerfile --target production -t $(IMG_WEB_PROD) web/
 	@echo "Production images built:"
 	@$(DOCKER) images --format "table {{.Repository}}:{{.Tag}}\t{{.Size}}" | grep -E "$(IMG_API_PROD)|$(IMG_WEB_PROD)"

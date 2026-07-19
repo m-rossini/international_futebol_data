@@ -24,6 +24,7 @@ FROM python:3.14-slim-bookworm AS production
 WORKDIR /app
 COPY --from=deps /app/.venv /app/.venv
 COPY --from=releases . /app/releases/
+COPY --from=infra VERSION /app/infra/VERSION
 COPY . .
 ENV PATH="/app/.venv/bin:$PATH"
 ENV PYTHONUNBUFFERED=1
