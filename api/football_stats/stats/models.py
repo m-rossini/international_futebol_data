@@ -642,6 +642,7 @@ class ReleaseListItem(BaseModel):
     version: str
     tag: str
     name: str
+    component: str
     published_at: str
     author: str
     body: str
@@ -652,6 +653,7 @@ class ReleaseDetailResponse(BaseModel):
     version: str
     tag: str
     name: str
+    component: str
     published_at: str
     author: str
     body: str

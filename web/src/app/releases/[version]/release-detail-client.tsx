@@ -86,7 +86,7 @@ export function ReleaseDetailClient({ version }: Props) {
     return (
       <div className="p-4 md:p-8">
         <Link
-          href="/flag-report"
+          href="/house-keeping"
           className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 mb-4"
         >
           <ArrowLeft size={14} />
