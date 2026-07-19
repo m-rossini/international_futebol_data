@@ -16,6 +16,7 @@ import {
 import { FilterBar } from '@/components/shared/FilterBar';
 import { StatsBar, type StatItem } from '@/components/shared/StatsBar';
 import { GoalsHistogramChart } from '@/components/shared/chart/GoalsHistogramChart';
+import { MatchTable } from '@/components/shared/MatchTable';
 import { logApiCall } from '@/lib/observability';
 import type { YearDetail } from '@/lib/types';
 
@@ -261,6 +262,12 @@ export function YearDetailClient({ year }: Props) {
       <div className="bg-white rounded-lg border border-gray-200 p-4 mt-6">
         <h2 className="text-sm font-semibold text-gray-700 mb-3">Goals per Match Distribution</h2>
         <GoalsHistogramChart data={data.goals_histogram} />
+      </div>
+
+      {/* Matches */}
+      <div className="mt-6">
+        <h2 className="text-sm font-semibold text-gray-700 mb-3">Matches</h2>
+        <MatchTable matches={data.matches_list} showNeutral />
       </div>
     </div>
   );
