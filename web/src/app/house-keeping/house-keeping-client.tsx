@@ -260,7 +260,7 @@ export function FlagReportClient() {
                       {items.map((release) => (
                         <Link
                           key={release.tag}
-                          href={`/releases/${release.version}`}
+                          href={`/releases/${release.tag}`}
                           className="block py-3 hover:bg-gray-50 px-3 rounded transition-colors"
                         >
                           <div className="flex items-baseline gap-3">
