@@ -27,6 +27,7 @@ services:
     volumes:
       - ./api:/app
       - ./releases:/app/releases:ro
+      - ./infra/VERSION:/app/infra/VERSION:ro
       # Set DATA_VOLUME in .env to point to your CSV directory
       - ${DATA_VOLUME}:/data:ro
     environment:

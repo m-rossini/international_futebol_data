@@ -25,6 +25,17 @@ engine = QueryEngine(state)
 _CONFIG_PATH = os.path.join(os.path.dirname(__file__), "..", "..", "config.json")
 
 
+def load_infra_version() -> str:
+    """Read the infra version from infra/VERSION."""
+    _INFRA_VERSION_PATH = os.path.join(
+        os.path.dirname(__file__), "..", "..", "..", "..", "infra", "VERSION"
+    )
+    try:
+        return open(_INFRA_VERSION_PATH).read().strip()
+    except FileNotFoundError | OSError:
+        return "unknown"
+
+
 def load_version() -> str:
     """Read the version string from config.json."""
     try:

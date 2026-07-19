@@ -584,6 +584,7 @@ class HealthResponse(BaseModel):
 
 class VersionResponse(BaseModel):
     version: str
+    infra_version: str
 
 
 # ===========================================================================
