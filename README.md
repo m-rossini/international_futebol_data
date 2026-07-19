@@ -82,7 +82,7 @@ The FastAPI `app` is configured with `title="International Football Stats"`, `ve
 │          ├─ /teams               500+ team list  │
 │          ├─ /head-to-head        Team comparison │
 │          ├─ /elo-ranking         ELO Ratings     │
-│          └─ /flag-report         Missing flags   │
+│          └─ /house-keeping        House Keeping   │
 │              │                                   │
 │              ▼  /api/proxy  (Next.js rewrite)    │
 │                                                   │

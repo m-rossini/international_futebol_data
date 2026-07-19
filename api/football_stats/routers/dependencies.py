@@ -27,13 +27,23 @@ _CONFIG_PATH = os.path.join(os.path.dirname(__file__), "..", "..", "config.json"
 
 def load_infra_version() -> str:
     """Read the infra version from infra/VERSION."""
-    _INFRA_VERSION_PATH = os.path.join(
-        os.path.dirname(__file__), "..", "..", "..", "..", "infra", "VERSION"
-    )
-    try:
-        return open(_INFRA_VERSION_PATH).read().strip()
-    except FileNotFoundError | OSError:
-        return "unknown"
+    here = os.path.dirname(__file__)
+    for candidate in (
+        os.path.join(
+            here, "..", "..", "..", "infra", "VERSION"
+        ),  # Docker: /app/infra/VERSION
+        os.path.join(
+            here, "..", "..", "..", "..", "infra", "VERSION"
+        ),  # Local: project root
+    ):
+        path = os.path.abspath(candidate)
+        if os.path.exists(path):
+            try:
+                with open(path) as f:
+                    return f.read().strip()
+            except OSError:
+                return "unknown"
+    return "unknown"
 
 
 def load_version() -> str:
@@ -42,7 +52,7 @@ def load_version() -> str:
         with open(_CONFIG_PATH) as f:
             cfg = json.load(f)
         return cfg.get("version", "unknown")
-    except FileNotFoundError | json.JSONDecodeError:
+    except (FileNotFoundError, json.JSONDecodeError):
         return "unknown"
 
 

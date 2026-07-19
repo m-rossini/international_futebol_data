@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import { Metadata } from 'next';
-import { FlagReportClient } from './flag-report-client';
+import { FlagReportClient } from './house-keeping-client';
 
 export const metadata: Metadata = {
   title: 'House Keeping',

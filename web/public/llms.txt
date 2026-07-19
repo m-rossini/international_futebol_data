@@ -20,7 +20,7 @@
 - /head-to-head — Compare any two teams head-to-head
 - /elo-ranking — Current ELO world rankings with historical charts
 - /decade-leaders — Top teams by decade based on ELO ratings
-- /flag-report — Teams mapped to countries and flags
+- /house-keeping — Teams mapped to countries and flags
 
 ## API
 The site exposes a REST API at /api/proxy/ with endpoints for teams, tournaments, matches, rankings, and filters. An MCP server is also available at futebol-mcp.orbisplace.co.uk.

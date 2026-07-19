@@ -30,7 +30,7 @@ const navItems: NavItem[] = [
   { type: 'separator' },
   { type: 'item', href: '/askme', label: 'Ask Me', icon: MessageSquare },
   { type: 'separator' },
-  { type: 'item', href: '/flag-report', label: 'House Keeping', icon: Flag },
+  { type: 'item', href: '/house-keeping', label: 'House Keeping', icon: Flag },
 ];
 
 interface Props {
