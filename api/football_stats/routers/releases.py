@@ -133,14 +133,14 @@ async def list_releases():
     return results
 
 
-@router.get("/releases/{version}", response_model=ReleaseDetailResponse)
-async def get_release(version: str):
-    """Return details for a specific release by version number (e.g. 1.1.0)."""
+@router.get("/releases/{tag_or_version}", response_model=ReleaseDetailResponse)
+async def get_release(tag_or_version: str):
+    """Return details for a specific release by tag (e.g. infra-v1.0.3) or version (e.g. 1.0.3)."""
     raw = _load_all_releases()
 
-    # Try to find by version with any component prefix
+    # Match by tag first (unique), then fall back to version number.
     for r in raw:
-        if r["version"] == version:
+        if r["tag"] == tag_or_version:
             return ReleaseDetailResponse(
                 version=r["version"],
                 tag=r["tag"],
@@ -152,4 +152,17 @@ async def get_release(version: str):
                 html_url=r["html_url"],
             )
 
-    raise HTTPException(status_code=404, detail=f"Release {version} not found")
+    for r in raw:
+        if r["version"] == tag_or_version:
+            return ReleaseDetailResponse(
+                version=r["version"],
+                tag=r["tag"],
+                name=r["name"],
+                component=r["component"],
+                published_at=r["published_at"],
+                author=r["author"],
+                body=r["body"],
+                html_url=r["html_url"],
+            )
+
+    raise HTTPException(status_code=404, detail=f"Release {tag_or_version} not found")
