@@ -1,4 +1,4 @@
-# Infra v1.1.0
+# Infra v1.0.2
 
 **Released:** July 19, 2026
 **Feature:** Infra Version in Sidebar
