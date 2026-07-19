@@ -12,8 +12,21 @@ interface Release {
   version: string;
   tag: string;
   name: string;
+  component: string;
   published_at: string;
   body: string;
+}
+
+const COMPONENT_LABELS: Record<string, string> = {
+  api: 'API',
+  web: 'WEB',
+  infra: 'Infra',
+};
+
+const COMPONENT_ORDER = ['web', 'api', 'infra'];
+
+function parseVersion(v: string): number[] {
+  return v.split('.').map(Number);
 }
 
 export function FlagReportClient() {
@@ -219,36 +232,65 @@ export function FlagReportClient() {
             No releases yet. Releases are created automatically when versions are bumped.
           </p>
         ) : (
-          <div className="divide-y divide-gray-100">
-            {releases.map((release) => (
-              <Link
-                key={release.tag}
-                href={`/releases/${release.version}`}
-                className="block py-3 hover:bg-gray-50 -mx-2 px-2 rounded transition-colors"
-              >
-                <div className="flex items-baseline gap-3">
-                  <span className="font-medium text-gray-800">{release.tag}</span>
-                  <span className="text-xs text-gray-400">
-                    {release.published_at
-                      ? new Date(release.published_at).toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric',
-                        })
-                      : ''}
-                  </span>
-                </div>
-                {release.body && (
-                  <p className="text-sm text-gray-500 mt-1 line-clamp-1">
-                    {release.body
-                      .split('\n')
-                      .filter((l) => l.startsWith('- '))
-                      .slice(0, 3)
-                      .join(' · ')}
-                  </p>
-                )}
-              </Link>
-            ))}
+          <div className="space-y-6">
+            {(() => {
+              const grouped: Record<string, Release[]> = {};
+              for (const r of releases) {
+                const comp = r.component || 'other';
+                if (!grouped[comp]) grouped[comp] = [];
+                grouped[comp].push(r);
+              }
+              for (const comp of Object.keys(grouped)) {
+                grouped[comp].sort(
+                  (a, b) =>
+                    parseVersion(b.version)[0] - parseVersion(a.version)[0] ||
+                    parseVersion(b.version)[1] - parseVersion(a.version)[1] ||
+                    parseVersion(b.version)[2] - parseVersion(a.version)[2],
+                );
+              }
+              return COMPONENT_ORDER.map((comp) => {
+                const items = grouped[comp];
+                if (!items?.length) return null;
+                return (
+                  <div key={comp}>
+                    <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                      {COMPONENT_LABELS[comp] || comp}
+                    </h3>
+                    <div className="divide-y divide-gray-100 border border-gray-200 rounded-lg">
+                      {items.map((release) => (
+                        <Link
+                          key={release.tag}
+                          href={`/releases/${release.version}`}
+                          className="block py-3 hover:bg-gray-50 px-3 rounded transition-colors"
+                        >
+                          <div className="flex items-baseline gap-3">
+                            <span className="font-medium text-gray-800">{release.tag}</span>
+                            <span className="text-xs text-gray-400">
+                              {release.published_at
+                                ? new Date(release.published_at).toLocaleDateString('en-US', {
+                                    year: 'numeric',
+                                    month: 'short',
+                                    day: 'numeric',
+                                  })
+                                : ''}
+                            </span>
+                          </div>
+                          {release.body && (
+                            <p className="text-sm text-gray-500 mt-1 line-clamp-1">
+                              {release.body
+                                .split('\n')
+                                .filter((l) => l.startsWith('- '))
+                                .slice(0, 3)
+                                .join(' · ')}
+                            </p>
+                          )}
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                );
+              });
+            })()}
           </div>
         )}
       </div>
