@@ -6,6 +6,7 @@ on:
     paths:
       - 'api/config.json'
       - 'web/src/lib/version.ts'
+      - 'infra/VERSION'
   workflow_dispatch:
 
 permissions:
@@ -31,6 +32,8 @@ jobs:
 
             if [ "$component" = "api" ]; then
               version=$(python3 -c "import json; print(json.load(open('api/config.json'))['version'])")
+            elif [ "$component" = "infra" ]; then
+              version=$(cat infra/VERSION | tr -d '[:space:]')
             else
               version=$(grep -oP "VERSION\s*=\s*['\"]([^'\"]+)['\"]" web/src/lib/version.ts | grep -oP "['\"]([^'\"]+)['\"]" | tr -d "'\"")
             fi
@@ -38,15 +41,10 @@ jobs:
             local tag="${component}-v${version}"
             local md="releases/${tag}.md"
 
-            # Latest existing tag for this component (skip if already released)
-            local latest
-            latest=$(git tag -l "${component}-v*" --sort=-version:refname | head -1)
-            if [ -n "$latest" ]; then
-              local latest_ver="${latest#${component}-v}"
-              if [ "$(printf '%s\n%s\n' "$latest_ver" "$version" | sort -V | tail -1)" = "$latest_ver" ]; then
-                echo "Skip $component: $tag already released (latest $latest)"
-                return
-              fi
+            # Skip if this exact release already exists on GitHub.
+            if gh release view "$tag" >/dev/null 2>&1; then
+              echo "Skip $component: $tag already released"
+              return
             fi
 
             local notes="$md"
@@ -63,3 +61,4 @@ jobs:
 
           create_release api
           create_release web
+          create_release infra
