@@ -11,3 +11,4 @@ build/
 .env.dev
 .env.prod
 .next/
+.wt/

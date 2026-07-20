@@ -80,10 +80,13 @@ services:
     container_name: futebol-web
     environment:
       - NEXT_PUBLIC_API_URL=http://api:7531
-      - NEXT_PUBLIC_OO_ENDPOINT=
-      - NEXT_PUBLIC_OO_BASIC_AUTH=YWRtaW5AZnV0ZWJvbC5sb2NhbDpGdXRlYm9sQDEyMw==
-      - NEXT_PUBLIC_OO_ORG=default
-      - NEXT_PUBLIC_OO_STREAM=web_events
+      - NEXT_PUBLIC_OBS_ENDPOINT=
+      - NEXT_PUBLIC_OBS_ORG=default
+      - NEXT_PUBLIC_OBS_STREAM=web_events
+      # NOTE: NEXT_PUBLIC_* vars are inlined into the browser bundle at build
+      # time. These are ignored by the prebuilt futebol-web:prod image; the
+      # values are baked via --build-arg in mk/deploy.mk. The OpenObserve Basic
+      # auth is injected server-side by the Next rewrite, not in the client.
     depends_on:
       api:
         condition: service_healthy

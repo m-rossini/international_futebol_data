@@ -8,7 +8,6 @@ interface OOConfig {
   endpoint: string;
   org: string;
   stream: string;
-  authHeader: string;
 }
 
 function getConfig(): OOConfig | null {
@@ -20,19 +19,19 @@ function getConfig(): OOConfig | null {
     // undefined in the browser, silently disabling all telemetry.
     //
     // When endpoint is empty, we use a same-origin relative path
-    // (proxied by Next.js rewrites) to avoid CORS preflight issues.
-    const endpoint = process.env.NEXT_PUBLIC_OO_ENDPOINT || '';
-    const org = process.env.NEXT_PUBLIC_OO_ORG || '';
-    const stream = process.env.NEXT_PUBLIC_OO_STREAM || '';
-    const basicAuth = process.env.NEXT_PUBLIC_OO_BASIC_AUTH || '';
+    // (/api/obs/<org>/...) proxied by Next.js rewrites. The OpenObserve
+    // Basic auth is injected server-side by the rewrite (next.config),
+    // so no credentials are ever inlined into the browser bundle.
+    const endpoint = process.env.NEXT_PUBLIC_OBS_ENDPOINT || '';
+    const org = process.env.NEXT_PUBLIC_OBS_ORG || '';
+    const stream = process.env.NEXT_PUBLIC_OBS_STREAM || '';
 
-    if (!org || !stream || !basicAuth) return null;
+    if (!org || !stream) return null;
 
     return {
       endpoint,
       org,
       stream,
-      authHeader: `Basic ${basicAuth}`,
     };
   } catch {
     return null;
@@ -80,7 +79,6 @@ function sendBatch(batch: LogEntry[]) {
   fetch(ooUrl(config, `${config.stream}/_json`), {
     method: 'POST',
     headers: {
-      Authorization: config.authHeader,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(batch),
@@ -127,7 +125,6 @@ function sendMetricsBatch(batch: MetricPoint[]) {
   fetch(ooUrl(config, `ingest/metrics/_json`), {
     method: 'POST',
     headers: {
-      Authorization: config.authHeader,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(batch),
@@ -298,7 +295,6 @@ function sendSpanBatch(spans: OtelSpan[]) {
   fetch(ooUrl(config, `v1/traces`), {
     method: 'POST',
     headers: {
-      Authorization: config.authHeader,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify(body),
