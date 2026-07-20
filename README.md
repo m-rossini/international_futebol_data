@@ -66,8 +66,7 @@ Since FastAPI auto‑generates an OpenAPI 3.1 spec from the source code, the mos
 
 | URL | Description |
 |---|---|
-| `http://localhost:7531/docs` | Swagger UI — interactive endpoint explorer |
-| `http://localhost:7531/redoc` | ReDoc — browsable reference |
+| `http://localhost:7531/scalar` | Scalar — interactive endpoint explorer (self-hosted, no external CDN) |
 | `http://localhost:7531/openapi.json` | Raw OpenAPI 3.1 schema |
 
 The FastAPI `app` is configured with `title="International Football Stats"`, `version="1.0.0"`, and full Pydantic response models for every endpoint, so the auto‑generated docs include request parameters, response schemas, and example values — no manual upkeep needed.
@@ -87,7 +86,7 @@ The FastAPI `app` is configured with `title="International Football Stats"`, `ve
 │              ▼  /api/proxy  (Next.js rewrite)    │
 │                                                   │
 │  FastAPI  :7531                                  │
-│    ├─ GET  /                    Redirect→ /docs  │
+│    ├─ GET  /                    Redirect→ /scalar │
 │    ├─ GET  /health, /version                     │
 │    ├─ GET  /filters, /summary                    │
 │    ├─ GET  /teams, /team/:name, /team/:name/matches/:year │
@@ -149,7 +148,7 @@ Run it after `make up` — dashboards appear immediately in the OpenObserve UI u
 
 | Method | Endpoint | Description |
 |---|---|---|
-| `GET` | `/` | Redirects to Swagger UI (`/docs`) |
+| `GET` | `/` | Redirects to Scalar API docs (`/scalar`) |
 | `GET` | `/health` | Health check for container probes |
 | `GET` | `/version` | Current application version |
 | `GET` | `/filters` | Distinct values for UI dropdowns (teams, tournaments, countries, cities) |
