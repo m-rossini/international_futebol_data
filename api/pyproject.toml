@@ -16,6 +16,7 @@ dependencies = [
     "opentelemetry-instrumentation-fastapi>=0.48b0",
     "openai>=1.40.0,<2.0.0",
     "anthropic>=0.40.0,<1.0.0",
+    "scalar-fastapi>=1.8.0",
 ]
 
 [dependency-groups]

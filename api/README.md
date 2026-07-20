@@ -259,5 +259,4 @@ The API container exposes port `5678` for VS Code debugpy. Set `debugpy` in your
 ### API Docs
 
 When the server is running, interactive docs are available at:
-- Swagger UI: http://localhost:7531/docs
-- ReDoc: http://localhost:7531/redoc
+- Scalar (self-hosted, no external CDN): http://localhost:7531/scalar

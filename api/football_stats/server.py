@@ -94,6 +94,8 @@ app = FastAPI(
     description="REST API for querying international football match statistics.",
     version="1.0.0",
     lifespan=lifespan,
+    docs_url=None,
+    redoc_url=None,
 )
 
 
@@ -146,7 +148,7 @@ def main():
     args = parser.parse_args()
 
     logger.info("Starting server on http://%s:%s", args.host, args.port)
-    logger.info("API docs at http://%s:%s/docs", args.host, args.port)
+    logger.info("API docs at http://%s:%s/scalar", args.host, args.port)
     uvicorn.run(app, host=args.host, port=args.port)
 
 

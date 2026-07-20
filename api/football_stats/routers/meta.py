@@ -88,4 +88,4 @@ async def filter_options():
 @router.get("/", include_in_schema=False)
 async def root():
     """Redirect to the interactive API docs."""
-    return RedirectResponse(url="/docs")
+    return RedirectResponse(url="/scalar")
