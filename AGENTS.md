@@ -172,18 +172,18 @@ Prefer minimal, targeted changes.
   git reset --hard origin/main
   ```
 
-  - Create a feature worktree
+  - Create a feature worktree — **inside the repo** (e.g. `.wt/<feature>`) so the
+    AI agent's permission scope already covers it and no prompts are raised.
+    Add `.wt/` to `.gitignore` (git keeps its own worktree metadata under `.git/worktrees/`).
 
   ```bash
-  git worktree add \
-  ~/projetos/worktrees/international_futebol_data/<feature> \
-  -b <feature>
+  git worktree add -b <feature> .wt/<feature>
   ```
 
   - Start working
 
   ```bash
-  cd ~/projetos/worktrees/international_futebol_data/<feature>
+  cd .wt/<feature>
   ```
 
     - Launch the AI agent.
