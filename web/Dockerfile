@@ -26,8 +26,26 @@ WORKDIR /app
 
 ARG NEXT_PUBLIC_API_URL=http://api:7531
 ARG NEXT_PUBLIC_OBS_PROXY_URL=http://openobserve:5080/api
+
+# Web observability settings — inlined into the browser bundle at build time
+# (Next.js only inlines NEXT_PUBLIC_* vars into the client). These are
+# non-secret: org name, stream, and provider selection.
+ARG NEXT_PUBLIC_OBS_PROVIDER=openobserve
+ARG NEXT_PUBLIC_OBS_ENDPOINT=
+ARG NEXT_PUBLIC_OBS_ORG=default
+ARG NEXT_PUBLIC_OBS_STREAM=web_events
+
+# Server-only secret (NOT inlined into the client). Injected into the
+# /api/obs rewrite at build time so it never reaches the browser bundle.
+ARG OBS_BASIC_AUTH=
+
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_OBS_PROXY_URL=$NEXT_PUBLIC_OBS_PROXY_URL
+ENV NEXT_PUBLIC_OBS_PROVIDER=$NEXT_PUBLIC_OBS_PROVIDER
+ENV NEXT_PUBLIC_OBS_ENDPOINT=$NEXT_PUBLIC_OBS_ENDPOINT
+ENV NEXT_PUBLIC_OBS_ORG=$NEXT_PUBLIC_OBS_ORG
+ENV NEXT_PUBLIC_OBS_STREAM=$NEXT_PUBLIC_OBS_STREAM
+ENV OBS_BASIC_AUTH=$OBS_BASIC_AUTH
 
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"

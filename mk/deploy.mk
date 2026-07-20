@@ -1,7 +1,12 @@
 build:
 	@echo "Building production images…"
 	$(DOCKER) build -f api/Dockerfile --build-context releases=./releases --build-context infra=./infra --target production -t $(IMG_API_PROD) api/
-	$(DOCKER) build -f web/Dockerfile --target production -t $(IMG_WEB_PROD) web/
+	$(DOCKER) build -f web/Dockerfile --target production -t $(IMG_WEB_PROD) web/ \
+		--build-arg NEXT_PUBLIC_OBS_PROVIDER=openobserve \
+		--build-arg NEXT_PUBLIC_OBS_ENDPOINT= \
+		--build-arg NEXT_PUBLIC_OBS_ORG=default \
+		--build-arg NEXT_PUBLIC_OBS_STREAM=web_events \
+		--build-arg OBS_BASIC_AUTH=$${OBS_BASIC_AUTH:-YWRtaW5AZnV0ZWJvbC5sb2NhbDpGdXRlYm9sQDEyMw==}
 	@echo "Production images built:"
 	@$(DOCKER) images --format "table {{.Repository}}:{{.Tag}}\t{{.Size}}" | grep -E "$(IMG_API_PROD)|$(IMG_WEB_PROD)"
 
