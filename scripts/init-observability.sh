@@ -21,6 +21,25 @@ DASHBOARDS_DIR="${ROOT_DIR}/dashboards"
 echo "=== Observability Init ==="
 echo "OpenObserve: ${OO_BASE_URL} (org: ${OO_ORG})"
 
+# ── 0. Wait for OpenObserve to accept requests ──
+# deploy-stack starts the containers and then runs this script straight
+# away, so OpenObserve is normally still booting and every stream call
+# fails with 404/400 until it answers. Probe the unauthenticated
+# /healthz rather than sleeping a guessed interval.
+OO_READY=0
+for _ in $(seq 1 30); do
+  if curl -sf -o /dev/null "${OO_BASE_URL}/healthz" 2>/dev/null; then
+    OO_READY=1
+    break
+  fi
+  sleep 2
+done
+if [ "${OO_READY}" -ne 1 ]; then
+  echo "ERROR: OpenObserve not ready at ${OO_BASE_URL} after 60s" >&2
+  exit 1
+fi
+echo "  OpenObserve is ready."
+
 # ── 1. Ensure streams exist ──
 # OpenObserve only honours a stream definition — and therefore stops the
 # compactor from discarding everything ingested into it — once its settings
