@@ -52,7 +52,7 @@ deploy-stack:
 	@echo "  2/4 Decompressing data…"
 	ssh $(HOST) "cd $(DEPLOY_DIR) && mkdir -p data && tar xzf tmp/data.tar.gz -C data/ 2>/dev/null || true"
 	@echo "  3/4 Starting containers…"
-	ssh $(HOST) "cd $(DEPLOY_DIR) && $(COMPOSE_CMD) up -d --no-deps --force-recreate nginx api mcp web openobserve"
+	ssh $(HOST) "cd $(DEPLOY_DIR) && $(COMPOSE_CMD) up -d --no-deps --force-recreate api mcp web openobserve nginx"
 	$(POST_DEPLOY)
 	@echo "  4/4 Initializing observability…"
 	ssh $(HOST) "cd $(DEPLOY_DIR) && bash scripts/init-observability.sh 2>&1 || true"
