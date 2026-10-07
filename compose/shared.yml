@@ -1,6 +1,9 @@
 services:
   openobserve:
-    image: openobserve/openobserve:latest
+    # Pinned rather than :latest so a deploy can't silently pull a different
+    # build. v1.0.4 is the current stable release (verified end-to-end: OTLP
+    # logs/traces/metrics all ingest and are queryable).
+    image: openobserve/openobserve:v1.0.4
     container_name: futebol-observe
     volumes:
       - oo_data:/data
