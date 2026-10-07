@@ -4,6 +4,11 @@ services:
     container_name: futebol-observe
     volumes:
       - oo_data:/data
+    # Loopback-only: scripts/init-observability.sh runs on the host and needs to
+    # reach OpenObserve to define streams + import dashboards. Not published
+    # publicly — it holds the admin credentials.
+    ports:
+      - "127.0.0.1:5080:5080"
     environment:
       - ZO_ROOT_USER_EMAIL=admin@futebol.local
       - ZO_ROOT_USER_PASSWORD=Futebol@123

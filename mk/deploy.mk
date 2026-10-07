@@ -30,11 +30,13 @@ publish-images:
 	cat $(NGINX_SRC) | ssh $(HOST) "cat > $(DEPLOY_DIR)/nginx/conf.d/$(NGINX_DST)"
 	ssh $(HOST) "mkdir -p $(DEPLOY_DIR)/compose"
 	cat compose/shared.yml | ssh $(HOST) "cat > $(DEPLOY_DIR)/compose/shared.yml"
+	@echo "Publishing scripts and dashboards…"
+	tar czf - scripts dashboards | ssh $(HOST) "cd $(DEPLOY_DIR) && tar xzf -"
 	$(POST_PUBLISH)
 	@echo "Compressing data…"
 	@tar czf $(STAGING)/data.tar.gz -C "$(DATA_VOLUME)" .
 	cat $(STAGING)/data.tar.gz | ssh $(HOST) "cat > $(DEPLOY_DIR)/tmp/data.tar.gz"
-	@echo "Published images, compose, nginx, env, and data to $(HOST)"
+	@echo "Published images, compose, nginx, env, scripts, dashboards, and data to $(HOST)"
 
 release-images:
 	@test -n "$(HOST)" || (echo "ERROR: HOST is not set." && exit 1)
