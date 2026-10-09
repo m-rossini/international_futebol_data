@@ -293,16 +293,19 @@ export function YearDetailClient({ year }: Props) {
         </div>
       </div>
 
-      {/* Avg goals ladder — full width */}
-      <div className="bg-white rounded-lg border border-gray-200 p-4 mt-6">
-        <h2 className="text-sm font-semibold text-gray-700 mb-3">Avg Goals per Match (running)</h2>
-        <AvgGoalsLadderChart data={avgGoalsData} />
-      </div>
+      {/* Avg goals ladder + goals histogram — two columns */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+        <div className="bg-white rounded-lg border border-gray-200 p-4">
+          <h2 className="text-sm font-semibold text-gray-700 mb-3">
+            Avg Goals per Match (running)
+          </h2>
+          <AvgGoalsLadderChart data={avgGoalsData} />
+        </div>
 
-      {/* Goals histogram — full width */}
-      <div className="bg-white rounded-lg border border-gray-200 p-4 mt-6">
-        <h2 className="text-sm font-semibold text-gray-700 mb-3">Goals per Match Distribution</h2>
-        <GoalsHistogramChart data={data.goals_histogram} />
+        <div className="bg-white rounded-lg border border-gray-200 p-4">
+          <h2 className="text-sm font-semibold text-gray-700 mb-3">Goals per Match Distribution</h2>
+          <GoalsHistogramChart data={data.goals_histogram} />
+        </div>
       </div>
 
       {/* Matches */}
