@@ -14,3 +14,7 @@ Makefile
 .venv
 .mcp_cache
 *.md
+# Supplied via named build contexts (--build-context infra/releases) instead;
+# anything present here is a runtime artefact and must not shadow them.
+infra/
+releases/

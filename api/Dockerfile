@@ -23,9 +23,14 @@ CMD ["uv", "run", "python", "-m", "debugpy", "--listen", "0.0.0.0:5678", "footba
 FROM python:3.14-slim-bookworm AS production
 WORKDIR /app
 COPY --from=deps /app/.venv /app/.venv
+COPY . .
+# These two must come *after* COPY . . -- the api/ build context can carry an
+# empty api/infra/VERSION and an empty api/releases/ (both created at runtime by
+# the dev container, which bind-mounts ./api over /app). Copying them afterwards
+# guaranteed an empty infra version and a truncated release list in every
+# non-local image, since no VPS compose bind-mounts them.
 COPY --from=releases . /app/releases/
 COPY --from=infra VERSION /app/infra/VERSION
-COPY . .
 ENV PATH="/app/.venv/bin:$PATH"
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONPATH="/app"
