@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import { Users, Swords, Trophy, Check, RotateCcw, TrendingUp, Clock, Calendar } from 'lucide-react';
 import { AutocompleteInput } from '@/components/shared/AutocompleteInput';
+import { HomeStats } from '@/components/shared/HomeStats';
 import { useDefaults } from '@/lib/useDefaults';
 import { logUserAction, logApiCall } from '@/lib/observability';
 
@@ -86,6 +87,11 @@ export default function HomePage() {
           Explore teams, tournaments, and head-to-head matchups across the history of international
           football.
         </p>
+      </div>
+
+      {/* Dataset-at-a-glance stats */}
+      <div className="w-full flex justify-center mb-10">
+        <HomeStats />
       </div>
 
       {/* Setup card */}
