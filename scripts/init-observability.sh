@@ -21,19 +21,73 @@ DASHBOARDS_DIR="${ROOT_DIR}/dashboards"
 echo "=== Observability Init ==="
 echo "OpenObserve: ${OO_BASE_URL} (org: ${OO_ORG})"
 
+# ── 0. Wait for OpenObserve to accept requests ──
+# deploy-stack starts the containers and then runs this script straight
+# away, so OpenObserve is normally still booting and every stream call
+# fails with 404/400 until it answers. Probe the unauthenticated
+# /healthz rather than sleeping a guessed interval.
+OO_READY=0
+for _ in $(seq 1 30); do
+  if curl -sf -o /dev/null "${OO_BASE_URL}/healthz" 2>/dev/null; then
+    OO_READY=1
+    break
+  fi
+  sleep 2
+done
+if [ "${OO_READY}" -ne 1 ]; then
+  echo "ERROR: OpenObserve not ready at ${OO_BASE_URL} after 60s" >&2
+  exit 1
+fi
+echo "  OpenObserve is ready."
+
 # ── 1. Ensure streams exist ──
+# OpenObserve only honours a stream definition — and therefore stops the
+# compactor from discarding everything ingested into it — once its settings
+# exist. On v1.0.4 that is PUT .../streams/<name>/settings; a plain PUT on
+# .../streams/<name> answers 405. Combined with ZO_COMPACT_ENABLED=true, the
+# stream then ingests normally (OTLP returns 200) and silently loses every
+# record, so this step must fail loudly rather than be swallowed.
 STREAMS=(api_logs mcp_logs web_events)
+SETTINGS='{"retention_period": "30", "full_text_search_keys": []}'
+CREATE='{"fields": [{"name": "body", "type": "Utf8"}], "settings": {"retention_period": "30", "full_text_search_keys": []}}'
+STREAM_FAILURES=0
+
 for stream in "${STREAMS[@]}"; do
-  echo "  Creating stream: ${stream}"
-  curl -sf -u "${OO_USER}:${OO_PASS}" \
-    -X PUT "${OO_BASE_URL}/api/${OO_ORG}/streams/${stream}" \
+  echo "  Defining stream: ${stream}"
+  # Fast path: the stream already exists (ingest materialises it on first
+  # write), so applying its settings is enough to define it.
+  code=$(curl -s -o /dev/null -w '%{http_code}' \
+    -u "${OO_USER}:${OO_PASS}" \
+    -X PUT "${OO_BASE_URL}/api/${OO_ORG}/streams/${stream}/settings" \
     -H "Content-Type: application/json" \
-    -d '{}' > /dev/null 2>&1 || true
-  echo "    OK"
+    -d "${SETTINGS}" 2>/dev/null || echo "000")
+
+  if [ "${code}" = "404" ]; then
+    # Never ingested yet — create it with its definition in a single call.
+    code=$(curl -s -o /dev/null -w '%{http_code}' \
+      -u "${OO_USER}:${OO_PASS}" \
+      -X POST "${OO_BASE_URL}/api/${OO_ORG}/streams/${stream}" \
+      -H "Content-Type: application/json" \
+      -d "${CREATE}" 2>/dev/null || echo "000")
+  fi
+
+  if [ "${code}" = "200" ]; then
+    echo "    OK (HTTP ${code})"
+  else
+    echo "    FAILED (HTTP ${code})"
+    STREAM_FAILURES=$((STREAM_FAILURES + 1))
+  fi
 done
 
 # ── 2. Import dashboards ──
 echo "  Importing dashboards..."
 python3 "${SCRIPT_DIR}/import_dashboards.py" --base-url "${OO_BASE_URL}" --user "${OO_USER}" --password "${OO_PASS}"
+
+# Reported last so dashboards are still provisioned when a stream fails.
+if [ "${STREAM_FAILURES}" -gt 0 ]; then
+  echo "ERROR: ${STREAM_FAILURES} stream(s) could not be defined. Logs will be" >&2
+  echo "       ingested and then discarded by the compactor." >&2
+  exit 1
+fi
 
 echo "=== Observability Init Complete ==="

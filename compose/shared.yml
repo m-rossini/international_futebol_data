@@ -1,9 +1,17 @@
 services:
   openobserve:
-    image: openobserve/openobserve:latest
+    # Pinned rather than :latest so a deploy can't silently pull a different
+    # build. v1.0.4 is the current stable release (verified end-to-end: OTLP
+    # logs/traces/metrics all ingest and are queryable).
+    image: openobserve/openobserve:v1.0.4
     container_name: futebol-observe
     volumes:
       - oo_data:/data
+    # Loopback-only: scripts/init-observability.sh runs on the host and needs to
+    # reach OpenObserve to define streams + import dashboards. Not published
+    # publicly — it holds the admin credentials.
+    ports:
+      - "127.0.0.1:5080:5080"
     environment:
       - ZO_ROOT_USER_EMAIL=admin@futebol.local
       - ZO_ROOT_USER_PASSWORD=Futebol@123
