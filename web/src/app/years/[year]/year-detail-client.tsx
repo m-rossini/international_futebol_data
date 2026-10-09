@@ -16,6 +16,10 @@ import {
 import { FilterBar } from '@/components/shared/FilterBar';
 import { StatsBar, type StatItem } from '@/components/shared/StatsBar';
 import { GoalsHistogramChart } from '@/components/shared/chart/GoalsHistogramChart';
+import {
+  AvgGoalsLadderChart,
+  type AvgGoalsPoint,
+} from '@/components/shared/chart/AvgGoalsLadderChart';
 import { MatchTable } from '@/components/shared/MatchTable';
 import { logApiCall } from '@/lib/observability';
 import type { YearDetail } from '@/lib/types';
@@ -36,6 +40,32 @@ interface CumulativeRow {
   date: string;
   cumulativeMatches: number;
   cumulativeGoals: number;
+}
+
+function buildAvgGoalsData(matches: YearDetail['matches_list']): AvgGoalsPoint[] {
+  const sorted = [...matches].sort(
+    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
+  );
+
+  const step = Math.max(1, Math.floor(sorted.length / 200));
+  const sampled = step > 1 ? sorted.filter((_, i) => i % step === 0) : sorted;
+
+  const rows: AvgGoalsPoint[] = [];
+  let cumMatches = 0;
+  let cumGoals = 0;
+
+  for (let i = 0; i < sampled.length; i++) {
+    const m = sampled[i];
+    cumMatches += 1;
+    cumGoals += m.home_score + m.away_score;
+    rows.push({
+      idx: i,
+      date: m.date,
+      avgGoals: cumGoals / cumMatches,
+    });
+  }
+
+  return rows;
 }
 
 function buildCumulativeData(matches: YearDetail['matches_list']): CumulativeRow[] {
@@ -137,6 +167,11 @@ export function YearDetailClient({ year }: Props) {
   const cumulativeData = useMemo(() => {
     if (!data?.matches_list) return [];
     return buildCumulativeData(data.matches_list);
+  }, [data]);
+
+  const avgGoalsData = useMemo(() => {
+    if (!data?.matches_list) return [];
+    return buildAvgGoalsData(data.matches_list);
   }, [data]);
 
   if (loading) {
@@ -256,6 +291,12 @@ export function YearDetailClient({ year }: Props) {
             </ResponsiveContainer>
           </div>
         </div>
+      </div>
+
+      {/* Avg goals ladder — full width */}
+      <div className="bg-white rounded-lg border border-gray-200 p-4 mt-6">
+        <h2 className="text-sm font-semibold text-gray-700 mb-3">Avg Goals per Match (running)</h2>
+        <AvgGoalsLadderChart data={avgGoalsData} />
       </div>
 
       {/* Goals histogram — full width */}
