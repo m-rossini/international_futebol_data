@@ -1,9 +1,11 @@
 services:
   openobserve:
-    # Pinned rather than :latest so a deploy can't silently pull a different
-    # build. v1.0.4 is the current stable release (verified end-to-end: OTLP
-    # logs/traces/metrics all ingest and are queryable).
-    image: openobserve/openobserve:v1.0.4
+    # Fully-qualified and pinned. Rootless podman enforces short-name resolution
+    # and cannot prompt for it without a TTY, so a bare "openobserve/openobserve"
+    # or ":v1.0.4" fails to pull on the dev VPS. v1.0.4 is the current stable
+    # release (verified end-to-end: OTLP logs/traces/metrics all ingest and are
+    # queryable).
+    image: docker.io/openobserve/openobserve:v1.0.4
     container_name: futebol-observe
     volumes:
       - oo_data:/data
