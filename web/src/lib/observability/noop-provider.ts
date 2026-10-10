@@ -19,6 +19,7 @@ function generateSpanId(): string {
 export class NoopProvider implements ObservabilityProvider {
   logApiCall(): void {}
   logUserAction(): void {}
+  logPageView(): void {}
   sendMetric(): void {}
   incrementMetric(): void {}
 

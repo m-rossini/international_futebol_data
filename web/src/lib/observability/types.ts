@@ -13,6 +13,13 @@ export interface ObservabilityProvider {
 
   logUserAction(action: string, context?: Record<string, unknown>): void;
 
+  /**
+   * Emits a `page_view` event carrying `page`, `referrer` and `previous_page`.
+   * Dashboards 03 ("Top Referrers", "Navigation Flow") are built on these
+   * fields, so without this method those panels stay permanently empty.
+   */
+  logPageView(page: string, referrer: string | null, previousPage: string | null): void;
+
   sendMetric(
     metricName: string,
     value: number,

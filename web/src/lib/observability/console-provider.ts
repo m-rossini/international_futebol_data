@@ -32,6 +32,10 @@ export class ConsoleProvider implements ObservabilityProvider {
     console.log(`[action] ${action}`, context);
   }
 
+  logPageView(page: string, referrer: string | null, previousPage: string | null): void {
+    console.log(`[page_view] ${page}`, { referrer, previousPage });
+  }
+
   sendMetric(
     metricName: string,
     value: number,
