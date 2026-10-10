@@ -15,10 +15,11 @@ const nextConfig: NextConfig = {
         source: '/api/oo/:path*',
         destination: `${OBS_PROXY_URL}/:path*`,
       },
-      {
-        source: '/api/obs/:path*',
-        destination: `${OBS_PROXY_URL}/:path*`,
-      },
+      // NOTE: /api/obs/* is intentionally NOT a rewrite. It is served by the
+      // Node-runtime route handler at src/app/api/obs/[...path]/route.ts, which
+      // injects the OpenObserve Basic auth header. Rewrites run BEFORE route
+      // handlers and cannot add an Authorization header, so leaving this rewrite
+      // in place shadowed the route handler and every ingest returned 401.
     ];
   },
 };

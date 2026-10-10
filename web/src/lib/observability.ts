@@ -26,6 +26,10 @@ export function logUserAction(action: string, context?: Record<string, unknown>)
   getProvider().logUserAction(action, context);
 }
 
+export function logPageView(page: string, referrer: string | null, previousPage: string | null) {
+  getProvider().logPageView(page, referrer, previousPage);
+}
+
 export function sendMetric(
   metricName: string,
   value: number,

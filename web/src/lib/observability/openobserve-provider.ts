@@ -358,6 +358,18 @@ export class OpenObserveProvider implements ObservabilityProvider {
     this.incrementMetric('user_action', 1, { action });
   }
 
+  logPageView(page: string, referrer: string | null, previousPage: string | null): void {
+    sendLog('info', `page_view:${page}`, {
+      event_type: 'page_view',
+      page,
+      // Empty strings would defeat the dashboards' `is not null and != ''`
+      // filters, so normalise "no referrer" to null instead.
+      referrer: referrer || null,
+      previous_page: previousPage || null,
+    });
+    this.incrementMetric('page_view', 1, { page });
+  }
+
   sendMetric(
     metricName: string,
     value: number,
