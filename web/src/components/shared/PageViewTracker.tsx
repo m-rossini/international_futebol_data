@@ -22,10 +22,14 @@ export function PageViewTracker() {
 
   // document.referrer is only meaningful on the first navigation of a session;
   // after that, "where the user came from" is the previous in-app route.
+  // Captured in an effect because reading a ref during render is disallowed.
   const firstReferrer = useRef<string | null>(null);
-  if (firstReferrer.current === null && typeof document !== 'undefined') {
-    firstReferrer.current = document.referrer || null;
-  }
+
+  useEffect(() => {
+    if (firstReferrer.current === null && typeof document !== 'undefined') {
+      firstReferrer.current = document.referrer || null;
+    }
+  }, []);
 
   useEffect(() => {
     const path = pathname + (searchParams.toString() ? `?${searchParams.toString()}` : '');
