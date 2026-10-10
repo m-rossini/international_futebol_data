@@ -73,6 +73,16 @@ ENV NODE_ENV=production
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
+# Server-only credential for the /api/obs telemetry proxy. It MUST be declared
+# here too, not just in the build stage: the Next.js standalone server reads it
+# at RUNTIME, and an ARG/ENV set only in the build stage does not survive into
+# this final image — the container would start with an empty value, every
+# ingest would 401, and the dashboards would silently stay empty.
+# Declared without a default so the image carries no secret; supply it via the
+# environment (compose) or --build-arg.
+ARG OBS_BASIC_AUTH=
+ENV OBS_BASIC_AUTH=$OBS_BASIC_AUTH
+
 EXPOSE 3000
 
 CMD ["node", "server.js"]
