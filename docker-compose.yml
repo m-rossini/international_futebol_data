@@ -90,8 +90,17 @@ services:
       # NOTE: NEXT_PUBLIC_* vars are inlined into the browser bundle at build
       # time. For the prod image these must be passed as --build-arg (mk/deploy.mk);
       # the values below are ignored by the prebuilt futebol-web:prod image.
-      # The OpenObserve Basic auth is injected server-side by the Next rewrite
-      # (next.config), so it is intentionally NOT inlined into the client.
+      # Server-only (no NEXT_PUBLIC_ prefix), so they are never inlined into the
+      # client bundle. src/middleware.ts reads OBS_BASIC_AUTH at REQUEST time to
+      # inject Basic auth for the /api/obs telemetry proxy.
+      #
+      # This used to be supplied only as a build-arg by mk/deploy.mk, so the
+      # production image authenticated correctly while `docker compose up
+      # --build` produced an image with an empty auth header — every ingest 401'd
+      # and the `web_events` stream that every dashboard reads from stayed empty.
+      # Setting it here fixes the local/dev path without touching the prod build.
+      - OBS_BASIC_AUTH=${OBS_BASIC_AUTH:-YWRtaW5AZnV0ZWJvbC5sb2NhbDpGdXRlYm9sQDEyMw==}
+      - OBS_PROXY_URL=${OBS_PROXY_URL:-http://openobserve:5080/api}
     depends_on:
       api:
         condition: service_started
