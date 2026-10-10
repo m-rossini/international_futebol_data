@@ -12,3 +12,11 @@ build/
 .env.prod
 .next/
 .wt/
+
+# Runtime artifacts written by the local dev containers. api/.cache holds the
+# precomputed pickle cache; api/infra/VERSION is an empty placeholder the dev
+# container creates under the ./api bind mount. Neither belongs in git, and
+# api/infra/VERSION in particular also clobbers the value baked into the
+# production image (see api/Dockerfile).
+api/.cache/
+api/infra/
