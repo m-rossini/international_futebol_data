@@ -70,8 +70,14 @@ services:
       - NEXT_PUBLIC_OBS_STREAM=web_events
       # NOTE: NEXT_PUBLIC_* vars are inlined into the browser bundle at build
       # time. These are ignored by the prebuilt futebol-web:prod image; the
-      # values are baked via --build-arg in mk/deploy.mk. The OpenObserve Basic
-      # auth is injected server-side by the Next rewrite, not in the client.
+      # values are baked via --build-arg in mk/deploy.mk.
+      #
+      # Server-only (no NEXT_PUBLIC_ prefix): the /api/obs route handler reads
+      # this at request time to inject OpenObserve Basic auth. It is supplied
+      # here at RUNTIME rather than baked into the image so the prod image
+      # carries no secret and rotating the password needs only a redeploy.
+      - OBS_BASIC_AUTH=${OBS_BASIC_AUTH:-YWRtaW5AZnV0ZWJvbC5sb2NhbDpGdXRlYm9sQDEyMw==}
+      - OBS_PROXY_URL=${OBS_PROXY_URL:-http://openobserve:5080/api}
     depends_on:
       api:
         condition: service_healthy
