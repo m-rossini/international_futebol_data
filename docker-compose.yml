@@ -21,6 +21,11 @@ services:
       dockerfile: Dockerfile
       target: development
     container_name: futebol-api
+    # Run as the host user so bind-mounted source, .venv, the precomputed
+    # cache and __pycache__ stay host-owned instead of being littered with
+    # root-owned files. Set LOCAL_UID/LOCAL_GID in .env if your uid/gid is not
+    # 1000; the api Dockerfile creates this user and chowns /app.
+    user: "${LOCAL_UID:-1000}:${LOCAL_GID:-1000}"
     ports:
       - "7531:7531"
       - "5678:5678"
@@ -32,6 +37,10 @@ services:
       - ${DATA_VOLUME}:/data:ro
     environment:
       - DATA_DIR=/data
+      # HOME/UV cache must be writable when running as a non-root user; uv
+      # otherwise defaults to /.cache/uv and fails with permission denied.
+      - HOME=/tmp
+      - UV_CACHE_DIR=/tmp/.cache/uv
       - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
       - OTEL_SERVICE_NAME=futebol-api
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://openobserve:5080/api/default
@@ -57,10 +66,15 @@ services:
       dockerfile: Dockerfile
       target: development
     container_name: futebol-mcp
+    # Same host-user requirement as api (see note there).
+    user: "${LOCAL_UID:-1000}:${LOCAL_GID:-1000}"
     volumes:
       - ./api:/app
     environment:
       - API_BASE_URL=http://api:7531
+      # Writable HOME/uv cache for the non-root user (see note under api).
+      - HOME=/tmp
+      - UV_CACHE_DIR=/tmp/.cache/uv
       - MCP_REQUEST_TIMEOUT=30
       - OTEL_SERVICE_NAME=futebol-mcp
       - OTEL_EXPORTER_OTLP_ENDPOINT=http://openobserve:5080/api/default
@@ -78,6 +92,8 @@ services:
       dockerfile: Dockerfile
       target: development
     container_name: futebol-web
+    # Same host-user requirement as api (see note there).
+    user: "${LOCAL_UID:-1000}:${LOCAL_GID:-1000}"
     volumes:
       - ./web:/app
       - /app/node_modules
