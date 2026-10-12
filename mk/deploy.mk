@@ -47,14 +47,23 @@ release-images:
 deploy-stack:
 	@test -n "$(HOST)" || (echo "ERROR: HOST is not set." && exit 1)
 	@echo "Deploying on $(HOST)…"
-	@echo "  1/4 Stopping old containers…"
+	@echo "  1/5 Stopping old containers…"
 	ssh $(HOST) "cd $(DEPLOY_DIR) && $(COMPOSE_CMD) stop api mcp web openobserve 2>/dev/null || true"
-	@echo "  2/4 Decompressing data…"
+	@echo "  2/5 Decompressing data…"
 	ssh $(HOST) "cd $(DEPLOY_DIR) && mkdir -p data && tar xzf tmp/data.tar.gz -C data/ 2>/dev/null || true"
-	@echo "  3/4 Starting containers…"
-	ssh $(HOST) "cd $(DEPLOY_DIR) && $(COMPOSE_CMD) up -d --no-deps --force-recreate api mcp web openobserve nginx"
+	@echo "  3/5 Starting containers…"
+	ssh $(HOST) "cd $(DEPLOY_DIR) && $(COMPOSE_CMD) up -d --no-deps --force-recreate api mcp web openobserve"
+	@echo "  4/5 Substituting nginx DNS resolver…"
+	@# The compose network now exists, so the container DNS server can be read
+	@# from the running containers. Podman's resolver is the network gateway,
+	@# which differs from Docker's 127.0.0.11 and is not stable enough to
+	@# hardcode, so it is discovered here rather than baked into the config.
+	ssh $(HOST) "cd $(DEPLOY_DIR) && bash scripts/set-nginx-resolver.sh $(NGINX_DST)"
+	@echo "  5/5 Starting nginx…"
+	@# Started last so it resolves the freshly assigned upstream addresses.
+	ssh $(HOST) "cd $(DEPLOY_DIR) && $(COMPOSE_CMD) up -d --no-deps --force-recreate nginx"
 	$(POST_DEPLOY)
-	@echo "  4/4 Initializing observability…"
+	@echo "  Initializing observability…"
 	ssh $(HOST) "cd $(DEPLOY_DIR) && bash scripts/init-observability.sh 2>&1 || true"
 	@echo "  Verifying…"
 	ssh $(HOST) "cd $(DEPLOY_DIR) && $(COMPOSE_CMD) ps"
