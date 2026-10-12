@@ -5,7 +5,15 @@ WORKDIR /app
 
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
-RUN corepack enable && corepack prepare pnpm@10 --activate
+# COREPACK_HOME is pinned to a shared, world-readable location. By default
+# Corepack caches under $HOME/.cache/node/corepack, which is root's home here
+# -- so once this image drops to USER 1000 (below) Corepack cannot see the
+# prepared pnpm and blocks on an interactive "download pnpm?" prompt, hanging
+# every non-TTY build and test run.
+ENV COREPACK_HOME="/corepack"
+RUN corepack enable \
+    && corepack prepare pnpm@10 --activate \
+    && chmod -R a+rX "$COREPACK_HOME"
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
@@ -15,6 +23,23 @@ COPY .npmrc package.json ./
 RUN pnpm install
 
 COPY . .
+
+# The dev compose runs this container as the host user (uid 1000) so files it
+# writes into the ./web bind mount stay host-owned. node_modules is seeded into
+# an anonymous volume from THIS image, so it has to be owned by the same uid or
+# the container cannot install into it -- the dev server then crash-loops with
+# ERR_PNPM_PACKAGE_MANAGER_REMOVE_MODULES_DIR / "Permission denied".
+# Build-arg so the uid can be matched to LOCAL_UID at build time.
+ARG DEV_UID=1000
+ARG DEV_GID=1000
+# /pnpm (PNPM_HOME) and the per-user pnpm store must also belong to the dev
+# uid. Otherwise the uid-1000 process cannot take pnpm's store lockfile and
+# fails with "An IO error occurred while attempting to create and acquire the
+# lockfile", crash-looping the dev server.
+RUN chown -R ${DEV_UID}:${DEV_GID} /app "$PNPM_HOME" "$COREPACK_HOME" \
+    && mkdir -p /home/node/.local/share/pnpm \
+    && chown -R ${DEV_UID}:${DEV_GID} /home/node/.local/share
+USER ${DEV_UID}:${DEV_GID}
 
 EXPOSE 3000
 CMD ["pnpm", "next", "dev", "--port", "3000", "--hostname", "0.0.0.0"]
