@@ -7,7 +7,12 @@ export interface Column<T> {
   key: string;
   header: string;
   sortable?: boolean;
-  render?: (row: T) => React.ReactNode;
+  /**
+   * Renders a cell. `index` is the row's 0-based position in the currently
+   * sorted+filtered display order, so a row-number column can show 1, 2, 3…
+   * reflecting whatever sort the user has applied.
+   */
+  render?: (row: T, index: number) => React.ReactNode;
   compare?: (a: T, b: T) => number;
 }
 
@@ -130,7 +135,7 @@ export function DataTable<T>({
           </tr>
         </thead>
         <tbody>
-          {sorted.map((row) => {
+          {sorted.map((row, rowIndex) => {
             const rowKey = String(row[keyField]);
             const isExpanded = expandedKey === rowKey;
             return (
@@ -142,7 +147,7 @@ export function DataTable<T>({
                   {columns.map((col) => (
                     <td key={col.key} className="px-4 py-3 text-sm text-gray-700">
                       {col.render
-                        ? col.render(row)
+                        ? col.render(row, rowIndex)
                         : String((row as Record<string, unknown>)[col.key] ?? '')}
                     </td>
                   ))}

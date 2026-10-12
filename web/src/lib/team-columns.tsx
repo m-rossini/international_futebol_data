@@ -25,6 +25,18 @@ function eloColor(rating: number | null): string {
 
 export const TEAMS_COLUMNS: Column<TeamItem>[] = [
   {
+    // Always the first column. The number is the row's position in the current
+    // display order, so re-sorting by any column renumbers the table and the
+    // current 1st/2nd/3rd place is always visible. Not sortable: it has no
+    // meaningful order of its own, it just reflects the active sort.
+    key: 'rank',
+    header: '#',
+    sortable: false,
+    render: (_row, index) => (
+      <span className="font-semibold tabular-nums text-gray-400">{index + 1}</span>
+    ),
+  },
+  {
     key: 'team',
     header: 'Team',
     sortable: true,
