@@ -18,6 +18,7 @@ Includes disk caching via pickle to avoid recalculating on every reload.
 import hashlib
 import json
 import os
+import tempfile
 
 import pandas as pd
 
@@ -94,15 +95,38 @@ def clear_elo_cache() -> bool:
 def _save_elo_cache(
     df: pd.DataFrame, matches: pd.DataFrame, elo_config: EloConfig | None = None
 ) -> None:
-    """Save ELO ratings to disk cache."""
+    """Save ELO ratings to the full-history disk cache.
+
+    Writes via a unique temp file + atomic ``os.replace`` so a concurrent
+    reader can never observe a half-written pickle. Writing directly to the
+    final path would let a parallel request read a truncated file; it would
+    fail the unpickle, but only by luck of timing.
+    """
+    tmp_path = None
     try:
         os.makedirs(ELO_CACHE_DIR, exist_ok=True)
-        df.to_pickle(ELO_CACHE_FILE)
+        # mkstemp (not a fixed ".tmp" name) so concurrent writers each stage
+        # their own file instead of clobbering one another.
+        fd, tmp_path = tempfile.mkstemp(dir=ELO_CACHE_DIR, suffix=".tmp")
+        os.close(fd)
+        df.to_pickle(tmp_path)
+        os.replace(tmp_path, ELO_CACHE_FILE)
+        tmp_path = None
+
+        # Write the hash only after the data is in place: a crash between the
+        # two leaves a hash that will not match, which correctly forces a
+        # recalculation rather than serving mismatched data.
         with open(ELO_HASH_FILE, "w") as f:
             f.write(_matches_hash(matches, elo_config))
         logger.info("ELO ratings cached to disk (%d rows).", len(df))
     except Exception as exc:
         logger.warning("Failed to write ELO cache: %s", exc)
+    finally:
+        if tmp_path and os.path.exists(tmp_path):
+            try:
+                os.unlink(tmp_path)
+            except OSError:
+                pass
 
 
 def _expected_score(rating_a: float, rating_b: float) -> float:
@@ -125,6 +149,7 @@ def calculate_elo_ratings(
     initial_elo: float = INITIAL_ELO,
     k_factor: float = K_FACTOR,
     home_advantage: float = HOME_ADVANTAGE,
+    use_disk_cache: bool = True,
 ) -> pd.DataFrame:
     """Calculate historical ELO ratings from match results.
 
@@ -143,6 +168,18 @@ def calculate_elo_ratings(
         K-factor for rating adjustment (default: 60).
     home_advantage : float
         Extra ELO points for home team (default: 100).
+    use_disk_cache : bool
+        Read/write the on-disk ELO cache.  The cache holds exactly **one**
+        entry, reserved for the full unfiltered history, because that
+        calculation is the expensive one (~16s over ~50k matches) and its
+        result is reused across restarts.
+
+        Pass ``False`` for filtered subsets.  A filtered run used to write
+        its own smaller result over the full-history cache, evicting it, so
+        every filtered request forced the next unfiltered one to recalculate
+        from scratch.  With the cache reserved for the full history there is
+        no eviction, and no file proliferation from the unbounded number of
+        filter combinations either.
 
     Returns
     -------
@@ -163,9 +200,10 @@ def calculate_elo_ratings(
         return pd.DataFrame()
 
     # Try loading from cache first
-    cached = _load_elo_cache(matches, elo_config)
-    if cached is not None:
-        return cached
+    if use_disk_cache:
+        cached = _load_elo_cache(matches, elo_config)
+        if cached is not None:
+            return cached
 
     # Sort chronologically
     matches = matches.sort_values("date").reset_index(drop=True)
@@ -273,8 +311,10 @@ def calculate_elo_ratings(
         max(elo_dict.values()),
     )
 
-    # Save to disk cache for faster reloads
-    _save_elo_cache(result, matches, elo_config)
+    # Save to disk cache for faster reloads. Reserved for the full unfiltered
+    # history -- see the use_disk_cache note in the docstring.
+    if use_disk_cache:
+        _save_elo_cache(result, matches, elo_config)
 
     return result
 
@@ -310,7 +350,22 @@ def calculate_elo_for_filters(
     if filtered.empty:
         return pd.DataFrame()
 
-    return calculate_elo_ratings(filtered, elo_config=elo_config)
+    # Filtered subsets are not disk-cached (see calculate_elo_ratings). The
+    # exception is a filter set that selects the entire frame, where the cached
+    # full history is exactly the right answer and reusing it avoids paying the
+    # ~16s recalculation.
+    #
+    # A row count is a sufficient test because apply_filters only ever narrows:
+    # every clause is a boolean mask, so if nothing was dropped the frames are
+    # identical. A filter that genuinely excludes matches -- including one that
+    # merely trims the long tail, e.g. date_from=1900 against a dataset
+    # reaching back to 1872 -- produces a genuinely different calculation and
+    # must not be served from cache.
+    is_full_history = len(filtered) == len(matches)
+
+    return calculate_elo_ratings(
+        filtered, elo_config=elo_config, use_disk_cache=is_full_history
+    )
 
 
 def get_latest_elo(elo_history: pd.DataFrame, top_n: int = 50) -> pd.DataFrame:
