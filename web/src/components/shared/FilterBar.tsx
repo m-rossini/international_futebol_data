@@ -69,6 +69,60 @@ export function FilterBar({ fields, injectDefaults = true, children }: Props) {
   const dateFrom = sp.get('date_from') || '';
   const dateTo = sp.get('date_to') || '';
 
+  const push = useCallback(
+    (key: string, value: string) => {
+      if (value) {
+        logUserAction('filter_change', { filter_key: key, filter_value: value });
+      }
+      const params = new URLSearchParams(sp.toString());
+      if (value) {
+        params.set(key, value);
+      } else {
+        params.delete(key);
+      }
+      router.replace(`${pathname}?${params.toString()}`);
+    },
+    [router, pathname, sp],
+  );
+
+  // The date inputs are held in local state rather than reading straight from
+  // the URL. An <input type="date"> reports "" from onChange until the value
+  // parses as a complete date, so while the user is typing day/month/year the
+  // URL has nothing to read. Driving the input from useSearchParams() meant
+  // React re-rendered it with "" on those keystrokes, wiping the partially
+  // typed segments back to the "dd-mm-yyyy" placeholder.
+  //
+  // Local state keeps the picker's own editing state intact, and only writes
+  // through to the URL once the value is complete. The URL is still the source
+  // of truth for external changes (clear filters, navigation), so the inputs
+  // follow it when it changes for a reason other than typing -- the documented
+  // "adjust state when a prop changes" pattern, done during render rather than
+  // in an effect so there is no extra commit.
+  const [dateFromInput, setDateFromInput] = useState(dateFrom);
+  const [seenDateFromUrl, setSeenDateFromUrl] = useState(dateFrom);
+  if (dateFrom !== seenDateFromUrl) {
+    setSeenDateFromUrl(dateFrom);
+    setDateFromInput(dateFrom);
+  }
+
+  const [dateToInput, setDateToInput] = useState(dateTo);
+  const [seenDateToUrl, setSeenDateToUrl] = useState(dateTo);
+  if (dateTo !== seenDateToUrl) {
+    setSeenDateToUrl(dateTo);
+    setDateToInput(dateTo);
+  }
+
+  const onDateChange = useCallback(
+    (key: string, setLocal: (v: string) => void) => (raw: string) => {
+      // Ignore incomplete values: there is nothing to store, and removing the
+      // param mid-typing is what used to reset the widget to its placeholder.
+      if (!raw) return;
+      setLocal(raw);
+      push(key, raw);
+    },
+    [push],
+  );
+
   // Inject saved defaults into URL params on first render (when param is empty)
   const injectedRef = useRef(false);
   useEffect(() => {
@@ -100,22 +154,6 @@ export function FilterBar({ fields, injectDefaults = true, children }: Props) {
       router.replace(`${pathname}?${params.toString()}`);
     }
   }, [cfg.teams, cfg.tournaments, injectDefaults, sp, router, pathname]);
-
-  const push = useCallback(
-    (key: string, value: string) => {
-      if (value) {
-        logUserAction('filter_change', { filter_key: key, filter_value: value });
-      }
-      const params = new URLSearchParams(sp.toString());
-      if (value) {
-        params.set(key, value);
-      } else {
-        params.delete(key);
-      }
-      router.replace(`${pathname}?${params.toString()}`);
-    },
-    [router, pathname, sp],
-  );
 
   const visible = Boolean(cfg.teams || cfg.tournaments || cfg.countries || cfg.dates || children);
   if (!visible) return null;
@@ -182,8 +220,8 @@ export function FilterBar({ fields, injectDefaults = true, children }: Props) {
             <label className="text-xs font-medium text-gray-500">From</label>
             <input
               type="date"
-              value={dateFrom}
-              onChange={(e) => push('date_from', e.target.value)}
+              value={dateFromInput}
+              onChange={(e) => onDateChange('date_from', setDateFromInput)(e.target.value)}
               className="border border-gray-300 rounded-lg px-2 py-1.5 text-sm bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-200 outline-none"
             />
           </div>
@@ -191,11 +229,30 @@ export function FilterBar({ fields, injectDefaults = true, children }: Props) {
             <label className="text-xs font-medium text-gray-500">To</label>
             <input
               type="date"
-              value={dateTo}
-              onChange={(e) => push('date_to', e.target.value)}
+              value={dateToInput}
+              onChange={(e) => onDateChange('date_to', setDateToInput)(e.target.value)}
               className="border border-gray-300 rounded-lg px-2 py-1.5 text-sm bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-200 outline-none"
             />
           </div>
+          {/* Only shown once a date is actually set. Clearing goes through
+              here rather than the input: a date picker reports an empty value
+              both for "incomplete while typing" and for "user cleared it", and
+              treating the former as a reset is what wiped the field. */}
+          {(dateFromInput || dateToInput) && (
+            <button
+              type="button"
+              onClick={() => {
+                logUserAction('clear_dates', { page: pathname });
+                setDateFromInput('');
+                setDateToInput('');
+                push('date_from', '');
+                push('date_to', '');
+              }}
+              className="px-2 py-1.5 text-sm text-gray-500 hover:text-gray-800 border border-gray-300 rounded-lg bg-white"
+            >
+              Clear dates
+            </button>
+          )}
         </>
       )}
       {children}
