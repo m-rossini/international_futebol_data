@@ -32,7 +32,13 @@ COPY . .
 # Build-arg so the uid can be matched to LOCAL_UID at build time.
 ARG DEV_UID=1000
 ARG DEV_GID=1000
-RUN chown -R ${DEV_UID}:${DEV_GID} /app
+# /pnpm (PNPM_HOME) and the per-user pnpm store must also belong to the dev
+# uid. Otherwise the uid-1000 process cannot take pnpm's store lockfile and
+# fails with "An IO error occurred while attempting to create and acquire the
+# lockfile", crash-looping the dev server.
+RUN chown -R ${DEV_UID}:${DEV_GID} /app "$PNPM_HOME" "$COREPACK_HOME" \
+    && mkdir -p /home/node/.local/share/pnpm \
+    && chown -R ${DEV_UID}:${DEV_GID} /home/node/.local/share
 USER ${DEV_UID}:${DEV_GID}
 
 EXPOSE 3000
