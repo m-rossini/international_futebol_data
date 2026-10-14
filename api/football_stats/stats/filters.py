@@ -43,6 +43,25 @@ class FilterParams:
             and self.date_to is None
         )
 
+    def describe(self) -> str:
+        """Human-readable summary of the active filters, for error messages.
+
+        Lists whichever fields are set so a user whose filter matched nothing
+        can see which one to widen or clear.
+        """
+        parts = []
+        if self.teams:
+            parts.append(f"teams={', '.join(self.teams)}")
+        if self.tournaments:
+            parts.append(f"tournaments={', '.join(self.tournaments)}")
+        if self.countries:
+            parts.append(f"countries={', '.join(self.countries)}")
+        if self.date_from:
+            parts.append(f"date_from={self.date_from}")
+        if self.date_to:
+            parts.append(f"date_to={self.date_to}")
+        return " ".join(parts) if parts else "no filter"
+
 
 def apply_filters(df: pd.DataFrame, filters: Optional[FilterParams]) -> pd.DataFrame:
     """Apply ``filters`` to the results DataFrame.

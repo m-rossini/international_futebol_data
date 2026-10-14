@@ -55,6 +55,19 @@ async def elo_ranking_current(
     from football_stats.stats.elo import calculate_elo_for_filters, get_latest_elo
 
     elo_df = calculate_elo_for_filters(state.results, filters.inner, state.elo_config)
+
+    # calculate_elo_for_filters returns None when no filters are active (the
+    # caller should fall back to the full history), an empty frame when a
+    # filter selected nothing, and a populated frame otherwise. Only the middle
+    # case is the user's mistake -- reporting it as a 503 makes it read like a
+    # server fault rather than "no matches for this filter".
+    if elo_df is not None and elo_df.empty:
+        raise HTTPException(
+            400,
+            f"No matches found for the selected filter ({filters.inner.describe()}). "
+            "Widen the date range or clear a filter and try again.",
+        )
+
     if elo_df is None:
         elo_df = state.elo_ratings
 
