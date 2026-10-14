@@ -23,6 +23,9 @@ prod-deploy: HOST = $(PROD_HOST)
 prod-deploy: DEPLOY_DIR = $(PROD_DEPLOY_DIR)
 prod-deploy: COMPOSE_CMD = $(PROD_COMPOSE)
 prod-deploy: POST_DEPLOY = @ssh $(PROD_HOST) "test -f $(PROD_DEPLOY_DIR)/nginx/conf.d/futebol-prod.conf && $(PROD_DOCKER) exec futebol-nginx test -f /etc/letsencrypt/live/futebol.$(DOMAIN)/fullchain.pem && cp $(PROD_DEPLOY_DIR)/nginx/conf.d/futebol-prod.conf $(PROD_DEPLOY_DIR)/nginx/conf.d/futebol-prod-init.conf && $(PROD_DOCKER) exec futebol-nginx nginx -s reload" || true
+# Must match prod-publish: deploy-stack substitutes @RESOLVER@ in this file.
+# prod deliberately still uses upstream blocks, so the script is a no-op there.
+prod-deploy: NGINX_DST = futebol-prod.conf
 prod-deploy: deploy-stack
 
 prod-down: HOST = $(PROD_HOST)
