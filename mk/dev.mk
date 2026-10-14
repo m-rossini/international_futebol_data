@@ -23,6 +23,8 @@ dev-deploy: HOST = $(DEV_HOST)
 dev-deploy: DEPLOY_DIR = $(DEV_DEPLOY_DIR)
 dev-deploy: COMPOSE_CMD = $(DEV_COMPOSE)
 dev-deploy: POST_DEPLOY =
+# Must match dev-publish: deploy-stack substitutes @RESOLVER@ in this file.
+dev-deploy: NGINX_DST = futebol-dev.conf
 dev-deploy: deploy-stack
 
 dev-down: HOST = $(DEV_HOST)
