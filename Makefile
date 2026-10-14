@@ -24,7 +24,7 @@ help:
 	@echo "    make local-down         Stop all"
 	@echo "    make local-test         Run api + web test suites"
 	@echo "    make local-test-cov     Run api + web test suites with coverage"
-	@echo "    make install-hooks      Install git hooks (pre-commit + pre-push)"
+	@echo "    make install-hooks      Install commit-time git hooks"
 	@echo ""
 	@echo "  API (dev container — attach VS Code)"
 	@echo "    make api-build          Build image"
@@ -103,12 +103,10 @@ install-hooks:
 	@echo "Installing git hooks…"
 	@command -v pre-commit >/dev/null 2>&1 || (echo "Installing pre-commit…" && pip install pre-commit 2>/dev/null || uv tool install pre-commit 2>/dev/null || true)
 	@if command -v pre-commit >/dev/null 2>&1; then \
-		pre-commit install --hook-type pre-commit --hook-type pre-push 2>/dev/null; \
-		ln -sf ../../.githooks/pre-push .git/hooks/pre-push 2>/dev/null; \
+		pre-commit install --hook-type pre-commit 2>/dev/null; \
 		echo "  ✓ pre-commit hooks installed"; \
-		echo "  ✓ pre-push hook installed"; \
 	else \
 		echo "  ! pre-commit not available — install manually:"; \
 		echo "    pip install pre-commit && pre-commit install"; \
-		ln -sf ../../.githooks/pre-push .git/hooks/pre-push 2>/dev/null && echo "  ✓ pre-push hook installed"; \
 	fi
+	@echo "  (no pre-push hook — run 'make local-test' before pushing when you want it)"
