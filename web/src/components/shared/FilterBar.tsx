@@ -85,43 +85,44 @@ export function FilterBar({ fields, injectDefaults = true, children }: Props) {
     [router, pathname, sp],
   );
 
-  // The date inputs are held in local state rather than reading straight from
-  // the URL. An <input type="date"> reports "" from onChange until the value
-  // parses as a complete date, so while the user is typing day/month/year the
-  // URL has nothing to read. Driving the input from useSearchParams() meant
-  // React re-rendered it with "" on those keystrokes, wiping the partially
-  // typed segments back to the "dd-mm-yyyy" placeholder.
+  // The date inputs are deliberately UNCONTROLLED (defaultValue + key).
   //
-  // Local state keeps the picker's own editing state intact, and only writes
-  // through to the URL once the value is complete. The URL is still the source
-  // of truth for external changes (clear filters, navigation), so the inputs
-  // follow it when it changes for a reason other than typing -- the documented
-  // "adjust state when a prop changes" pattern, done during render rather than
-  // in an effect so there is no extra commit.
-  const [dateFromInput, setDateFromInput] = useState(dateFrom);
-  const [seenDateFromUrl, setSeenDateFromUrl] = useState(dateFrom);
-  if (dateFrom !== seenDateFromUrl) {
-    setSeenDateFromUrl(dateFrom);
-    setDateFromInput(dateFrom);
-  }
+  // Controlling the value makes React write it back into the DOM on every
+  // change event. For <input type="date"> that discards the browser's own
+  // segmented editing state, which is what snapped the field back to its
+  // dd-mm-yyyy placeholder mid-typing, and -- with a controlled value derived
+  // from the URL -- also locked the field so a date could not be replaced.
+  //
+  // Leaving them uncontrolled means React never writes to the widget while the
+  // user is typing, so the picker keeps its editing state. The URL is still the
+  // source of truth: dateKey changes with either date, remounting the inputs
+  // with the new defaultValue. That is what makes a filter cleared elsewhere
+  // show as empty.
+  const dateKey = `${dateFrom}|${dateTo}`;
 
-  const [dateToInput, setDateToInput] = useState(dateTo);
-  const [seenDateToUrl, setSeenDateToUrl] = useState(dateTo);
-  if (dateTo !== seenDateToUrl) {
-    setSeenDateToUrl(dateTo);
-    setDateToInput(dateTo);
-  }
-
+  // One navigation, not two. `push` closes over the current `sp`, so calling it
+  // twice in a row would make the second rebuild its params from the stale
+  // value and undo the first -- clearing date_from only, then restoring it
+  // while removing date_to.
   const onDateChange = useCallback(
-    (key: string, setLocal: (v: string) => void) => (raw: string) => {
-      // Ignore incomplete values: there is nothing to store, and removing the
-      // param mid-typing is what used to reset the widget to its placeholder.
+    (key: string) => (raw: string) => {
+      // <input type="date"> reports "" until the value parses as a complete
+      // date. Writing that through would clear the param mid-typing and, with a
+      // controlled input, wipe the field. Ignoring it keeps the widget intact;
+      // the picker simply holds whatever the user has typed so far.
       if (!raw) return;
-      setLocal(raw);
       push(key, raw);
     },
     [push],
   );
+
+  const clearDates = useCallback(() => {
+    logUserAction('clear_dates', { page: pathname });
+    const params = new URLSearchParams(sp.toString());
+    params.delete('date_from');
+    params.delete('date_to');
+    router.replace(`${pathname}?${params.toString()}`);
+  }, [sp, router, pathname]);
 
   // Inject saved defaults into URL params on first render (when param is empty)
   const injectedRef = useRef(false);
@@ -219,18 +220,20 @@ export function FilterBar({ fields, injectDefaults = true, children }: Props) {
           <div className="flex flex-col gap-1 min-w-0 w-[140px]">
             <label className="text-xs font-medium text-gray-500">From</label>
             <input
+              key={`date-from-${dateKey}`}
               type="date"
-              value={dateFromInput}
-              onChange={(e) => onDateChange('date_from', setDateFromInput)(e.target.value)}
+              defaultValue={dateFrom}
+              onChange={(e) => onDateChange('date_from')(e.target.value)}
               className="border border-gray-300 rounded-lg px-2 py-1.5 text-sm bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-200 outline-none"
             />
           </div>
           <div className="flex flex-col gap-1 min-w-0 w-[140px]">
             <label className="text-xs font-medium text-gray-500">To</label>
             <input
+              key={`date-to-${dateKey}`}
               type="date"
-              value={dateToInput}
-              onChange={(e) => onDateChange('date_to', setDateToInput)(e.target.value)}
+              defaultValue={dateTo}
+              onChange={(e) => onDateChange('date_to')(e.target.value)}
               className="border border-gray-300 rounded-lg px-2 py-1.5 text-sm bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-200 outline-none"
             />
           </div>
@@ -238,16 +241,10 @@ export function FilterBar({ fields, injectDefaults = true, children }: Props) {
               here rather than the input: a date picker reports an empty value
               both for "incomplete while typing" and for "user cleared it", and
               treating the former as a reset is what wiped the field. */}
-          {(dateFromInput || dateToInput) && (
+          {(dateFrom || dateTo) && (
             <button
               type="button"
-              onClick={() => {
-                logUserAction('clear_dates', { page: pathname });
-                setDateFromInput('');
-                setDateToInput('');
-                push('date_from', '');
-                push('date_to', '');
-              }}
+              onClick={clearDates}
               className="px-2 py-1.5 text-sm text-gray-500 hover:text-gray-800 border border-gray-300 rounded-lg bg-white"
             >
               Clear dates
