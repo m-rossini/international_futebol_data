@@ -265,3 +265,43 @@ class TestEloRankingFiltered:
         # They may occasionally be equal but usually differ
         assert isinstance(full_elo, (int, float))
         assert isinstance(filtered_elo, (int, float))
+
+
+class TestEloRankingEmptyFilter:
+    """A filter that selects no matches is the caller's mistake, not a server fault.
+
+    Previously these returned 503 "No ELO data available", which reads like an
+    outage and gives the user nothing to act on. Now they are a 400 that names
+    the offending filter.
+    """
+
+    def test_inverted_date_range_is_a_400(self, client):
+        resp = client.get(
+            "/elo-ranking/current?date_from=2020-01-01&date_to=1930-12-31"
+        )
+        assert resp.status_code == 400
+        body = resp.json()["detail"]
+        assert "date_from=2020-01-01" in body
+        assert "date_to=1930-12-31" in body
+
+    def test_range_beyond_the_data_is_a_400(self, client):
+        resp = client.get("/elo-ranking/current?date_from=9999-01-01")
+        assert resp.status_code == 400
+        assert "date_from=9999-01-01" in resp.json()["detail"]
+
+    def test_message_tells_the_user_what_to_do(self, client):
+        resp = client.get("/elo-ranking/current?countries=Atlantis")
+        assert resp.status_code == 400
+        assert "countries=Atlantis" in resp.json()["detail"]
+        assert "Widen the date range or clear a filter" in resp.json()["detail"]
+
+    def test_unfiltered_request_is_unaffected(self, client):
+        # No filter must keep working, and must not be reported as an error.
+        resp = client.get("/elo-ranking/current?top_n=5")
+        assert resp.status_code == 200
+        assert resp.json()["filtered"] is False
+
+    def test_matching_narrow_filter_still_works(self, client):
+        resp = client.get("/elo-ranking/current?date_to=1872-12-31&top_n=5")
+        assert resp.status_code == 200
+        assert resp.json()["filtered"] is True
