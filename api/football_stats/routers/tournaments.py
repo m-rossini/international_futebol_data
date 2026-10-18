@@ -4,8 +4,15 @@ import logging
 
 from fastapi import APIRouter, Depends
 
+from football_stats.stats.models import (
+    ErrorResponse,
+    SeasonInfoResponse,
+)
 from football_stats.routers.dependencies import FilterParamsDep, engine, require_data
-from football_stats.stats.models import TournamentListItem
+from football_stats.stats.models import (
+    TournamentInfoResponse,
+    TournamentListItem,
+)
 
 logger = logging.getLogger("stats.server.tournaments")
 
@@ -21,7 +28,10 @@ async def tournaments_endpoint(filters: FilterParamsDep = Depends()):
     return engine.tournaments(filters.inner)
 
 
-@router.get("/tournament/{tournament_name}")
+@router.get(
+    "/tournament/{tournament_name}",
+    response_model=TournamentInfoResponse | ErrorResponse,
+)
 async def tournament_endpoint(
     tournament_name: str, filters: FilterParamsDep = Depends()
 ):
@@ -32,7 +42,10 @@ async def tournament_endpoint(
     return engine.tournament(tournament_name, filters.inner)
 
 
-@router.get("/tournament/{tournament_name}/season/{year}")
+@router.get(
+    "/tournament/{tournament_name}/season/{year}",
+    response_model=SeasonInfoResponse | ErrorResponse,
+)
 async def season_endpoint(
     tournament_name: str, year: int, filters: FilterParamsDep = Depends()
 ):

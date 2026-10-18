@@ -6,6 +6,7 @@ FastAPI's automatic /docs & /openapi.json show full field-level schemas.
 
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Any, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -168,13 +169,12 @@ class TeamResponse(BaseModel):
     worst_defeats: list[dict] = Field(
         default_factory=list, description="Top 3 defeats by goal margin"
     )
-    error: Optional[bool] = None
-    message: Optional[str] = None
 
+    # ===========================================================================
+    #  GET /head_to_head
+    # ===========================================================================
 
-# ===========================================================================
-#  GET /head_to_head
-# ===========================================================================
+    model_config = ConfigDict(extra="allow")
 
 
 class H2HMatchItem(BaseModel):
@@ -201,8 +201,6 @@ class HeadToHeadResponse(BaseModel):
     draws: int
     total_goals_per_match_stats: Optional[SeriesStats] = None
     matches_list: list[H2HMatchItem] = Field(default_factory=list)
-    error: Optional[bool] = None
-    message: Optional[str] = None
 
     model_config = ConfigDict(extra="allow")  # dynamic keys like "Brazil_wins"
 
@@ -372,7 +370,7 @@ class TournamentSummary(BaseModel):
     draws: int
     unique_teams: int
     biggest_win: Optional[BiggestWinSummary] = None
-    top_teams_by_wins: list[TopTeamItem]
+    top_teams_by_wins: list[TeamCategoryItem]
     top_host_countries: list[TopCountryItem]
     top_host_cities: list[TopCityItem]
 
@@ -393,13 +391,12 @@ class TournamentInfoResponse(BaseModel):
     tournament: str
     summary: TournamentSummary
     yearly: list[TournamentYearlyItem]
-    error: Optional[bool] = None
-    message: Optional[str] = None
 
+    # ===========================================================================
+    #  GET /tournament/{name}/season/{year}
+    # ===========================================================================
 
-# ===========================================================================
-#  GET /tournament/{name}/season/{year}
-# ===========================================================================
+    model_config = ConfigDict(extra="allow")
 
 
 class SeasonMatchItem(BaseModel):
@@ -447,13 +444,12 @@ class SeasonInfoResponse(BaseModel):
     summary: SeasonSummary
     standings: list[SeasonStandingItem]
     matches_list: list[SeasonMatchItem]
-    error: Optional[bool] = None
-    message: Optional[str] = None
 
+    # ===========================================================================
+    #  GET /cities  &  GET /city/{name}
+    # ===========================================================================
 
-# ===========================================================================
-#  GET /cities  &  GET /city/{name}
-# ===========================================================================
+    model_config = ConfigDict(extra="allow")
 
 
 class CityListItem(BaseModel):
@@ -485,7 +481,7 @@ class CitySummary(BaseModel):
     unique_teams: int
     unique_tournaments: int
     biggest_win: Optional[BiggestWinSummary] = None
-    top_teams_by_wins: list[TopTeamItem]
+    top_teams_by_wins: list[TeamCategoryItem]
     top_teams: Optional[TopTeams] = None
     top_tournaments: list[dict[str, Any]] = Field(default_factory=list)
 
@@ -494,13 +490,12 @@ class CityInfoResponse(BaseModel):
     city: str
     country: str
     summary: CitySummary
-    error: Optional[bool] = None
-    message: Optional[str] = None
 
+    # ===========================================================================
+    #  GET /countries  &  GET /country/{name}
+    # ===========================================================================
 
-# ===========================================================================
-#  GET /countries  &  GET /country/{name}
-# ===========================================================================
+    model_config = ConfigDict(extra="allow")
 
 
 class CountryListItem(BaseModel):
@@ -533,7 +528,7 @@ class CountrySummary(BaseModel):
     unique_tournaments: int
     unique_cities: int
     biggest_win: Optional[BiggestWinSummary] = None
-    top_teams_by_wins: list[TopTeamItem]
+    top_teams_by_wins: list[TeamCategoryItem]
     top_teams: Optional[TopTeams] = None
     top_tournaments: list[dict[str, Any]] = Field(default_factory=list)
     top_cities: list[dict[str, Any]] = Field(default_factory=list)
@@ -542,13 +537,12 @@ class CountrySummary(BaseModel):
 class CountryInfoResponse(BaseModel):
     country: str
     summary: CountrySummary
-    error: Optional[bool] = None
-    message: Optional[str] = None
 
+    # ===========================================================================
+    #  GET /years  &  GET /years/{year}
+    # ===========================================================================
 
-# ===========================================================================
-#  GET /years  &  GET /years/{year}
-# ===========================================================================
+    model_config = ConfigDict(extra="allow")
 
 
 class YearOverviewItem(BaseModel):
@@ -658,3 +652,223 @@ class ReleaseDetailResponse(BaseModel):
     author: str
     body: str
     html_url: str
+
+
+# ===========================================================================
+#  Previously undocumented endpoints
+#  ---------------------------------------------------------------------
+#  The models below were added so these endpoints publish a real schema in
+#  /openapi.json instead of an empty {}. Shapes were captured from live
+#  responses, not guessed.
+#
+#  They all set extra="allow" on purpose: several of these payloads grow
+#  dynamic keys (head_to_head emits "<team>_wins", "<team>_biggest_wins")
+#  and several have a degenerate {"error", "message"} form instead of the
+#  documented shape. extra="allow" means FastAPI passes unknown keys through
+#  instead of silently stripping them, so wiring these up cannot change a
+#  response payload.
+# ===========================================================================
+
+
+class ErrorResponse(BaseModel):
+    """Degenerate form returned instead of the documented shape on lookup miss."""
+
+    error: bool = True
+    message: str
+
+    model_config = ConfigDict(extra="allow")
+
+
+class TeamListItem(BaseModel):
+    """One row of GET /teams."""
+
+    team: str
+    matches_played: int = 0
+    wins: int = 0
+    draws: int = 0
+    losses: int = 0
+    points: int = 0
+    goals_for: int = 0
+    goals_against: int = 0
+    win_rate: float = 0.0
+    loss_rate: float = 0.0
+    unique_countries: Optional[int] = None
+    elo_rating: Optional[int] = None
+    elo_ranking: Optional[int] = None
+
+    model_config = ConfigDict(extra="allow")
+
+
+class MatchItem(BaseModel):
+    """A single historical match, as embedded in the detail endpoints."""
+
+    date: str
+    home_team: str
+    away_team: str
+    home_score: int
+    away_score: int
+    tournament: Optional[str] = None
+    city: Optional[str] = None
+    country: Optional[str] = None
+    neutral: Optional[bool] = None
+
+    model_config = ConfigDict(extra="allow")
+
+
+class TeamMatchesResponse(BaseModel):
+    """GET /team/{team_name}/matches/{year}."""
+
+    team: str
+    year: int
+    matches: int
+    matches_list: list[MatchItem] = Field(default_factory=list)
+
+    model_config = ConfigDict(extra="allow")
+
+
+class ScorerItem(BaseModel):
+    """One goalscorer row of GET /matchgoals."""
+
+    model_config = ConfigDict(extra="allow")
+
+
+class ShootoutItem(BaseModel):
+    """Shootout summary embedded in GET /matchgoals."""
+
+    model_config = ConfigDict(extra="allow")
+
+
+class MatchGoalsResponse(BaseModel):
+    """GET /matchgoals — goalscorers and shootout info for one match."""
+
+    date: str
+    home_team: str
+    away_team: str
+    scorers: list[ScorerItem] = Field(default_factory=list)
+    shootout: Optional[ShootoutItem] = None
+
+    model_config = ConfigDict(extra="allow")
+
+
+# ---------------------------------------------------------------------------
+#  ELO ranking
+# ---------------------------------------------------------------------------
+
+
+class EloHistoryEntry(BaseModel):
+    """One row of the ELO history series."""
+
+    date: datetime
+    team: str
+    opponent: str
+    elo_rating: float
+    elo_rating_new: float
+    opponent_elo: float
+    opponent_elo_new: float
+    home_score: int
+    away_score: int
+    tournament: Optional[str] = None
+    is_neutral: Optional[bool] = None
+    home_advantage_applied: Optional[float] = None
+    expected_score: Optional[float] = None
+    actual_result: Optional[float] = None
+    rating_change: Optional[float] = None
+    match_weight: Optional[float] = None
+    gd_multiplier: Optional[float] = None
+    ranking: Optional[int] = None
+
+    model_config = ConfigDict(extra="allow")
+
+
+class EloStandingItem(BaseModel):
+    """One row of a current ELO ranking table."""
+
+    team: str
+    elo_rating: float
+    date: datetime
+    ranking: int
+
+    model_config = ConfigDict(extra="allow")
+
+
+class EloCurrentResponse(BaseModel):
+    """GET /elo-ranking/current."""
+
+    calculation_date: str
+    total_teams: int
+    top_n: int
+    filtered: bool
+    ranking: list[EloStandingItem] = Field(default_factory=list)
+
+
+class EloTeamHistoryResponse(BaseModel):
+    """GET /elo-ranking/history/{team}."""
+
+    team: str
+    matches_calculated: int
+    from_: str = Field(alias="from")
+    to: str
+    min_elo: float
+    max_elo: float
+    current_elo: float
+    history: list[EloHistoryEntry] = Field(default_factory=list)
+
+    model_config = ConfigDict(populate_by_name=True)
+
+
+class EloDecadeItem(BaseModel):
+    """One decade of GET /elo-ranking/decade-leaders."""
+
+    decade: str
+    year_range: str
+    leader: dict[str, Any] = Field(default_factory=dict)
+    teams: list[dict[str, Any]] = Field(default_factory=list)
+
+    model_config = ConfigDict(extra="allow")
+
+
+class EloDecadeLeadersResponse(BaseModel):
+    """GET /elo-ranking/decade-leaders."""
+
+    decades: list[EloDecadeItem] = Field(default_factory=list)
+    total_decades: int = 0
+
+
+class EloSummaryResponse(BaseModel):
+    """GET /elo-ranking/summary."""
+
+    total_matches_calculated: int
+    total_teams: int
+    min_elo: float
+    max_elo: float
+    mean_elo: float
+    median_elo: float
+    date_range: dict[str, str] = Field(default_factory=dict)
+    filtered: bool
+    top_10: list[EloStandingItem] = Field(default_factory=list)
+
+
+class EloAtDateResponse(BaseModel):
+    """GET /elo-ranking/at-date."""
+
+    date: str
+    total_entries: int
+    entries: list[EloHistoryEntry] = Field(default_factory=list)
+
+
+# ---------------------------------------------------------------------------
+#  LLM profile
+# ---------------------------------------------------------------------------
+
+
+class LlmProfileChainItem(BaseModel):
+    """One configured provider in the fallback chain."""
+
+    model_config = ConfigDict(extra="allow")
+
+
+class LlmProfileResponse(BaseModel):
+    """GET /llm/profile — active profile plus the provider fallback chain."""
+
+    status: str
+    data: dict[str, Any] = Field(default_factory=dict)

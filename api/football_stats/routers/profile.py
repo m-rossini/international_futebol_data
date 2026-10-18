@@ -11,6 +11,7 @@ from football_stats.llm.chain import ProviderChain
 from football_stats.llm.executor import ToolExecutor
 from football_stats.llm.service import ConversationService
 from football_stats.routers.dependencies import engine
+from football_stats.stats.models import LlmProfileResponse
 
 __all__ = ["router", "set_conversation_service", "get_conversation_service"]
 
@@ -30,7 +31,7 @@ def get_conversation_service() -> ConversationService | None:
     return _conversation_service
 
 
-@router.get("/profile")
+@router.get("/profile", response_model=LlmProfileResponse)
 async def get_profile():
     """Return the current chain state: active profile details + fallback chain."""
     svc = _conversation_service
@@ -49,7 +50,7 @@ async def get_profile():
     }
 
 
-@router.put("/profile")
+@router.put("/profile", response_model=LlmProfileResponse)
 async def switch_profile(body: dict):
     """Switch the active profile by promoting it to top priority.
 

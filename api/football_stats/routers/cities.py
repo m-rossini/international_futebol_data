@@ -4,8 +4,12 @@ import logging
 
 from fastapi import APIRouter, Depends
 
+from football_stats.stats.models import ErrorResponse
 from football_stats.routers.dependencies import FilterParamsDep, engine, require_data
-from football_stats.stats.models import CityListItem
+from football_stats.stats.models import (
+    CityInfoResponse,
+    CityListItem,
+)
 
 logger = logging.getLogger("stats.server.cities")
 
@@ -21,7 +25,7 @@ async def cities_endpoint(filters: FilterParamsDep = Depends()):
     return engine.cities(filters.inner)
 
 
-@router.get("/city/{city_name}")
+@router.get("/city/{city_name}", response_model=CityInfoResponse | ErrorResponse)
 async def city_endpoint(city_name: str, filters: FilterParamsDep = Depends()):
     """Comprehensive stats for a specific city.
     Optional filters: ``?tournaments=Friendly&date_from=2000``"""
