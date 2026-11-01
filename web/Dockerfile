@@ -19,27 +19,26 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-COPY .npmrc package.json ./
-RUN pnpm install
-
-COPY . .
-
 # The dev compose runs this container as the host user (uid 1000) so files it
 # writes into the ./web bind mount stay host-owned. node_modules is seeded into
-# an anonymous volume from THIS image, so it has to be owned by the same uid or
-# the container cannot install into it -- the dev server then crash-loops with
-# ERR_PNPM_PACKAGE_MANAGER_REMOVE_MODULES_DIR / "Permission denied".
-# Build-arg so the uid can be matched to LOCAL_UID at build time.
+# an anonymous volume from THIS image, so it has to be owned by the same uid.
+#
+# ARGs are declared BEFORE the install so we can switch to the dev user first
+# and let pnpm create node_modules already owned by it. The previous order did
+# `COPY . .` then `chown -R /app`, which recursively chowned the entire
+# node_modules tree (~75k files) on every build and hung for minutes.
 ARG DEV_UID=1000
 ARG DEV_GID=1000
-# /pnpm (PNPM_HOME) and the per-user pnpm store must also belong to the dev
-# uid. Otherwise the uid-1000 process cannot take pnpm's store lockfile and
-# fails with "An IO error occurred while attempting to create and acquire the
-# lockfile", crash-looping the dev server.
-RUN chown -R ${DEV_UID}:${DEV_GID} /app "$PNPM_HOME" "$COREPACK_HOME" \
-    && mkdir -p /home/node/.local/share/pnpm \
-    && chown -R ${DEV_UID}:${DEV_GID} /home/node/.local/share
+
+RUN mkdir -p "$PNPM_HOME" /home/node/.local/share/pnpm \
+    && chown -R ${DEV_UID}:${DEV_GID} /app "$PNPM_HOME" "$COREPACK_HOME" /home/node/.local/share
+
 USER ${DEV_UID}:${DEV_GID}
+
+COPY --chown=${DEV_UID}:${DEV_GID} .npmrc package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
+
+COPY --chown=${DEV_UID}:${DEV_GID} . .
 
 EXPOSE 3000
 CMD ["pnpm", "next", "dev", "--port", "3000", "--hostname", "0.0.0.0"]
