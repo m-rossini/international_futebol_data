@@ -12,6 +12,7 @@ from football_stats.routers.dependencies import (
     state,
 )
 from football_stats.stats.elo import clear_elo_cache
+from football_stats.stats.filters import CONFEDERATION_ORDER
 from football_stats.stats.models import (
     FilterOptionsResponse,
     HealthResponse,
@@ -82,6 +83,7 @@ async def filter_options():
             set(results["home_team"].dropna().unique().tolist())
             | set(results["away_team"].dropna().unique().tolist())
         ),
+        "confederations": CONFEDERATION_ORDER,
     }
 
 
