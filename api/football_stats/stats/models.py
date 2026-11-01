@@ -616,6 +616,7 @@ class FilterOptionsResponse(BaseModel):
     countries: list[str]
     cities: list[str]
     teams: list[str]
+    confederations: list[str] = Field(default_factory=list)
 
 
 # ===========================================================================

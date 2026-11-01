@@ -85,6 +85,10 @@ class FilterParamsDep:
             None,
             description="Filter by tournament name (can repeat or be comma-separated)",
         ),
+        confederations: Optional[list[str]] = Query(
+            None,
+            description="Filter by confederation (UEFA, CONMEBOL, CONCACAF, CAF, AFC, OFC). Can repeat or be comma-separated.",
+        ),
         countries: Optional[list[str]] = Query(
             None,
             description="Filter by host country (can repeat or be comma-separated)",
@@ -107,6 +111,7 @@ class FilterParamsDep:
             teams=_split(teams),
             tournaments=_split(tournaments),
             countries=_split(countries),
+            confederations=_split(confederations),
             date_from=date_from,
             date_to=date_to,
         )
