@@ -69,19 +69,23 @@ class TestConfederationDetail:
         assert data["error"] is True
 
     def test_detail_filters_narrow_results(self, client: TestClient):
-        all_matches = client.get("/confederation/UEFA").json()["total_matches"]
-        world_cup = client.get(
-            "/confederation/UEFA", params={"tournaments": "FIFA World Cup"}
-        ).json()["total_matches"]
-        assert 0 < world_cup < all_matches
+        detail = client.get("/confederation/UEFA").json()
+        all_matches = detail["total_matches"]
+        assert all_matches > 0
+        tournaments = detail["tournaments"]
+        assert tournaments, "UEFA detail should list at least one tournament"
+
+        tournament = tournaments[0]
+        narrowed = client.get(
+            "/confederation/UEFA", params={"tournaments": tournament}
+        ).json()
+        assert 0 < narrowed["total_matches"] <= all_matches
 
     def test_every_match_has_a_member_team(self, client: TestClient):
         """A confederation filter must only return matches with one of its teams."""
         uefa_teams = set(client.get("/confederation/UEFA").json()["teams"])
-        matches = client.get(
-            "/confederation/UEFA/matches", params={"date_from": "2020-01-01"}
-        ).json()["matches"]
-        assert matches
+        matches = client.get("/confederation/UEFA/matches").json()["matches"]
+        assert matches, "UEFA should have matches in the dataset"
         offenders = [
             m
             for m in matches
@@ -93,11 +97,14 @@ class TestConfederationDetail:
         """Dataset spellings like 'Republic of Ireland' must count as UEFA."""
         teams = client.get("/confederation/UEFA").json()["teams"]
         assert "Republic of Ireland" in teams
+
+        # Filtering by the alias must never return a match without that team.
         matches = client.get(
-            "/confederation/UEFA/matches",
-            params={"teams": "Republic of Ireland", "date_from": "2020-01-01"},
+            "/confederation/UEFA/matches", params={"teams": "Republic of Ireland"}
         ).json()["matches"]
-        assert matches
+        assert all(
+            "Republic of Ireland" in (m["home_team"], m["away_team"]) for m in matches
+        )
 
 
 class TestConfederationMatches:
@@ -109,7 +116,9 @@ class TestConfederationMatches:
         assert data["total"] == len(data["matches"])
 
     def test_match_item_shape(self, client: TestClient):
-        item = client.get("/confederation/OFC/matches").json()["matches"][0]
+        matches = client.get("/confederation/UEFA/matches").json()["matches"]
+        assert matches, "UEFA should have matches in the dataset"
+        item = matches[0]
         _assert_keys(
             item,
             {
