@@ -50,6 +50,12 @@ export function ConfederationClient({ name }: Props) {
         const mData = await mRes.json();
         const matchList: MatchItem[] = mData.matches || [];
         if (!cancelled) {
+          // Unknown confederation → API returns {error: true, ...} with HTTP 200
+          if ((detail as ConfederationDetail & { error?: boolean }).error) {
+            setError((detail as ConfederationDetail & { message?: string }).message);
+            setLoading(false);
+            return;
+          }
           setDetail(detail);
           setMatches(matchList);
           setLoading(false);
