@@ -94,6 +94,9 @@ services:
     container_name: futebol-web
     # Same host-user requirement as api (see note there).
     user: "${LOCAL_UID:-1000}:${LOCAL_GID:-1000}"
+    # Publish Next.js dev server so it's reachable on the host (PORT_WEB=7500).
+    ports:
+      - "7500:3000"
     volumes:
       - ./web:/app
       - /app/node_modules
