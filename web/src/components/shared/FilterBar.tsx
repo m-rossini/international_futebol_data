@@ -11,10 +11,17 @@ interface FilterOptions {
   teams: string[];
   tournaments: string[];
   countries: string[];
+  confederations: string[];
 }
 
 interface Props {
-  fields?: { teams?: boolean; tournaments?: boolean; countries?: boolean; dates?: boolean };
+  fields?: {
+    teams?: boolean;
+    tournaments?: boolean;
+    countries?: boolean;
+    dates?: boolean;
+    confederations?: boolean;
+  };
   injectDefaults?: boolean;
   children?: React.ReactNode;
 }
@@ -24,6 +31,7 @@ const ALL_FIELDS: Required<Props['fields']> = {
   tournaments: true,
   countries: true,
   dates: true,
+  confederations: false,
 };
 
 const FETCHED = new Map<string, FilterOptions>();
@@ -35,7 +43,12 @@ export function FilterBar({ fields, injectDefaults = true, children }: Props) {
   const sp = useSearchParams();
 
   const [options, setOptions] = useState<FilterOptions>(
-    FETCHED.get('filters') || { teams: [], tournaments: [], countries: [] },
+    FETCHED.get('filters') || {
+      teams: [],
+      tournaments: [],
+      countries: [],
+      confederations: [],
+    },
   );
 
   useEffect(() => {
@@ -51,7 +64,12 @@ export function FilterBar({ fields, injectDefaults = true, children }: Props) {
       .then((data: FilterOptions) => {
         if (!cancelled) {
           FETCHED.set('filters', data);
-          setOptions(data);
+          setOptions({
+            teams: data.teams ?? [],
+            tournaments: data.tournaments ?? [],
+            countries: data.countries ?? [],
+            confederations: data.confederations ?? [],
+          });
         }
       })
       .catch((err) => {
@@ -66,6 +84,7 @@ export function FilterBar({ fields, injectDefaults = true, children }: Props) {
   const teams = sp.get('teams')?.split(',').filter(Boolean) || [];
   const tournaments = sp.get('tournaments')?.split(',').filter(Boolean) || [];
   const countries = sp.get('countries')?.split(',').filter(Boolean) || [];
+  const confederations = sp.get('confederations')?.split(',').filter(Boolean) || [];
   const dateFrom = sp.get('date_from') || '';
   const dateTo = sp.get('date_to') || '';
 
@@ -156,7 +175,9 @@ export function FilterBar({ fields, injectDefaults = true, children }: Props) {
     }
   }, [cfg.teams, cfg.tournaments, injectDefaults, sp, router, pathname]);
 
-  const visible = Boolean(cfg.teams || cfg.tournaments || cfg.countries || cfg.dates || children);
+  const visible = Boolean(
+    cfg.teams || cfg.tournaments || cfg.countries || cfg.dates || cfg.confederations || children,
+  );
   if (!visible) return null;
 
   return (
@@ -212,6 +233,22 @@ export function FilterBar({ fields, injectDefaults = true, children }: Props) {
                 {c}
               </span>
             )}
+          />
+        </div>
+      )}
+      {cfg.confederations && (
+        <div className="flex flex-col gap-1 min-w-0 max-w-[300px] flex-1">
+          <label
+            className="text-xs font-medium text-gray-500"
+            title="Type to search. Click to select multiple confederations."
+          >
+            Confederations
+          </label>
+          <AutocompleteInput
+            options={options.confederations}
+            selected={confederations}
+            onChange={(sel) => push('confederations', sel.join(','))}
+            placeholder="All confederations"
           />
         </div>
       )}
