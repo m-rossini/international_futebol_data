@@ -10,6 +10,7 @@ import {
   Calendar,
   Swords,
   Flag,
+  Globe,
   TrendingUp,
   Clock,
   MessageSquare,
@@ -22,6 +23,7 @@ type NavItem =
 const navItems: NavItem[] = [
   { type: 'item', href: '/teams', label: 'Teams', icon: Users },
   { type: 'item', href: '/tournaments', label: 'Tournaments', icon: Trophy },
+  { type: 'item', href: '/confederations', label: 'Confederations', icon: Globe },
   { type: 'item', href: '/years', label: 'Years', icon: Calendar },
   { type: 'item', href: '/head-to-head', label: 'Head to Head', icon: Swords },
   { type: 'separator' },

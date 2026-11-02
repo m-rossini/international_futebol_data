@@ -188,6 +188,23 @@ export interface TournamentDetail {
   message?: string;
 }
 
+export interface ConfederationListItem {
+  name: string;
+  count: number;
+  countries: string[];
+  teams: string[];
+}
+
+export interface ConfederationDetail {
+  confederation: string;
+  countries: string[];
+  teams: string[];
+  total_matches: number;
+  total_goals: number;
+  unique_teams: number;
+  tournaments: string[];
+}
+
 export interface TournamentSeasonDetail {
   tournament: string;
   year: number;
