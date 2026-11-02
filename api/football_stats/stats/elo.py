@@ -192,7 +192,6 @@ def calculate_elo_ratings(
     # Apply config overrides
     if elo_config is not None:
         initial_elo = elo_config.initial_elo
-        k_factor = elo_config.k_factor
         home_advantage = elo_config.home_advantage
 
     if matches.empty:
@@ -253,10 +252,11 @@ def calculate_elo_ratings(
         expected_home = _expected_score(home_elo_effective, away_elo_effective)
         actual_home = _get_actual_result(home_score, away_score)
 
-        # Tournament weight and goal-difference multiplier
+        # Tournament weight and per-tournament K factor
         match_weight = (
             elo_config.get_tournament_weight(tournament) if elo_config else 1.0
         )
+        k = elo_config.get_tournament_k(tournament) if elo_config else k_factor
         if elo_config and elo_config.gd_enabled:
             gd_mult = goal_difference_multiplier(
                 home_score - away_score, elo_config.gd_cap
@@ -264,8 +264,9 @@ def calculate_elo_ratings(
         else:
             gd_mult = 1.0
 
-        # ELO change
-        elo_change = k_factor * match_weight * gd_mult * (actual_home - expected_home)
+        # ELO change: K varies by tournament type (World Cup > Continental >
+        # Qualifier > Other > Friendly), scaled by match weight and GD multiplier
+        elo_change = k * match_weight * gd_mult * (actual_home - expected_home)
 
         # Update ratings (use the *effective* home ELO for the formula but apply
         # the change to the *base* rating)
