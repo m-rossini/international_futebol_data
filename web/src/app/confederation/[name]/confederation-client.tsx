@@ -52,7 +52,10 @@ export function ConfederationClient({ name }: Props) {
         if (!cancelled) {
           // Unknown confederation → API returns {error: true, ...} with HTTP 200
           if ((detail as ConfederationDetail & { error?: boolean }).error) {
-            setError((detail as ConfederationDetail & { message?: string }).message);
+            setError(
+              (detail as ConfederationDetail & { message?: string }).message ??
+                'Unknown confederation',
+            );
             setLoading(false);
             return;
           }
