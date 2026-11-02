@@ -1,3 +1,19 @@
 {
-  "version": "1.3.1"
+  "version": "1.3.1",
+  "elo": {
+    "k_factor": 60,
+    "home_advantage": 100,
+    "initial_elo": 1500,
+    "tournament_k_factors": {
+      "world_cup": 60,
+      "continental": 50,
+      "qualifier": 40,
+      "other": 30,
+      "friendly": 20
+    },
+    "goal_difference": {
+      "enabled": true,
+      "cap": 2.0
+    }
+  }
 }

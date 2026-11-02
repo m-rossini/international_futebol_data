@@ -108,6 +108,90 @@ class TestGetTournamentWeight:
         assert cfg.get_tournament_weight("Unknown") == 0.1
 
 
+# ── Tournament classification ──────────────────────────────────────────
+
+
+class TestTournamentClassification:
+    """Tournament name → K-factor type classification."""
+
+    def test_world_cup(self):
+        from football_stats.stats.elo_config import _classify_tournament
+
+        assert _classify_tournament("FIFA World Cup") == "world_cup"
+
+    def test_world_cup_qualification_is_qualifier(self):
+        from football_stats.stats.elo_config import _classify_tournament
+
+        assert _classify_tournament("FIFA World Cup qualification") == "qualifier"
+
+    def test_continental(self):
+        from football_stats.stats.elo_config import _classify_tournament
+
+        assert _classify_tournament("UEFA Euro") == "continental"
+        assert _classify_tournament("Copa América") == "continental"
+        assert _classify_tournament("African Cup of Nations") == "continental"
+        assert _classify_tournament("AFC Asian Cup") == "continental"
+        assert _classify_tournament("Gold Cup") == "continental"
+
+    def test_qualifier(self):
+        from football_stats.stats.elo_config import _classify_tournament
+
+        assert _classify_tournament("UEFA Euro qualification") == "qualifier"
+        assert (
+            _classify_tournament("African Cup of Nations qualification") == "qualifier"
+        )
+
+    def test_friendly(self):
+        from football_stats.stats.elo_config import _classify_tournament
+
+        assert _classify_tournament("Friendly") == "friendly"
+
+    def test_other(self):
+        from football_stats.stats.elo_config import _classify_tournament
+
+        assert _classify_tournament("UEFA Nations League") == "other"
+        assert _classify_tournament("CONCACAF Nations League") == "other"
+        assert _classify_tournament("Merdeka Tournament") == "other"
+        assert _classify_tournament("Central European International Cup") == "other"
+
+
+# ── EloConfig.get_tournament_k ─────────────────────────────────────────
+
+
+class TestGetTournamentK:
+    """Per-tournament-type K factor lookup."""
+
+    def _make_config(self, k_factors=None, default_k=60.0):
+        if k_factors is None:
+            k_factors = {}
+        return EloConfig(
+            tournament_k_factors=k_factors,
+            k_factor=default_k,
+        )
+
+    def test_default_k_factors(self):
+        cfg = EloConfig()
+        assert cfg.get_tournament_k("FIFA World Cup") == 60.0
+        assert cfg.get_tournament_k("UEFA Euro") == 50.0
+        assert cfg.get_tournament_k("FIFA World Cup qualification") == 40.0
+        assert cfg.get_tournament_k("UEFA Nations League") == 30.0
+        assert cfg.get_tournament_k("Friendly") == 20.0
+
+    def test_exact_type_match(self):
+        cfg = self._make_config({"world_cup": 100.0, "friendly": 10.0})
+        assert cfg.get_tournament_k("FIFA World Cup") == 100.0
+        assert cfg.get_tournament_k("Friendly") == 10.0
+
+    def test_falls_back_to_k_factor(self):
+        cfg2 = EloConfig(tournament_k_factors={}, k_factor=45.0)
+        assert cfg2.get_tournament_k("FIFA World Cup") == 45.0
+
+    def test_case_insensitive(self):
+        cfg = EloConfig()
+        assert cfg.get_tournament_k("fifa world cup") == 60.0
+        assert cfg.get_tournament_k("FRIENDLY") == 20.0
+
+
 # ── load_elo_config ───────────────────────────────────────────────────
 
 
@@ -125,6 +209,10 @@ class TestLoadEloConfig:
                     "Friendly": 0.17,
                     "*": 0.33,
                 },
+                "tournament_k_factors": {
+                    "world_cup": 100,
+                    "friendly": 10,
+                },
                 "goal_difference": {"enabled": False, "cap": 3.0},
             }
         }
@@ -138,6 +226,10 @@ class TestLoadEloConfig:
         assert cfg.get_tournament_weight("FIFA World Cup") == 1.0
         assert cfg.get_tournament_weight("Friendly") == 0.17
         assert cfg.get_tournament_weight("Some Other Cup") == 0.33
+        # Tournament K factors
+        assert cfg.get_tournament_k("FIFA World Cup") == 100.0
+        assert cfg.get_tournament_k("Friendly") == 10.0
+        assert cfg.get_tournament_k("UEFA Euro") == 50.0  # default continental
 
     def test_empty_config(self):
         cfg = load_elo_config({})
@@ -170,6 +262,7 @@ class TestEloConfigToDict:
             "elo": {
                 "k_factor": 45,
                 "tournament_weights": {"FIFA World Cup": 1.0, "*": 0.33},
+                "tournament_k_factors": {"world_cup": 70, "friendly": 15},
                 "goal_difference": {"enabled": True, "cap": 2.5},
             }
         }
@@ -178,9 +271,15 @@ class TestEloConfigToDict:
         assert d["k_factor"] == 45
         assert d["gd_cap"] == 2.5
         assert "tournament_weights" in d
+        assert "tournament_k_factors" in d
+        assert d["tournament_k_factors"]["world_cup"] == 70
+        assert d["tournament_k_factors"]["friendly"] == 15
 
     def test_empty_config_roundtrip(self):
         cfg = load_elo_config({})
         d = cfg.to_dict()
         assert d["k_factor"] == 60
         assert d["gd_enabled"] is True
+        # Default K factors present
+        assert d["tournament_k_factors"]["world_cup"] == 60.0
+        assert d["tournament_k_factors"]["friendly"] == 20.0
