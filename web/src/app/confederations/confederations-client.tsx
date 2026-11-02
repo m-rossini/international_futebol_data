@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useMemo, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { DataTable, type Column } from '@/components/shared/DataTable';
 import { FilterBar } from '@/components/shared/FilterBar';
@@ -45,50 +45,15 @@ const columns: Column<ConfederationListItem>[] = [
   },
 ];
 
-export function ConfederationsClient() {
+interface Props {
+  confederations: ConfederationListItem[];
+}
+
+export function ConfederationsClient({ confederations }: Props) {
   const sp = useSearchParams();
   const router = useRouter();
-  const [confederations, setConfederations] = useState<ConfederationListItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   const qs = useMemo(() => buildQs(sp), [sp]);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function load() {
-      setLoading(true);
-      const t0 = performance.now();
-      try {
-        const url = `${API}/confederations${qs ? '?' + qs : ''}`;
-        const res = await fetch(url);
-        const duration = performance.now() - t0;
-        logApiCall('/confederations', duration, res.status, { query: qs || undefined });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data: ConfederationListItem[] = await res.json();
-        if (!cancelled) {
-          setConfederations(data);
-          setLoading(false);
-        }
-      } catch (err) {
-        const duration = performance.now() - t0;
-        logApiCall('/confederations', duration, 0, {
-          query: qs || undefined,
-          error: err instanceof Error ? err.message : String(err),
-        });
-        if (!cancelled) {
-          setError(err instanceof Error ? err.message : 'Failed to load confederations');
-          setLoading(false);
-        }
-      }
-    }
-
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, [qs]);
 
   const handleRowClick = useCallback(
     (row: ConfederationListItem) => {
@@ -111,19 +76,13 @@ export function ConfederationsClient() {
         the filters above to narrow the list.
       </p>
       <FilterBar injectDefaults={false} />
-      {loading ? (
-        <p className="text-sm text-gray-400">Loading...</p>
-      ) : error ? (
-        <p className="text-sm text-red-500">Error: {error}</p>
-      ) : (
-        <DataTable
-          columns={columns}
-          data={confederations}
-          keyField="name"
-          defaultSort={{ key: 'name', dir: 'asc' }}
-          onRowClick={handleRowClick}
-        />
-      )}
+      <DataTable
+        columns={columns}
+        data={confederations}
+        keyField="name"
+        defaultSort={{ key: 'name', dir: 'asc' }}
+        onRowClick={handleRowClick}
+      />
     </div>
   );
 }

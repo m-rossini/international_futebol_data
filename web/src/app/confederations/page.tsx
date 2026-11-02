@@ -1,6 +1,6 @@
-import { Suspense } from 'react';
 import { Metadata } from 'next';
 import { ConfederationsClient } from './confederations-client';
+import type { ConfederationListItem } from '@/lib/types';
 
 export const metadata: Metadata = {
   title: 'Confederations',
@@ -12,10 +12,18 @@ export const metadata: Metadata = {
   },
 };
 
-export default function ConfederationsPage() {
-  return (
-    <Suspense fallback={<p className="p-8 text-sm text-gray-400">Loading...</p>}>
-      <ConfederationsClient />
-    </Suspense>
+async function fetchConfederations(): Promise<ConfederationListItem[]> {
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:7531'}/confederations`,
+    {
+      headers: { Accept: 'application/json' },
+    },
   );
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+export default async function ConfederationsPage() {
+  const confederations = await fetchConfederations();
+  return <ConfederationsClient confederations={confederations} />;
 }

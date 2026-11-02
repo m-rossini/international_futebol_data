@@ -1,89 +1,42 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
-import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { FilterBar } from '@/components/shared/FilterBar';
 import { CountryFlag } from '@/components/shared/CountryFlag';
 import { MatchTable } from '@/components/shared/MatchTable';
-import { logApiCall } from '@/lib/observability';
+import { logUserAction } from '@/lib/observability';
 import type { ConfederationDetail, MatchItem } from '@/lib/types';
-
-const API = '/api/proxy';
-
-function buildQs(params: URLSearchParams): string {
-  const q = new URLSearchParams();
-  for (const key of ['teams', 'tournaments', 'countries', 'date_from', 'date_to']) {
-    const v = params.get(key);
-    if (v) q.set(key, v);
-  }
-  return q.toString();
-}
 
 interface Props {
   name: string;
+  detail: ConfederationDetail | null;
+  matches: MatchItem[];
+  error: string | null;
 }
 
-export function ConfederationClient({ name }: Props) {
-  const sp = useSearchParams();
-  const [detail, setDetail] = useState<ConfederationDetail | null>(null);
-  const [matches, setMatches] = useState<MatchItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+export function ConfederationClient({ name, detail, matches, error }: Props) {
+  if (error) {
+    return (
+      <div className="p-4 md:p-8">
+        <div className="flex items-center gap-2 mb-4">
+          <Link
+            href="/confederations"
+            className="text-gray-400 hover:text-blue-600"
+            onClick={() => {}}
+          >
+            <ArrowLeft size={16} />
+          </Link>
+          <h1 className="text-2xl font-bold text-gray-800">{name}</h1>
+        </div>
+        <p className="text-sm text-red-500">Error: {error}</p>
+      </div>
+    );
+  }
 
-  const qs = useMemo(() => buildQs(sp), [sp]);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function load() {
-      setLoading(true);
-      const t0 = performance.now();
-      try {
-        const [dRes, mRes] = await Promise.all([
-          fetch(`${API}/confederation/${encodeURIComponent(name)}`),
-          fetch(`${API}/confederation/${encodeURIComponent(name)}/matches${qs ? '?' + qs : ''}`),
-        ]);
-        if (!dRes.ok || !mRes.ok) throw new Error(`HTTP ${dRes.status}/${mRes.status}`);
-        const detail: ConfederationDetail = await dRes.json();
-        const mData = await mRes.json();
-        const matchList: MatchItem[] = mData.matches || [];
-        if (!cancelled) {
-          // Unknown confederation → API returns {error: true, ...} with HTTP 200
-          if ((detail as ConfederationDetail & { error?: boolean }).error) {
-            setError(
-              (detail as ConfederationDetail & { message?: string }).message ??
-                'Unknown confederation',
-            );
-            setLoading(false);
-            return;
-          }
-          setDetail(detail);
-          setMatches(matchList);
-          setLoading(false);
-        }
-      } catch (err) {
-        logApiCall(`/confederation/${name}`, performance.now() - t0, 0, {
-          query: qs || undefined,
-          error: err instanceof Error ? err.message : String(err),
-        });
-        if (!cancelled) {
-          setError(err instanceof Error ? err.message : 'Failed to load confederation');
-          setLoading(false);
-        }
-      }
-    }
-
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, [name, qs]);
-
-  if (loading) return <p className="text-sm text-gray-400">Loading...</p>;
-  if (error) return <p className="text-sm text-red-500">Error: {error}</p>;
-  if (!detail) return null;
+  if (!detail || !matches) {
+    return <p className="p-8 text-sm text-gray-400">Loading...</p>;
+  }
 
   return (
     <div className="p-4 md:p-8">
