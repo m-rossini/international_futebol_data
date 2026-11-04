@@ -74,7 +74,7 @@ export function ConfederationClient({ name, detail, matches, error }: Props) {
 
       <FilterBar
         fields={{ teams: true, tournaments: true, countries: true, dates: true }}
-        injectDefaults={false}
+        injectDefaults={true}
       />
 
       {/* Summary stats */}

@@ -75,7 +75,7 @@ export function ConfederationsClient({ confederations }: Props) {
         The six FIFA confederations. Click a confederation to see its matches and summary stats. Use
         the filters above to narrow the list.
       </p>
-      <FilterBar injectDefaults={false} />
+      <FilterBar injectDefaults={true} />
       <DataTable
         columns={columns}
         data={confederations}

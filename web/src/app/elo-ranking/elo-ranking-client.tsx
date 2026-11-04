@@ -551,9 +551,10 @@ export function EloRankingClient() {
               higher-rated team is expected to win; an upset causes a larger rating swing.
             </p>
             <p>
-              Formula: <code>new_elo = old_elo + K × W × GD × (result − expected)</code> where K=60
-              (sensitivity), W is the tournament weight (friendlies ~0.33, World Cup ~1.0), GD is a
-              goal-difference multiplier (capped at 2.0), and{' '}
+              Formula: <code>new_elo = old_elo + K × W × GD × (result − expected)</code> where K
+              depends on match type (World Cup 60, Continental 50, Qualifier 40, Other 30, Friendly
+              20), W is the tournament weight multiplier (default 1.0), GD is a goal-difference
+              multiplier (capped at 2.0), and{' '}
               <code>expected = 1 / (1 + 10^((elo_opponent − elo_team + HA) / 400))</code>. Home
               advantage (HA) is +100 points, removed for neutral venues. All teams start at 1500
               ELO.
