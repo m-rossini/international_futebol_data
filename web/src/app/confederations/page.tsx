@@ -12,6 +12,11 @@ export const metadata: Metadata = {
   },
 };
 
+// Fetches from the API at request time, not build time — the API hostname
+// (e.g. http://api:7531) is only resolvable at runtime inside Docker Compose,
+// not during `docker build`.
+export const dynamic = 'force-dynamic';
+
 async function fetchConfederations(): Promise<ConfederationListItem[]> {
   const res = await fetch(
     `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:7531'}/confederations`,
