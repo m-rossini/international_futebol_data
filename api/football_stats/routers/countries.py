@@ -4,8 +4,12 @@ import logging
 
 from fastapi import APIRouter, Depends
 
+from football_stats.stats.models import ErrorResponse
 from football_stats.routers.dependencies import FilterParamsDep, engine, require_data
-from football_stats.stats.models import CountryListItem
+from football_stats.stats.models import (
+    CountryInfoResponse,
+    CountryListItem,
+)
 
 logger = logging.getLogger("stats.server.countries")
 
@@ -21,7 +25,9 @@ async def countries_endpoint(filters: FilterParamsDep = Depends()):
     return engine.countries(filters.inner)
 
 
-@router.get("/country/{country_name}")
+@router.get(
+    "/country/{country_name}", response_model=CountryInfoResponse | ErrorResponse
+)
 async def country_endpoint(country_name: str, filters: FilterParamsDep = Depends()):
     """Comprehensive stats for a specific country.
     Optional filters: ``?tournaments=Friendly&date_from=2010``"""

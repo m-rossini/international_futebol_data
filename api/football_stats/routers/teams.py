@@ -5,14 +5,21 @@ import logging
 from fastapi import APIRouter, Depends, Query
 
 from football_stats.routers.dependencies import FilterParamsDep, engine, require_data
-from football_stats.stats.models import TopScorersResponse
+from football_stats.stats.models import (
+    ErrorResponse,
+    HeadToHeadResponse,
+    TeamListItem,
+    TeamMatchesResponse,
+    TeamResponse,
+    TopScorersResponse,
+)
 
 logger = logging.getLogger("stats.server.teams")
 
 router = APIRouter(tags=["Teams"])
 
 
-@router.get("/teams")
+@router.get("/teams", response_model=list[TeamListItem])
 async def teams_list_endpoint(filters: FilterParamsDep = Depends()):
     """List all teams with full aggregate stats (wins, losses, draws, win_rate, unique_countries, etc.)."""
     require_data()
@@ -20,7 +27,7 @@ async def teams_list_endpoint(filters: FilterParamsDep = Depends()):
     return engine.teams(filters.inner)
 
 
-@router.get("/team/{team_name}")
+@router.get("/team/{team_name}", response_model=TeamResponse | ErrorResponse)
 async def team_stats(team_name: str, filters: FilterParamsDep = Depends()):
     """Stats for a specific national team. Optional filters: ``?tournaments=FIFA+World+cup``"""
     require_data()
@@ -35,7 +42,10 @@ async def team_stats(team_name: str, filters: FilterParamsDep = Depends()):
     return engine.team(team_name, filters.inner)
 
 
-@router.get("/team/{team_name}/matches/{year}")
+@router.get(
+    "/team/{team_name}/matches/{year}",
+    response_model=TeamMatchesResponse | ErrorResponse,
+)
 async def team_matches_by_year_endpoint(
     team_name: str,
     year: int,
@@ -47,7 +57,10 @@ async def team_matches_by_year_endpoint(
     return engine.team_matches(team_name, year, filters.inner)
 
 
-@router.get("/head_to_head")
+@router.get(
+    "/head_to_head",
+    response_model=HeadToHeadResponse | ErrorResponse,
+)
 async def head_to_head(
     team1: str = Query(...),
     team2: str = Query(...),
