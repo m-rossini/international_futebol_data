@@ -305,7 +305,7 @@ def _simulate_scores(
         "draw": draws / total,
         "team2_win": team2_wins / total,
         "score_histogram": {k: v / total for k, v in score_counts.items()},
-        "most_likely_score": max(score_counts, key=score_counts.get)
+        "most_likely_score": max(score_counts, key=lambda k: score_counts[k])
         if score_counts
         else "0-0",
     }
