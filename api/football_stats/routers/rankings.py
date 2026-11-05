@@ -12,7 +12,14 @@ from football_stats.routers.dependencies import (
     require_data,
     state,
 )
-from football_stats.stats.models import TeamRankingResponse
+from football_stats.stats.models import (
+    EloAtDateResponse,
+    EloCurrentResponse,
+    EloDecadeLeadersResponse,
+    EloSummaryResponse,
+    EloTeamHistoryResponse,
+    TeamRankingResponse,
+)
 
 logger = logging.getLogger("stats.server.rankings")
 
@@ -36,7 +43,7 @@ async def most_endpoint(
 # =========================================================================
 
 
-@router.get("/elo-ranking/current")
+@router.get("/elo-ranking/current", response_model=EloCurrentResponse)
 async def elo_ranking_current(
     top_n: int = Query(
         50, ge=1, le=211, description="Number of top-ranked teams to return"
@@ -85,7 +92,7 @@ async def elo_ranking_current(
     }
 
 
-@router.get("/elo-ranking/history/{team}")
+@router.get("/elo-ranking/history/{team}", response_model=EloTeamHistoryResponse)
 async def elo_ranking_history(
     team: str,
     date_from: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
@@ -133,7 +140,7 @@ async def elo_ranking_history(
     }
 
 
-@router.get("/elo-ranking/decade-leaders")
+@router.get("/elo-ranking/decade-leaders", response_model=EloDecadeLeadersResponse)
 async def elo_decade_leaders(
     top_n: int = Query(5, ge=1, le=10, description="Number of top teams per decade"),
     decade: Optional[str] = Query(
@@ -159,7 +166,7 @@ async def elo_decade_leaders(
     }
 
 
-@router.get("/elo-ranking/summary")
+@router.get("/elo-ranking/summary", response_model=EloSummaryResponse)
 async def elo_ranking_summary(filters: FilterParamsDep = Depends()):
     """Summary statistics for ELO ratings.
 
@@ -193,7 +200,7 @@ async def elo_ranking_summary(filters: FilterParamsDep = Depends()):
     }
 
 
-@router.get("/elo-ranking/at-date")
+@router.get("/elo-ranking/at-date", response_model=EloAtDateResponse)
 async def elo_ranking_at_date(
     date: str = Query(..., description="Date in YYYY-MM-DD format"),
 ):

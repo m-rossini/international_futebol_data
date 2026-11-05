@@ -8,6 +8,7 @@ from football_stats.routers.dependencies import FilterParamsDep, engine, require
 from football_stats.stats.models import (
     BiggestWinItem,
     GoalsPerYearItem,
+    MatchGoalsResponse,
     SummaryResponse,
 )
 
@@ -56,7 +57,7 @@ async def goals_per_year_endpoint(
     return engine.goals_per_year(sort_by=sort_by, order=order, filters=filters.inner)
 
 
-@router.get("/matchgoals")
+@router.get("/matchgoals", response_model=MatchGoalsResponse)
 async def match_goalscorers_endpoint(
     date: str = Query(..., description="Match date (YYYY-MM-DD)"),
     home_team: str = Query(..., description="Home team name"),
