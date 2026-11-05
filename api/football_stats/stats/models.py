@@ -659,3 +659,29 @@ class ReleaseDetailResponse(BaseModel):
     author: str
     body: str
     html_url: str
+
+
+# ===========================================================================
+#  POST /simulate
+# ===========================================================================
+
+
+class SimulationResponse(BaseModel):
+    """Dixon-Coles Monte Carlo match simulation result."""
+
+    team1: str
+    team2: str
+    team1_win_prob: float
+    draw_prob: float
+    team2_win_prob: float
+    team1_expected_goals: float
+    team2_expected_goals: float
+    n_simulations: int
+    score_histogram: dict[str, float]
+    most_likely_score: str
+    method: str
+    rho: float
+    n_matches_used: int
+    error: Optional[str] = None
+
+    model_config = ConfigDict(extra="allow")

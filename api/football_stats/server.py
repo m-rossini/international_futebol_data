@@ -37,6 +37,7 @@ from football_stats.routers.profile import (
 )
 from football_stats.routers.releases import router as releases_router
 from football_stats.routers.scalar import router as scalar_router
+from football_stats.routers.simulation import router as simulation_router
 from football_stats.llm.config import LLMConfig
 from football_stats.llm.chain import ProviderChain
 from football_stats.llm.executor import ToolExecutor
@@ -134,6 +135,7 @@ app.include_router(conversation_router)  # /conversation
 app.include_router(profile_router)  # /llm/profile
 app.include_router(releases_router)  # /releases
 app.include_router(scalar_router)  # /scalar
+app.include_router(simulation_router)  # /simulate
 
 
 # ---------------------------------------------------------------------------
