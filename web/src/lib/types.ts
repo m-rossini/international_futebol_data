@@ -247,6 +247,23 @@ export interface HeadToHeadResult {
   [key: string]: unknown;
 }
 
+export interface SimulationResult {
+  team1: string;
+  team2: string;
+  team1_win_prob: number;
+  draw_prob: number;
+  team2_win_prob: number;
+  team1_expected_goals: number;
+  team2_expected_goals: number;
+  n_simulations: number;
+  score_histogram: Record<string, number>;
+  most_likely_score: string;
+  method: string;
+  rho: number;
+  n_matches_used: number;
+  error?: string;
+}
+
 export interface YearOverviewItem {
   year: number;
   matches: number;
