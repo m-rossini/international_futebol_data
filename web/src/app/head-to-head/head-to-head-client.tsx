@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
-import { ArrowRightLeft, Minus, Plus } from 'lucide-react';
+import { ArrowRightLeft, CheckCircle2, Loader2, Minus, Play, Plus } from 'lucide-react';
 import { FilterBar } from '@/components/shared/FilterBar';
 import { AutocompleteInput } from '@/components/shared/AutocompleteInput';
 import { CountryFlag } from '@/components/shared/CountryFlag';
@@ -16,15 +16,6 @@ import { logApiCall, logUserAction } from '@/lib/observability';
 import type { HeadToHeadResult, BiggestWin, SimulationResult } from '@/lib/types';
 
 const API = '/api/proxy';
-
-// Tournament type → home advantage ELO points (mirrors api/elo_config.py)
-const TOURNAMENT_TYPES = [
-  { value: 'world_cup', label: 'World Cup', homeAdvElo: 0 },
-  { value: 'continental', label: 'Continental', homeAdvElo: 25 },
-  { value: 'qualifier', label: 'Qualifier', homeAdvElo: 100 },
-  { value: 'other', label: 'Other', homeAdvElo: 50 },
-  { value: 'friendly', label: 'Friendly', homeAdvElo: 100 },
-];
 
 const DEFAULT_N_SIMS = 1200;
 const LOCAL_STORAGE_KEY = 'football-h2h-sim';
@@ -104,40 +95,55 @@ export function HeadToHeadClient() {
   const [simulation, setSimulation] = useState<SimulationResult | null>(null);
   const [simLoading, setSimLoading] = useState(false);
   const [simError, setSimError] = useState<string | null>(null);
-  const [tournamentType, setTournamentType] = useState('friendly');
   const [nSimulations, setNSimulations] = useState(DEFAULT_N_SIMS);
-  const [adjustmentFactor, setAdjustmentFactor] = useState(1.0);
+  // Bumped by the "Run simulation" button; every other trigger (team change)
+  // leaves it alone, so the button is the only way to force a re-run.
+  const [runNonce, setRunNonce] = useState(0);
+  const [simStartedAt, setSimStartedAt] = useState<number | null>(null);
+  const [nowMs, setNowMs] = useState(0);
+  const [lastRun, setLastRun] = useState<{ ms: number; at: Date; nSims: number } | null>(null);
+  // Read at fetch time without making nSimulations an effect dependency —
+  // editing the number must not silently fire a new run.
+  const nSimsRef = useRef(nSimulations);
+  useEffect(() => {
+    nSimsRef.current = nSimulations;
+  }, [nSimulations]);
 
   // Load persisted simulation preferences
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
-      if (raw) {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
+        if (!raw || cancelled) return;
         const prefs = JSON.parse(raw);
-        if (prefs.tournamentType) setTournamentType(prefs.tournamentType);
         if (prefs.nSimulations) setNSimulations(prefs.nSimulations);
-        if (prefs.adjustmentFactor !== undefined) setAdjustmentFactor(prefs.adjustmentFactor);
+      } catch {
+        /* ignore */
       }
-    } catch {
-      /* ignore */
-    }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Persist simulation preferences when they change
   useEffect(() => {
     try {
-      localStorage.setItem(
-        LOCAL_STORAGE_KEY,
-        JSON.stringify({
-          tournamentType,
-          nSimulations,
-          adjustmentFactor,
-        }),
-      );
+      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify({ nSimulations }));
     } catch {
       /* ignore */
     }
-  }, [tournamentType, nSimulations, adjustmentFactor]);
+  }, [nSimulations]);
+
+  // Elapsed-time ticker so a long run never looks frozen.
+  useEffect(() => {
+    if (!simLoading) return;
+    const id = setInterval(() => setNowMs(Date.now()), 100);
+    return () => clearInterval(id);
+  }, [simLoading]);
+
+  const simElapsedMs = simStartedAt ? Math.max(0, nowMs - simStartedAt) : 0;
 
   // Load team names once
   useEffect(() => {
@@ -238,17 +244,6 @@ export function HeadToHeadClient() {
     };
   }, [qs, team1, team2]);
 
-  // Run Monte Carlo simulation when teams, tournament type, or n_simulations change
-  const simQs = useMemo(() => {
-    const q = new URLSearchParams();
-    q.set('team1', team1);
-    q.set('team2', team2);
-    q.set('n_simulations', String(nSimulations));
-    q.set('use_elo', 'false'); // Use Dixon-Coles fit by default
-    q.set('half_life_years', '3.0');
-    return q.toString();
-  }, [team1, team2, nSimulations]);
-
   useEffect(() => {
     if (!team1 || !team2) return;
 
@@ -256,9 +251,18 @@ export function HeadToHeadClient() {
     async function loadSim() {
       setSimLoading(true);
       setSimError(null);
+      setLastRun(null);
       const t0 = performance.now();
+      setSimStartedAt(t0);
+      setNowMs(t0);
       try {
-        const url = `${API}/simulate?${simQs}`;
+        const q = new URLSearchParams();
+        q.set('team1', team1);
+        q.set('team2', team2);
+        q.set('n_simulations', String(nSimsRef.current));
+        q.set('use_elo', 'false'); // Use Dixon-Coles fit by default
+        q.set('half_life_years', '3.0');
+        const url = `${API}/simulate?${q.toString()}`;
         const res = await fetch(url);
         const duration = performance.now() - t0;
         logApiCall('/simulate', duration, res.status, { team1, team2 });
@@ -269,6 +273,11 @@ export function HeadToHeadClient() {
             setSimulation(null);
           } else {
             setSimulation(data);
+            setLastRun({
+              ms: duration,
+              at: new Date(),
+              nSims: data.n_simulations ?? nSimsRef.current,
+            });
           }
           setSimLoading(false);
         }
@@ -290,7 +299,7 @@ export function HeadToHeadClient() {
     return () => {
       cancelled = true;
     };
-  }, [simQs, team1, team2]);
+  }, [team1, team2, runNonce]);
 
   // Extract dynamic keys from the API response
   const team1Wins = result ? ((result[`${result.team1}_wins`] as number) ?? 0) : 0;
@@ -474,21 +483,7 @@ export function HeadToHeadClient() {
               </div>
 
               {/* Simulation controls */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                <div className="flex flex-col gap-2">
-                  <label className="text-xs font-medium text-gray-500">Tournament type</label>
-                  <select
-                    value={tournamentType}
-                    onChange={(e) => setTournamentType(e.target.value)}
-                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none"
-                  >
-                    {TOURNAMENT_TYPES.map((t) => (
-                      <option key={t.value} value={t.value}>
-                        {t.label} (home +{t.homeAdvElo} ELO)
-                      </option>
-                    ))}
-                  </select>
-                </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 max-w-xl">
                 <div className="flex flex-col gap-2">
                   <label className="text-xs font-medium text-gray-500">Simulations</label>
                   <div className="flex items-center gap-2">
@@ -502,6 +497,7 @@ export function HeadToHeadClient() {
                     <input
                       type="number"
                       value={nSimulations}
+                      disabled={simLoading}
                       onChange={(e) =>
                         setNSimulations(
                           Math.min(100000, Math.max(100, Number(e.target.value) || DEFAULT_N_SIMS)),
@@ -519,24 +515,6 @@ export function HeadToHeadClient() {
                   </div>
                 </div>
                 <div className="flex flex-col gap-2">
-                  <label className="text-xs font-medium text-gray-500">Adjustment factor</label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="number"
-                      step="0.1"
-                      min="0.5"
-                      max="2.0"
-                      value={adjustmentFactor}
-                      onChange={(e) =>
-                        setAdjustmentFactor(
-                          Math.min(2.0, Math.max(0.5, Number(e.target.value) || 1.0)),
-                        )
-                      }
-                      className="w-20 px-3 py-2 border border-gray-300 rounded-lg text-sm text-center"
-                    />
-                  </div>
-                </div>
-                <div className="flex flex-col gap-2">
                   <label className="text-xs font-medium text-gray-500">&nbsp;</label>
                   <button
                     onClick={() => {
@@ -544,16 +522,57 @@ export function HeadToHeadClient() {
                         team1,
                         team2,
                         nSimulations,
-                        tournamentType,
                       });
+                      setRunNonce((n) => n + 1);
                     }}
                     disabled={simLoading}
-                    className="px-4 py-2.5 border border-amber-600 rounded-lg bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+                    className="inline-flex items-center justify-center gap-2 px-4 py-2.5 border border-amber-600 rounded-lg bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
                   >
-                    {simLoading ? 'Simulating…' : 'Run Simulation'}
+                    {simLoading ? (
+                      <>
+                        <Loader2 size={16} className="animate-spin" />
+                        Simulating…
+                      </>
+                    ) : (
+                      <>
+                        <Play size={16} />
+                        {simulation ? 'Run again' : 'Run simulation'}
+                      </>
+                    )}
                   </button>
                 </div>
               </div>
+
+              {simLoading && (
+                <div
+                  role="status"
+                  aria-live="polite"
+                  className="mt-2 flex items-center gap-3 p-4 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800"
+                >
+                  <Loader2 size={16} className="animate-spin shrink-0" />
+                  <span>
+                    Fitting Dixon–Coles on real match data and drawing{' '}
+                    <strong>{nSimulations.toLocaleString()}</strong> simulations…{' '}
+                    <span className="tabular-nums">{(simElapsedMs / 1000).toFixed(1)}s</span>
+                  </span>
+                </div>
+              )}
+
+              {lastRun && !simLoading && !simError && (
+                <div
+                  role="status"
+                  aria-live="polite"
+                  className="mt-2 flex items-center gap-3 p-4 bg-emerald-50 border border-emerald-200 rounded-lg text-sm text-emerald-800"
+                >
+                  <CheckCircle2 size={16} className="shrink-0" />
+                  <span>
+                    Finished in <strong>{(lastRun.ms / 1000).toFixed(1)}s</strong> ·{' '}
+                    {lastRun.nSims.toLocaleString()} simulations · {simulation?.n_matches_used ?? 0}{' '}
+                    matches used ·{' '}
+                    <span className="tabular-nums">{lastRun.at.toLocaleTimeString()}</span>
+                  </span>
+                </div>
+              )}
 
               {simError && (
                 <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
@@ -562,7 +581,9 @@ export function HeadToHeadClient() {
               )}
 
               {simulation && !simulation.error && (
-                <>
+                <div
+                  className={simLoading ? 'opacity-50 transition-opacity' : 'transition-opacity'}
+                >
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {/* Probability cards */}
                     <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -619,12 +640,6 @@ export function HeadToHeadClient() {
                       unit="probability"
                     />
                   </div>
-                </>
-              )}
-
-              {simLoading && !simulation && (
-                <div className="mt-4 p-4 text-center text-sm text-gray-500">
-                  Running simulation…
                 </div>
               )}
             </div>
