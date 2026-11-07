@@ -32,6 +32,8 @@ from .analysis import (
     city_info,
     countries_list,
     country_info,
+    build_players,
+    build_player_detail,
     yearly_overview,
     yearly_matches,
     _strip_accents,
@@ -319,6 +321,23 @@ class QueryEngine:
         logger.debug("Country info requested: %s", name)
         try:
             return country_info(self._enriched_filtered(filters), name)
+        except ValueError as e:
+            return {"error": True, "message": str(e)}
+
+    # ------------------------------------------------------------------
+    #  Player queries
+    # ------------------------------------------------------------------
+
+    def players(self, filters: Optional[FilterParams] = None) -> list:
+        """List all player entities derived from goalscorers.csv."""
+        logger.debug("Players list", extra={"source": "live"})
+        return build_players(self._state.goalscorers)
+
+    def player(self, name: str, filters: Optional[FilterParams] = None) -> dict:
+        """Comprehensive stats for a specific player."""
+        logger.debug("Player info requested: %s", name)
+        try:
+            return build_player_detail(self._state.goalscorers, name)
         except ValueError as e:
             return {"error": True, "message": str(e)}
 

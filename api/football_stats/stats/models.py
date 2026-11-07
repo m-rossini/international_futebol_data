@@ -780,6 +780,57 @@ class TeamListItem(BaseModel):
     model_config = ConfigDict(extra="allow")
 
 
+class PlayerListItem(BaseModel):
+    """One row of GET /players."""
+
+    player_id: str
+    name: str
+    teams: list[str]
+    goals: int
+    matches: int
+    first_year: Optional[int] = None
+    last_year: Optional[int] = None
+    tournaments: list[str] = Field(default_factory=list)
+
+    model_config = ConfigDict(extra="allow")
+
+
+class PlayerCareerRow(BaseModel):
+    """One year of a player's career (GET /player/{name})."""
+
+    year: int
+    goals: int
+    matches: int
+    teams: list[str]
+    tournaments: list[str] = Field(default_factory=list)
+
+    model_config = ConfigDict(extra="allow")
+
+
+class PlayerSummary(BaseModel):
+    teams: list[str]
+    goals: int
+    matches: int
+    first_year: Optional[int] = None
+    last_year: Optional[int] = None
+    tournaments: list[str] = Field(default_factory=list)
+
+    model_config = ConfigDict(extra="allow")
+
+
+class PlayerDetailResponse(BaseModel):
+    """GET /player/{name}."""
+
+    player_id: str
+    name: str
+    summary: PlayerSummary
+    career: list[PlayerCareerRow] = Field(default_factory=list)
+    tournaments: list[str] = Field(default_factory=list)
+    top_teams: list[dict[str, Any]] = Field(default_factory=list)
+
+    model_config = ConfigDict(extra="allow")
+
+
 class MatchItem(BaseModel):
     """A single historical match, as embedded in the detail endpoints."""
 

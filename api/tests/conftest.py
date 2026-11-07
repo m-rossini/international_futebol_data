@@ -16,6 +16,7 @@ import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
 
 from football_stats.server import app  # noqa: E402
+from football_stats.ratelimit import limiter  # noqa: E402
 
 # Re-export helpers for convenience (pytest auto-loads conftest, not helpers)
 from .helpers import (  # noqa: E402, F401
@@ -48,3 +49,12 @@ def client():
     """FastAPI TestClient with lifespan triggered (data loaded automatically)."""
     with TestClient(app, raise_server_exceptions=False) as c:
         yield c
+
+
+@pytest.fixture(autouse=True)
+def _reset_rate_limiter():
+    """Reset the in-memory rate-limiter buckets before every test so tests
+    are not affected by rate limiting from previous tests."""
+    limiter.reset()
+    yield
+    limiter.reset()

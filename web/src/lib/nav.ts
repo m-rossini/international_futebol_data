@@ -44,6 +44,14 @@ export const NAV_ITEMS: NavEntry[] = [
   },
   {
     type: 'link',
+    href: '/players',
+    label: 'Players',
+    icon: Users,
+    description: 'Browse every goalscorer and their career',
+    accent: 'blue',
+  },
+  {
+    type: 'link',
     href: '/tournaments',
     label: 'Tournaments',
     icon: Trophy,

@@ -56,6 +56,8 @@ from .city import (
     city_info,
 )
 
+from .players import build_player_detail, build_players
+
 from .country import (
     countries_list,
     country_info,
@@ -109,6 +111,8 @@ __all__ = [
     "city_info",
     "countries_list",
     "country_info",
+    "build_players",
+    "build_player_detail",
     "biggest_wins_in_df",
     "biggest_single_win",
     "biggest_wins",
