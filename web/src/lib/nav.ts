@@ -3,6 +3,7 @@ import {
   Clock,
   Flag,
   Globe,
+  Info,
   MapPin,
   MessageSquare,
   Swords,
@@ -97,6 +98,14 @@ export const NAV_ITEMS: NavEntry[] = [
     icon: Clock,
     description: 'Which teams dominated each era?',
     accent: 'amber',
+  },
+  {
+    type: 'link',
+    href: '/about',
+    label: 'About',
+    icon: Info,
+    description: 'Data sources, credits and how the ratings are calculated',
+    accent: 'blue',
   },
   { type: 'separator' },
   {

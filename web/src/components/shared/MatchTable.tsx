@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState, useCallback } from 'react';
+import Link from 'next/link';
 import { DataTable, type Column } from '@/components/shared/DataTable';
 import { CountryFlag } from '@/components/shared/CountryFlag';
 import { ShootoutBadge } from '@/components/shared/ShootoutBadge';
@@ -82,16 +83,31 @@ export function MatchTable({ matches, highlightTeam, showNeutral = false, headin
     const cols: Column<Row>[] = [
       { key: 'date', header: 'Date', sortable: true, render: (r) => fmtDate(r.date) },
       { key: 'tournament', header: 'Tournament', sortable: true },
-      { key: 'city', header: 'City', sortable: true },
+      {
+        key: 'city',
+        header: 'City',
+        sortable: true,
+        render: (r) => (
+          <Link
+            href={`/city/${encodeURIComponent(r.city ?? '')}`}
+            className="text-blue-600 hover:underline"
+          >
+            {r.city ?? '—'}
+          </Link>
+        ),
+      },
       {
         key: 'country',
         header: 'Country',
         sortable: true,
         render: (r) => (
-          <span className="inline-flex items-center gap-1.5">
+          <Link
+            href={`/country/${encodeURIComponent(r.country ?? '')}`}
+            className="inline-flex items-center gap-1.5 text-blue-600 hover:underline"
+          >
             <CountryFlag countryName={r.country ?? ''} size={14} />
             {r.country ?? '—'}
-          </span>
+          </Link>
         ),
       },
       {

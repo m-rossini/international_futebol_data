@@ -36,12 +36,21 @@ describe('navigation config', () => {
     }
   });
 
-  it('renders the same links on the home cards and in the sidebar', () => {
+  it('sidebar renders exactly the nav config links, home exposes all of them', () => {
     const { container: home } = render(<HomePage />);
     const { container: sidebar } = render(<Sidebar isOpen onClose={vi.fn()} />);
 
-    expect(navHrefs(home).sort()).toEqual(navHrefs(sidebar).sort());
-    expect(navHrefs(home).sort()).toEqual(NAV_LINKS.map((item) => item.href).sort());
+    const expectedHrefs = NAV_LINKS.map((item) => item.href).sort();
+
+    // Sidebar is the canonical single source of truth.
+    expect(navHrefs(sidebar).sort()).toEqual(expectedHrefs);
+
+    // Home cards expose every nav link (they may also link elsewhere, e.g. the
+    // abuse-notice banner links to /about, so home is a superset, not exact).
+    const homeSet = new Set(navHrefs(home));
+    for (const href of expectedHrefs) {
+      expect(homeSet.has(href)).toBe(true);
+    }
   });
 
   it('shows every nav label as a home card', () => {
