@@ -1,6 +1,6 @@
 # Feature & Data Roadmap
 
-Status: draft plan, not started.
+Status: agreed plan, M0 ready to start. Decisions settled 2026-11-07.
 Owner: Marcos.
 Scope: fix the reported UX defects, close the data gaps, add the new sources that are
 licence-clean, and put limits on abusive usage.
@@ -18,7 +18,7 @@ Sizes: **S** ≤ 1 day · **M** 2–3 days · **L** 1–2 weeks · **XL** > 2 we
 | 3 | Host countries should come before countries | `tournament-detail-client.tsx:25-85` (yearly columns), `:257-280` (sections) | `host_country` is the last column; the "Host Countries" block sits after standings | Order: **Host(s) → Countries → Teams → Matches…**; move the Host block above standings | S |
 | 4 | No country-level menu, should divide into cities | no `/countries` page, no `/country/[name]` route, API has only `/countries`, `/cities`, `/city/{name}` | Country is only a filter value. `Engine.country()` already exists in `api/football_stats/stats/engine.py:287` — only the router + UI are missing | New API `/country/{name}` + `/country/{name}/cities`; new pages `/countries`, `/country/[name]`, `/cities`, `/city/[name]`; add "Countries" to nav | M |
 | 5 | Home cards must match the sidebar | `web/src/app/page.tsx:198-252` vs `web/src/components/layout/Sidebar.tsx:23-36` | Two hand-maintained lists: 6 cards vs 9 nav items (missing Confederations, Ask Me, House Keeping) | Single `navConfig` module consumed by Sidebar, home cards, and `sitemap.ts`; add a test asserting parity | S |
-| 6 | No women's football | data layer | `results.csv` is men's only; no `gender` dimension anywhere | Add `gender` to schema + ingest women's results; see B1 | XL |
+| 6 | No women's football | data layer | `results.csv` is men's only; no `gender` dimension anywhere | **Out of scope by decision (2026-11-07)** — revisit later; see B1 | — |
 | 7 | Housekeeping missing latest releases | `releases/` (api stops at `api-v1.3.1.md`, web at `web-v1.3.7.md`) | 1.4.0 was bumped without generating notes | Add `api-v1.4.0.md`, `web-v1.4.0.md`; add a CI/Make check that a release note exists for every bumped version | S |
 | 8 | Credits to other people's work are missing | `web/src/app/about/page.tsx:104` | Generic paragraph, no links, no licences | Full credits block with links and licences (see A6) | S |
 | 9 | Anti-scraping notice + limits | none | No rate limiting anywhere; `robots.txt` is static and permissive | See workstream E | M |
@@ -77,13 +77,12 @@ Content must include, with links:
 
 ## 2. Workstream B — Data completeness
 
-### B1 — Women's national teams (XL)
-Decision needed first (see Open Decisions).
-- Add `gender` (`men` | `women`) to the canonical schema, defaulting to `men` for the
-  existing dataset so nothing breaks.
-- Ingest women's results (Wikipedia/FIFA lists, or a CC0 dataset if one is found).
-- Scope: separate ELO pool (never mix), separate rankings, same page templates with a toggle.
-- Accept: `/teams?gender=women`, women's ELO ranking, women's H2H + simulation.
+### B1 — Women's national teams (deferred, not in scope)
+Decision (2026-11-07): no women's football for now. Kept here so the schema is not
+painted into a corner:
+- When it returns: add `gender` (`men` | `women`) defaulting to `men`, separate ELO pool,
+  same page templates with a toggle.
+- Nothing in the current milestones depends on it.
 
 ### B2 — Completeness of the men's dataset (L)
 - Pre-1900 matches, defunct nations (USSR, Yugoslavia, Czechoslovakia, East Germany, Saar,
@@ -264,35 +263,31 @@ Two layers, nginx first (already in front of both web and API), app middleware s
 | **M3 — players** | B4, C1, D1 | Real player pages from data already owned |
 | **M4 — squads** | B3, C3, D2 | Squad lists per match; age/caps calibration tested in H2H |
 | **M5 — events** | C2, D3, D4 | Shot maps, xG, player-adjusted simulation |
-| **M6 — completeness** | B1, B2 | Women's football + defunct/pre-war coverage |
+| **M6 — completeness** | B2 | Defunct/pre-war coverage (women's football deferred) |
 
 Order rationale: M0/M1 are cheap and user-visible; M2 protects infrastructure before traffic
 grows; M3 is the cheapest data unlock (CC0, no scraping); M4 and M5 depend on new ingests;
-M6 is the largest and least urgent.
+M6 is the largest and least urgent. Women's football is explicitly deferred.
 
 ---
 
-## 7. Open decisions (need your call)
+## 7. Decisions (settled 2026-11-07)
 
-| # | Decision | Options | Recommendation |
-|---|---|---|---|
-| 1 | Women's football scope | (a) gender toggle inside the same site, (b) separate `/women` section, (c) separate deployment | **(a)** — one codebase, `gender` query param, separate ELO pool; cheapest and keeps one URL |
-| 2 | Squad source | (a) OpenFootball only (CC0, WC/Euro), (b) + Wikipedia, (c) + StatsBomb lineups | **(b)** — OpenFootball + Wikipedia for tournaments, StatsBomb where it overlaps; no scraping of blocked sites |
-| 3 | Scraping policy | (a) keep hard no-scraping, (b) allow with attribution, (c) allow only with written permission | **(a)** for now; revisit FBref/Transfermarkt only with written permission |
-| 4 | Rate-limit home | (a) nginx only, (b) nginx + Cloudflare | **(a)** first; Cloudflare only if you approve an account/install |
-| 5 | Player identity | (a) automatic Wikidata matching + review queue, (b) manual only | **(a)** — automatic, but every low-confidence match goes to a review file, nothing guessed |
-| 6 | Shot-map scope | (a) only StatsBomb competitions, (b) + empty-state fallback everywhere | **(b)** — show the fallback on every match so coverage is honest |
+| # | Decision | Call |
+|---|---|---|
+| 1 | Women's football scope | **Out of scope for now** — no women's data, no `gender` work |
+| 2 | Squad source | **OpenFootball + Wikipedia** for tournaments; StatsBomb where it overlaps |
+| 3 | Scraping policy | **Keep the hard no-scraping rule**; FBref/Transfermarkt/Sofascore/FotMob stay blocked |
+| 4 | Rate-limit home | **nginx only** — no Cloudflare |
+| 5 | Player identity | **Wikidata auto-matching + review queue**; nothing guessed |
+| 6 | Shot-map scope | **Explicit fallback on every match** when event data is absent |
 
-Additional decisions the plan depends on:
+Still to confirm before the relevant milestone:
 
-7. **Wikipedia** — is CC BY-SA acceptable? It requires attribution and share-alike on derived
-   text; using it only for facts (squads, DOB cross-checks) is safer than copying prose.
-8. **Data volume** — StatsBomb events need Parquet or SQLite rather than the current in-memory
-   CSVs; confirm a separate `data/events/` store is acceptable.
-9. **Squad coverage expectation** — accept "major tournaments only" for v1, or delay squads
-   until broader coverage exists?
-10. **Prod rollout** — deploy each milestone to `futebol.orbisplace.co.uk` as it lands, or batch
-    at the end?
+7. **Wikipedia licence** — CC BY-SA 4.0 accepted for facts (squads, DOB cross-checks)?
+8. **Event storage** — separate `data/events/` Parquet store acceptable?
+9. **Squad coverage** — accept "major tournaments only" for v1?
+10. **Prod rollout** — deploy per milestone or batch at the end?
 
 ---
 
@@ -312,7 +307,7 @@ Additional decisions the plan depends on:
 
 | Table / column | Introduced by | Purpose |
 |---|---|---|
-| `matches.gender` (`men`/`women`) | B1 | One schema, two pools |
+| `matches.gender` (`men`/`women`) | B1 (deferred) | Reserved for if women's football returns |
 | `teams.status` (`active`/`defunct`) | B2 | Defunct-nation views |
 | `players(id, wikidata_qid, name, dob, position, nationality, gender)` | B4 | Player pages, age |
 | `player_appearances(player_id, match_id, team, minutes, goals, assists, cards)` | B4 | Caps, scorer links |
@@ -340,8 +335,7 @@ its source so the UI can label coverage and credits can be generated from the da
 | 8 | `feat/openfootball-squads` | C3 + B3 | 7 |
 | 9 | `feat/squad-calibration` | D2 (+ D4 if it wins) | 8 |
 | 10 | `feat/statsbomb-events` | C2 + D3 | 8 |
-| 11 | `feat/womens-football` | B1 | 7 |
-| 12 | `feat/defunct-nations` | B2 | 7 |
+| 11 | `feat/defunct-nations` | B2 | 7 |
 
 Each branch: worktree from up-to-date `main`, tests first where practical, one logical commit
 per step, PR to `main`, deploy to dev (`boyz@192.168.1.61`), then prod when approved.
