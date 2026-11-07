@@ -96,6 +96,18 @@ export function HeadToHeadClient() {
   const [simLoading, setSimLoading] = useState(false);
   const [simError, setSimError] = useState<string | null>(null);
   const [nSimulations, setNSimulations] = useState(DEFAULT_N_SIMS);
+  // Free-text draft for the simulations input. While the user is typing the
+  // field holds raw text; the value is only clamped and committed on blur, so
+  // typing "300" is not clamped to "100" after the first keystroke.
+  const [simsDraft, setSimsDraft] = useState<string | null>(null);
+  const commitSims = useCallback(() => {
+    if (simsDraft === null) return;
+    const parsed = Number(simsDraft);
+    if (simsDraft.trim() !== '' && Number.isFinite(parsed)) {
+      setNSimulations(Math.min(100000, Math.max(100, Math.round(parsed))));
+    }
+    setSimsDraft(null);
+  }, [simsDraft]);
   // Bumped by the "Run simulation" button; every other trigger (team change)
   // leaves it alone, so the button is the only way to force a re-run.
   const [runNonce, setRunNonce] = useState(0);
@@ -488,7 +500,10 @@ export function HeadToHeadClient() {
                   <label className="text-xs font-medium text-gray-500">Simulations</label>
                   <div className="flex items-center gap-2">
                     <button
-                      onClick={() => setNSimulations(Math.max(100, nSimulations - 100))}
+                      onClick={() => {
+                        setSimsDraft(null);
+                        setNSimulations(Math.max(100, nSimulations - 100));
+                      }}
                       disabled={nSimulations <= 100 || simLoading}
                       className="px-3 py-2 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
@@ -496,17 +511,24 @@ export function HeadToHeadClient() {
                     </button>
                     <input
                       type="number"
-                      value={nSimulations}
+                      min={100}
+                      max={100000}
+                      step={100}
+                      value={simsDraft ?? String(nSimulations)}
                       disabled={simLoading}
-                      onChange={(e) =>
-                        setNSimulations(
-                          Math.min(100000, Math.max(100, Number(e.target.value) || DEFAULT_N_SIMS)),
-                        )
-                      }
+                      onChange={(e) => setSimsDraft(e.target.value)}
+                      onBlur={commitSims}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') e.currentTarget.blur();
+                      }}
+                      aria-label="Number of simulations"
                       className="w-20 px-3 py-2 border border-gray-300 rounded-lg text-sm text-center"
                     />
                     <button
-                      onClick={() => setNSimulations(Math.min(100000, nSimulations + 100))}
+                      onClick={() => {
+                        setSimsDraft(null);
+                        setNSimulations(Math.min(100000, nSimulations + 100));
+                      }}
                       disabled={nSimulations >= 100000 || simLoading}
                       className="px-3 py-2 border border-gray-300 rounded-lg bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
