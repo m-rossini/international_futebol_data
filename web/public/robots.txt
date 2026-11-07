@@ -1,11 +1,30 @@
 User-agent: *
 Allow: /
-Disallow: /api/
+# Programmatic API — crawlers and AI training bots must not scrape it.
+Disallow: /api/proxy/
+Disallow: /docs
+Disallow: /openapi.json
+Disallow: /redoc
+Disallow: /scalar/
+Disallow: /conversation
+Disallow: /house-keeping/
+Disallow: /releases/
+Disallow: /qrcode
+# Crawl-delay to be gentle on the server.
+Crawl-delay: 2
+
+# Known AI training / scraping bots are not permitted to crawl the site.
+User-agent: GPTBot
+Disallow: /
+User-agent: CCBot
+Disallow: /
+User-agent: ClaudeBot
+Disallow: /
+User-agent: Bytespider
+Disallow: /
+User-agent: Amazonbot
+Disallow: /
+User-agent: Google-Extended
+Disallow: /
 
 Sitemap: https://futebol.orbisplace.co.uk/sitemap.xml
-
-# API endpoints for programmatic access
-# /api/proxy/teams - List all teams
-# /api/proxy/tournaments - List all tournaments
-# /api/proxy/matches - List matches
-# /api/proxy/years - List available years
