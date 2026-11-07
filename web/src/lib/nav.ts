@@ -3,6 +3,7 @@ import {
   Clock,
   Flag,
   Globe,
+  MapPin,
   MessageSquare,
   Swords,
   TrendingUp,
@@ -46,6 +47,14 @@ export const NAV_ITEMS: NavEntry[] = [
     label: 'Tournaments',
     icon: Trophy,
     description: 'Browse tournaments and seasons',
+    accent: 'blue',
+  },
+  {
+    type: 'link',
+    href: '/countries',
+    label: 'Countries',
+    icon: MapPin,
+    description: 'Browse countries and their cities',
     accent: 'blue',
   },
   {
