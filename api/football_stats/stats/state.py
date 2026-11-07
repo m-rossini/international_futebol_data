@@ -55,6 +55,7 @@ class DataState:
         self.goalscorers = None
         self.shootouts = None
         self.former_names = None
+        self.squads = None
         self.elo_ratings = None
         self.elo_config = None
         self.config = {}
@@ -221,6 +222,7 @@ class DataState:
         self.goalscorers = _drop_future_rows(data["goalscorers"], "goalscorers")
         self.shootouts = _drop_future_rows(data["shootouts"], "shootouts")
         self.former_names = data["former_names"]  # no date column for matches
+        self.squads = data["squads"]  # no date filter needed
 
         # Load config BEFORE ELO calculation so elo_config is available
         if os.path.exists(CONFIG_PATH):
@@ -259,13 +261,15 @@ class DataState:
             "goalscorers_loaded": len(self.goalscorers),
             "shootouts_loaded": len(self.shootouts),
             "former_names_loaded": len(self.former_names),
+            "squads_loaded": len(self.squads),
             "elo_ratings_loaded": len(self.elo_ratings)
             if self.elo_ratings is not None
             else 0,
         }
         logger.info(
             "Data reloaded: %(matches_loaded)d matches, %(goalscorers_loaded)d scorers, "
-            "%(elo_ratings_loaded)d ELO rows",
+            "%(shootouts_loaded)d shootouts, %(former_names_loaded)d former names, "
+            "%(squads_loaded)d squads, %(elo_ratings_loaded)d ELO rows",
             summary,
         )
         return summary

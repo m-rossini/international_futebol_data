@@ -401,3 +401,29 @@ export interface PlayerDetailResponse {
   tournaments: string[];
   top_teams: { team: string; goals: number }[];
 }
+
+export interface SquadPlayer {
+  player_name: string;
+  shirt_no: number | null;
+  position: string | null;
+  captain: boolean;
+}
+
+export interface SquadTeam {
+  team: string;
+  xi: SquadPlayer[];
+  bench: SquadPlayer[];
+}
+
+export interface SquadMatchItem {
+  match_date: string;
+  home_team: string;
+  away_team: string;
+}
+
+export interface SquadDetailResponse {
+  match_date: string;
+  home_team: string;
+  away_team: string;
+  squads: SquadTeam[];
+}

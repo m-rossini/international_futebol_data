@@ -31,6 +31,7 @@ from football_stats.routers.cities import router as cities_router
 from football_stats.routers.countries import router as countries_router
 from football_stats.routers.confederations import router as confederations_router
 from football_stats.routers.players import router as players_router
+from football_stats.routers.squads import router as squads_router
 from football_stats.routers.years import router as years_router
 from football_stats.routers.conversation import router as conversation_router
 from football_stats.routers.profile import (
@@ -151,6 +152,7 @@ app.include_router(tournaments_router)  # /tournaments, /tournament/{name}
 app.include_router(cities_router)  # /cities, /city/{name}
 app.include_router(countries_router)  # /countries, /country/{name}
 app.include_router(players_router)  # /players, /player/{name}
+app.include_router(squads_router)  # /squads, /squads/{date}/{home}/{away}
 app.include_router(confederations_router)  # /confederations, /confederation/{name}
 app.include_router(years_router)  # /years, /years/{year}
 app.include_router(conversation_router)  # /conversation

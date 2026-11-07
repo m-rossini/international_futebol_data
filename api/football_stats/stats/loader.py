@@ -34,6 +34,7 @@ _DATASETS = [
         "file": "former_names.csv",
         "parse_dates": ["start_date", "end_date"],
     },
+    {"key": "squads", "file": "squads.csv", "parse_dates": ["match_date"]},
 ]
 
 
@@ -41,7 +42,12 @@ def _load_one(cfg: dict) -> pd.DataFrame:
     """Load a single CSV based on a catalog entry."""
     path = _data_path(cfg["file"])
     logger.info("Loading %s (%s)...", cfg["file"], cfg["key"])
-    df = pd.read_csv(path, parse_dates=cfg["parse_dates"])
+    try:
+        df = pd.read_csv(path, parse_dates=cfg["parse_dates"])
+    except FileNotFoundError:
+        # Optional datasets (e.g. squads.csv) may not exist in every DATA_DIR.
+        logger.warning("%s not found at %s; loading empty frame", cfg["file"], path)
+        return pd.DataFrame()
     logger.debug("Loaded %s: %d rows, %d columns", cfg["key"], len(df), len(df.columns))
     return df
 
