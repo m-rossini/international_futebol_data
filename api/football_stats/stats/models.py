@@ -317,6 +317,50 @@ class TournamentListItem(BaseModel):
     model_config = ConfigDict(extra="allow")
 
 
+class ConfederationListItem(BaseModel):
+    name: str
+    count: int
+    countries: list[str]
+    teams: list[str]
+
+    model_config = ConfigDict(extra="allow")
+
+
+class ConfederationMatchItem(BaseModel):
+    date: str
+    home_team: str
+    away_team: str
+    home_score: Optional[int] = None
+    away_score: Optional[int] = None
+    tournament: Optional[str] = None
+    city: Optional[str] = None
+    country: Optional[str] = None
+    goals: int = 0
+
+    model_config = ConfigDict(extra="allow")
+    model_config = ConfigDict(extra="allow")
+
+
+class ConfederationDetailResponse(BaseModel):
+    confederation: str
+    countries: list[str]
+    teams: list[str]
+    total_matches: int
+    total_goals: int
+    unique_teams: int
+    tournaments: list[str]
+
+    model_config = ConfigDict(extra="allow")
+
+
+class ConfederationMatchesResponse(BaseModel):
+    confederation: str
+    matches: list[ConfederationMatchItem]
+    total: int
+
+    model_config = ConfigDict(extra="allow")
+
+
 class TopTeamItem(BaseModel):
     team: str
     wins: int
@@ -407,9 +451,19 @@ class SeasonMatchItem(BaseModel):
     away_score: int
     city: Optional[str] = None
     country: Optional[str] = None
+    neutral: Optional[bool] = None
+    tournament: Optional[str] = None
     shootout: Optional[bool] = None
 
     model_config = ConfigDict(extra="allow")
+
+
+class TournamentMatchesResponse(BaseModel):
+    tournament: str
+    total: int
+    limit: int
+    offset: int
+    matches: list[SeasonMatchItem]
 
 
 class SeasonStandingItem(BaseModel):

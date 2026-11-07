@@ -7,11 +7,18 @@ import { DataTable, type Column } from '@/components/shared/DataTable';
 import { FilterBar } from '@/components/shared/FilterBar';
 import { CountryFlag } from '@/components/shared/CountryFlag';
 import { GoalsPerYearChart } from '@/components/shared/chart/GoalsPerYearChart';
+import { MatchTable } from '@/components/shared/MatchTable';
 import { TeamStandingsTable } from '@/components/shared/TeamStandingsTable';
 import { logApiCall, logUserAction } from '@/lib/observability';
-import type { TournamentDetail, TournamentYearlyRow } from '@/lib/types';
+import type {
+  MatchItem,
+  TournamentDetail,
+  TournamentMatchesResponse,
+  TournamentYearlyRow,
+} from '@/lib/types';
 
 const API = '/api/proxy';
+const MATCHES_PAGE = 50;
 
 function buildQs(params: URLSearchParams): string {
   const q = new URLSearchParams();
@@ -24,6 +31,26 @@ function buildQs(params: URLSearchParams): string {
 
 const yearlyColumns: Column<TournamentYearlyRow>[] = [
   { key: 'year', header: 'Year', sortable: true },
+  {
+    key: 'host_country',
+    header: 'Host(s)',
+    sortable: true,
+    render: (r) => {
+      if (!r.host_country) return '—';
+      const countries = r.host_country.split(', ');
+      return (
+        <span className="inline-flex items-center gap-1 flex-wrap">
+          {countries.map((c, i) => (
+            <span key={c} className="inline-flex items-center gap-0.5">
+              {i > 0 && <span className="text-gray-400">,</span>}
+              <CountryFlag countryName={c} size={14} />
+              {c}
+            </span>
+          ))}
+        </span>
+      );
+    },
+  },
   {
     key: 'matches',
     header: 'Matches',
@@ -62,26 +89,6 @@ const yearlyColumns: Column<TournamentYearlyRow>[] = [
     header: 'Teams',
     sortable: true,
   },
-  {
-    key: 'host_country',
-    header: 'Host(s)',
-    sortable: true,
-    render: (r) => {
-      if (!r.host_country) return '—';
-      const countries = r.host_country.split(', ');
-      return (
-        <span className="inline-flex items-center gap-1 flex-wrap">
-          {countries.map((c, i) => (
-            <span key={c} className="inline-flex items-center gap-0.5">
-              {i > 0 && <span className="text-gray-400">,</span>}
-              <CountryFlag countryName={c} size={14} />
-              {c}
-            </span>
-          ))}
-        </span>
-      );
-    },
-  },
 ];
 
 interface Props {
@@ -95,6 +102,9 @@ export function TournamentDetailClient({ tournamentName }: Props) {
   const [detail, setDetail] = useState<TournamentDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [matches, setMatches] = useState<MatchItem[]>([]);
+  const [matchTotal, setMatchTotal] = useState(0);
+  const [matchOffset, setMatchOffset] = useState(0);
 
   const qs = useMemo(() => buildQs(sp), [sp]);
 
@@ -140,6 +150,34 @@ export function TournamentDetailClient({ tournamentName }: Props) {
       cancelled = true;
     };
   }, [tournamentName, qs]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadMatches() {
+      const params = new URLSearchParams(qs);
+      params.set('limit', String(MATCHES_PAGE));
+      params.set('offset', String(matchOffset));
+      try {
+        const res = await fetch(
+          `${API}/tournament/${encodeURIComponent(tournamentName)}/matches?${params.toString()}`,
+        );
+        if (!res.ok) return;
+        const data: TournamentMatchesResponse = await res.json();
+        if (!cancelled && !data.error) {
+          setMatches(data.matches);
+          setMatchTotal(data.total);
+        }
+      } catch {
+        // The match list is supplementary; the rest of the page still renders.
+      }
+    }
+
+    loadMatches();
+    return () => {
+      cancelled = true;
+    };
+  }, [tournamentName, qs, matchOffset]);
 
   const handleBack = useCallback(() => {
     logUserAction('back_to_tournaments', { from_tournament: tournamentName });
@@ -254,13 +292,7 @@ export function TournamentDetailClient({ tournamentName }: Props) {
             </div>
           )}
 
-          {/* Team standings */}
-          <div className="mb-6">
-            <h2 className="text-lg font-semibold text-gray-800 mb-3">Team Standings</h2>
-            <TeamStandingsTable tournamentName={tournamentName} />
-          </div>
-
-          {/* Host countries summary */}
+          {/* Host countries summary — before standings, per tournament ordering */}
           {detail.summary.top_host_countries.length > 0 && (
             <div className="mb-6">
               <h2 className="text-lg font-semibold text-gray-800 mb-3">Host Countries</h2>
@@ -279,6 +311,12 @@ export function TournamentDetailClient({ tournamentName }: Props) {
             </div>
           )}
 
+          {/* Team standings */}
+          <div className="mb-6">
+            <h2 className="text-lg font-semibold text-gray-800 mb-3">Team Standings</h2>
+            <TeamStandingsTable tournamentName={tournamentName} />
+          </div>
+
           {/* Seasons (yearly breakdown) */}
           <div className="mb-6">
             <h2 className="text-lg font-semibold text-gray-800 mb-3">Seasons</h2>
@@ -292,6 +330,48 @@ export function TournamentDetailClient({ tournamentName }: Props) {
               />
             ) : (
               <p className="text-sm text-gray-400">No season data available</p>
+            )}
+          </div>
+
+          {/* Match list */}
+          <div className="mb-6">
+            <div className="flex flex-wrap items-baseline justify-between gap-2 mb-3">
+              <h2 className="text-lg font-semibold text-gray-800">Matches</h2>
+              {matchTotal > 0 && (
+                <span className="text-xs text-gray-400">
+                  Showing {matchOffset + 1}–{Math.min(matchOffset + MATCHES_PAGE, matchTotal)} of{' '}
+                  {matchTotal.toLocaleString()}
+                </span>
+              )}
+            </div>
+            {matches.length > 0 ? (
+              <>
+                <MatchTable matches={matches} showNeutral />
+                {matchTotal > MATCHES_PAGE && (
+                  <div className="flex items-center justify-between mt-3">
+                    <button
+                      type="button"
+                      onClick={() => setMatchOffset((o) => Math.max(0, o - MATCHES_PAGE))}
+                      disabled={matchOffset === 0}
+                      className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Previous
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setMatchOffset((o) => o + MATCHES_PAGE)}
+                      disabled={matchOffset + MATCHES_PAGE >= matchTotal}
+                      className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Next
+                    </button>
+                  </div>
+                )}
+              </>
+            ) : (
+              <p className="text-sm text-gray-400">
+                No matches for this tournament with the current filters.
+              </p>
             )}
           </div>
         </>

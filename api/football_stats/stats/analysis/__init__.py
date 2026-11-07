@@ -47,6 +47,7 @@ from .ranking import (
 from .tournament import (
     tournaments_list,
     tournament_info,
+    tournament_matches,
     season_info,
 )
 
@@ -102,6 +103,7 @@ __all__ = [
     "most_cities",
     "tournaments_list",
     "tournament_info",
+    "tournament_matches",
     "season_info",
     "cities_list",
     "city_info",

@@ -15,6 +15,12 @@ from football_stats.stats.filters import (
     get_teams_by_confederation,
     list_all_confederations,
 )
+from football_stats.stats.models import (
+    ConfederationListItem,
+    ConfederationDetailResponse,
+    ConfederationMatchesResponse,
+    ErrorResponse,
+)
 
 logger = logging.getLogger("stats.server.confederations")
 
@@ -41,14 +47,17 @@ def _unknown(confederation_name: str) -> dict:
     }
 
 
-@router.get("/confederations")
+@router.get("/confederations", response_model=list[ConfederationListItem])
 async def confederations_endpoint():
     """List the six FIFA confederations with their member countries."""
     logger.debug("GET /confederations")
     return list_all_confederations()
 
 
-@router.get("/confederation/{confederation_name}")
+@router.get(
+    "/confederation/{confederation_name}",
+    response_model=ConfederationDetailResponse | ErrorResponse,
+)
 async def confederation_detail(
     confederation_name: str,
     filters: FilterParamsDep = Depends(),
@@ -81,7 +90,10 @@ async def confederation_detail(
     }
 
 
-@router.get("/confederation/{confederation_name}/matches")
+@router.get(
+    "/confederation/{confederation_name}/matches",
+    response_model=ConfederationMatchesResponse | ErrorResponse,
+)
 async def confederation_matches(
     confederation_name: str,
     filters: FilterParamsDep = Depends(),

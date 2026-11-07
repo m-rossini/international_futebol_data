@@ -26,6 +26,7 @@ from .analysis import (
     most_cities,
     tournaments_list,
     tournament_info,
+    tournament_matches,
     season_info,
     cities_list,
     city_info,
@@ -239,6 +240,28 @@ class QueryEngine:
         logger.debug("Tournament info requested: %s", name)
         try:
             return tournament_info(self._enriched_filtered(filters), name)
+        except ValueError as e:
+            return {"error": True, "message": str(e)}
+
+    def tournament_matches(
+        self,
+        name: str,
+        filters: Optional[FilterParams] = None,
+        year: Optional[int] = None,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> dict:
+        """Paginated match list for a tournament."""
+        logger.debug("Tournament matches requested: %s", name)
+        try:
+            result = tournament_matches(
+                self._enriched_filtered(filters), name, year, limit, offset
+            )
+            mark_shootouts(
+                result["matches"],
+                build_shootout_lookup(self._state.shootouts),
+            )
+            return result
         except ValueError as e:
             return {"error": True, "message": str(e)}
 

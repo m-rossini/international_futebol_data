@@ -197,6 +197,25 @@ export function SeasonDetailClient({ tournamentName, year }: Props) {
             </div>
           )}
 
+          {/* Match list — above standings so it is visible without scrolling */}
+          <div className="mb-6">
+            <div className="flex flex-wrap items-baseline justify-between gap-2 mb-3">
+              <h2 className="text-lg font-semibold text-gray-800">Matches</h2>
+              {detail.matches_list.length > 0 && (
+                <span className="text-xs text-gray-400">
+                  {detail.matches_list.length.toLocaleString()} matches
+                </span>
+              )}
+            </div>
+            {detail.matches_list.length > 0 ? (
+              <MatchTable matches={detail.matches_list} showNeutral />
+            ) : (
+              <p className="text-sm text-gray-400">
+                No matches for this edition with the current filters.
+              </p>
+            )}
+          </div>
+
           {/* Standings */}
           {detail.standings.length > 0 && (
             <div className="mb-6">
@@ -207,14 +226,6 @@ export function SeasonDetailClient({ tournamentName, year }: Props) {
                 keyField="team"
                 defaultSort={{ key: 'points', dir: 'desc' }}
               />
-            </div>
-          )}
-
-          {/* Match list */}
-          {detail.matches_list.length > 0 && (
-            <div className="mb-6">
-              <h2 className="text-lg font-semibold text-gray-800 mb-3">Matches</h2>
-              <MatchTable matches={detail.matches_list} showNeutral />
             </div>
           )}
         </>
