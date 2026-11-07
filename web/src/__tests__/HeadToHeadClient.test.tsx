@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { HeadToHeadClient } from '@/app/head-to-head/head-to-head-client';
 
 const mockFilters = {
@@ -81,6 +81,7 @@ describe('HeadToHeadClient', () => {
   beforeEach(() => {
     mockSearchParams = new URLSearchParams('');
     mockReplace.mockClear();
+    localStorage.clear();
     mockFetch();
   });
 
@@ -207,5 +208,34 @@ describe('HeadToHeadClient', () => {
     await waitFor(() => {
       expect(screen.getByText(/Network error/)).toBeInTheDocument();
     });
+  });
+
+  it('lets the simulation count be typed without clamping every keystroke', async () => {
+    mockSearchParams = new URLSearchParams('team1=Brazil&team2=Argentina');
+    render(<HeadToHeadClient />);
+
+    const input = await screen.findByLabelText('Number of simulations');
+    fireEvent.change(input, { target: { value: '3' } });
+    expect(input).toHaveValue(3);
+    fireEvent.change(input, { target: { value: '30' } });
+    expect(input).toHaveValue(30);
+    fireEvent.change(input, { target: { value: '300' } });
+    expect(input).toHaveValue(300);
+    fireEvent.blur(input);
+    expect(input).toHaveValue(300);
+  });
+
+  it('clamps the simulation count to the allowed range on blur', async () => {
+    mockSearchParams = new URLSearchParams('team1=Brazil&team2=Argentina');
+    render(<HeadToHeadClient />);
+
+    const input = await screen.findByLabelText('Number of simulations');
+    fireEvent.change(input, { target: { value: '5' } });
+    fireEvent.blur(input);
+    expect(input).toHaveValue(100);
+
+    fireEvent.change(input, { target: { value: '999999' } });
+    fireEvent.blur(input);
+    expect(input).toHaveValue(100000);
   });
 });
