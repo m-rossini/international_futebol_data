@@ -34,6 +34,8 @@ from .analysis import (
     country_info,
     build_players,
     build_player_detail,
+    squads_list,
+    squad_info,
     yearly_overview,
     yearly_matches,
     _strip_accents,
@@ -338,6 +340,31 @@ class QueryEngine:
         logger.debug("Player info requested: %s", name)
         try:
             return build_player_detail(self._state.goalscorers, name)
+        except ValueError as e:
+            return {"error": True, "message": str(e)}
+
+    # ------------------------------------------------------------------
+    #  Squad queries
+    # ------------------------------------------------------------------
+
+    def squad_matches(self, filters: Optional[FilterParams] = None) -> list:
+        """List matches that have squad data."""
+        logger.debug("Squad matches list", extra={"source": "live"})
+        return squads_list(self._state.squads)
+
+    def squad(
+        self,
+        match_date: str,
+        home_team: str,
+        away_team: str,
+        filters: Optional[FilterParams] = None,
+    ) -> dict:
+        """Squad detail for a specific match."""
+        logger.debug(
+            "Squad info requested: %s %s vs %s", match_date, home_team, away_team
+        )
+        try:
+            return squad_info(self._state.squads, match_date, home_team, away_team)
         except ValueError as e:
             return {"error": True, "message": str(e)}
 

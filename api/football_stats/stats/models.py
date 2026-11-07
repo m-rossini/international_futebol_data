@@ -831,6 +831,46 @@ class PlayerDetailResponse(BaseModel):
     model_config = ConfigDict(extra="allow")
 
 
+class SquadPlayer(BaseModel):
+    """One player in a squad (XI or bench)."""
+
+    player_name: str
+    shirt_no: Optional[int] = None
+    position: Optional[str] = None
+    captain: bool = False
+
+    model_config = ConfigDict(extra="allow")
+
+
+class SquadTeam(BaseModel):
+    """One team's squad for a match."""
+
+    team: str
+    xi: list[SquadPlayer] = Field(default_factory=list)
+    bench: list[SquadPlayer] = Field(default_factory=list)
+
+
+class SquadMatchItem(BaseModel):
+    """One row of GET /squads - a match that has squad data."""
+
+    match_date: str
+    home_team: str
+    away_team: str
+
+    model_config = ConfigDict(extra="allow")
+
+
+class SquadDetailResponse(BaseModel):
+    """GET /squads/{match_date}/{home_team}/{away_team}."""
+
+    match_date: str
+    home_team: str
+    away_team: str
+    squads: list[SquadTeam] = Field(default_factory=list)
+
+    model_config = ConfigDict(extra="allow")
+
+
 class MatchItem(BaseModel):
     """A single historical match, as embedded in the detail endpoints."""
 
