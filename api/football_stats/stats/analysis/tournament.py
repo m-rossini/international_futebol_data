@@ -409,3 +409,57 @@ def season_info(results: pd.DataFrame, tournament: str, year: int) -> dict:
         "standings": standings_list,
         "matches_list": matches_list,
     }
+
+
+def tournament_matches(
+    results: pd.DataFrame,
+    tournament: str,
+    year: int | None = None,
+    limit: int = 50,
+    offset: int = 0,
+) -> dict:
+    """Paginated match list for a tournament, newest first.
+
+    Kept separate from ``tournament_info`` because a tournament like
+    "Friendly" has thousands of matches and the detail page must not download
+    all of them at once.
+    """
+    df = results[results["tournament"] == tournament].copy()
+    if df.empty:
+        raise ValueError(f"Unknown tournament: '{tournament}'")
+
+    df = enrich_match_results(df)
+    if year is not None:
+        df = df[df["year"] == year]
+        if df.empty:
+            raise ValueError(f"No data for tournament '{tournament}' in year {year}")
+
+    total = len(df)
+    page = df.sort_values("date", ascending=False).iloc[offset : offset + limit]
+
+    matches = []
+    for _, row in page.iterrows():
+        neutral = row.get("neutral")
+        matches.append(
+            {
+                "date": str(row["date"]),
+                "home_team": row["home_team"],
+                "away_team": row["away_team"],
+                "home_score": int(row["home_score"]),
+                "away_score": int(row["away_score"]),
+                "city": row.get("city"),
+                "country": row.get("country"),
+                "neutral": bool(neutral)
+                if neutral is not None and pd.notna(neutral)
+                else False,
+                "tournament": row.get("tournament"),
+            }
+        )
+
+    return {
+        "tournament": tournament,
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+        "matches": matches,
+    }

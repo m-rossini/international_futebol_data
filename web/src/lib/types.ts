@@ -188,6 +188,16 @@ export interface TournamentDetail {
   message?: string;
 }
 
+export interface TournamentMatchesResponse {
+  tournament: string;
+  total: number;
+  limit: number;
+  offset: number;
+  matches: MatchItem[];
+  error?: boolean;
+  message?: string;
+}
+
 export interface ConfederationListItem {
   name: string;
   count: number;

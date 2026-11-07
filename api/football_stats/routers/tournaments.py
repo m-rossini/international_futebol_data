@@ -2,7 +2,7 @@
 
 import logging
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 
 from football_stats.stats.models import (
     ErrorResponse,
@@ -12,6 +12,7 @@ from football_stats.routers.dependencies import FilterParamsDep, engine, require
 from football_stats.stats.models import (
     TournamentInfoResponse,
     TournamentListItem,
+    TournamentMatchesResponse,
 )
 
 logger = logging.getLogger("stats.server.tournaments")
@@ -40,6 +41,30 @@ async def tournament_endpoint(
     require_data()
     logger.debug("GET /tournament/%s", tournament_name)
     return engine.tournament(tournament_name, filters.inner)
+
+
+@router.get(
+    "/tournament/{tournament_name}/matches",
+    response_model=TournamentMatchesResponse | ErrorResponse,
+)
+async def tournament_matches_endpoint(
+    tournament_name: str,
+    year: int | None = Query(None, description="Restrict to a single edition"),
+    limit: int = Query(50, ge=1, le=200, description="Matches per page"),
+    offset: int = Query(0, ge=0, description="Matches to skip"),
+    filters: FilterParamsDep = Depends(),
+):
+    """Paginated match list for a tournament, newest first.
+    Optional filters: ``?year=2022&limit=50&offset=0``"""
+    require_data()
+    logger.debug("GET /tournament/%s/matches", tournament_name)
+    return engine.tournament_matches(
+        tournament_name,
+        filters.inner,
+        year=year,
+        limit=limit,
+        offset=offset,
+    )
 
 
 @router.get(
