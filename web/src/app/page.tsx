@@ -2,9 +2,10 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
-import { Users, Swords, Trophy, Check, RotateCcw, TrendingUp, Clock, Calendar } from 'lucide-react';
+import { Check, RotateCcw, Trophy } from 'lucide-react';
 import { AutocompleteInput } from '@/components/shared/AutocompleteInput';
 import { HomeStats } from '@/components/shared/HomeStats';
+import { NAV_ACCENTS, NAV_LINKS } from '@/lib/nav';
 import { useDefaults } from '@/lib/useDefaults';
 import { logUserAction, logApiCall } from '@/lib/observability';
 
@@ -195,60 +196,19 @@ export default function HomePage() {
         )}
       </div>
 
-      {/* Quick nav cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-lg">
-        <Link
-          href="/teams"
-          className="flex flex-col items-center gap-2 p-5 bg-white rounded-xl border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all"
-        >
-          <Users size={24} className="text-blue-600" />
-          <span className="text-sm font-semibold text-gray-700">Teams</span>
-          <span className="text-xs text-gray-400 text-center">
-            Browse all teams and their stats
-          </span>
-        </Link>
-        <Link
-          href="/tournaments"
-          className="flex flex-col items-center gap-2 p-5 bg-white rounded-xl border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all"
-        >
-          <Trophy size={24} className="text-blue-600" />
-          <span className="text-sm font-semibold text-gray-700">Tournaments</span>
-          <span className="text-xs text-gray-400 text-center">Browse tournaments and seasons</span>
-        </Link>
-        <Link
-          href="/years"
-          className="flex flex-col items-center gap-2 p-5 bg-white rounded-xl border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all"
-        >
-          <Calendar size={24} className="text-blue-600" />
-          <span className="text-sm font-semibold text-gray-700">Years</span>
-          <span className="text-xs text-gray-400 text-center">Per-year statistics and charts</span>
-        </Link>
-        <Link
-          href="/head-to-head"
-          className="flex flex-col items-center gap-2 p-5 bg-white rounded-xl border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all"
-        >
-          <Swords size={24} className="text-blue-600" />
-          <span className="text-sm font-semibold text-gray-700">Head to Head</span>
-          <span className="text-xs text-gray-400 text-center">Compare two teams head-to-head</span>
-        </Link>
-        <Link
-          href="/elo-ranking"
-          className="flex flex-col items-center gap-2 p-5 bg-white rounded-xl border border-gray-200 hover:border-violet-300 hover:shadow-md transition-all"
-        >
-          <TrendingUp size={24} className="text-violet-500" />
-          <span className="text-sm font-semibold text-gray-700">ELO Rankings</span>
-          <span className="text-xs text-gray-400 text-center">
-            ELO ratings calculated from match results
-          </span>
-        </Link>
-        <Link
-          href="/decade-leaders"
-          className="flex flex-col items-center gap-2 p-5 bg-white rounded-xl border border-gray-200 hover:border-amber-300 hover:shadow-md transition-all"
-        >
-          <Clock size={24} className="text-amber-500" />
-          <span className="text-sm font-semibold text-gray-700">Decade Leaders</span>
-          <span className="text-xs text-gray-400 text-center">Which teams dominated each era?</span>
-        </Link>
+      {/* Quick nav cards — generated from the same list as the sidebar */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full max-w-3xl">
+        {NAV_LINKS.map((item) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            className={`flex flex-col items-center gap-2 p-5 bg-white rounded-xl border border-gray-200 hover:shadow-md transition-all ${NAV_ACCENTS[item.accent].hover}`}
+          >
+            <item.icon size={24} className={NAV_ACCENTS[item.accent].icon} />
+            <span className="text-sm font-semibold text-gray-700">{item.label}</span>
+            <span className="text-xs text-gray-400 text-center">{item.description}</span>
+          </Link>
+        ))}
       </div>
     </div>
   );
