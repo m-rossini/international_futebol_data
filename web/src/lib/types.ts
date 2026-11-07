@@ -364,3 +364,40 @@ export interface CityDetail {
   country: string;
   summary: CitySummary;
 }
+
+export interface PlayerListItem {
+  player_id: string;
+  name: string;
+  teams: string[];
+  goals: number;
+  matches: number;
+  first_year: number | null;
+  last_year: number | null;
+  tournaments: string[];
+}
+
+export interface PlayerCareerRow {
+  year: number;
+  goals: number;
+  matches: number;
+  teams: string[];
+  tournaments: string[];
+}
+
+export interface PlayerSummary {
+  teams: string[];
+  goals: number;
+  matches: number;
+  first_year: number | null;
+  last_year: number | null;
+  tournaments: string[];
+}
+
+export interface PlayerDetailResponse {
+  player_id: string;
+  name: string;
+  summary: PlayerSummary;
+  career: PlayerCareerRow[];
+  tournaments: string[];
+  top_teams: { team: string; goals: number }[];
+}

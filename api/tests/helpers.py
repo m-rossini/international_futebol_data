@@ -18,6 +18,7 @@ _KNOWN_CITY = "London"
 _KNOWN_CITY_LOWER = "london"
 _KNOWN_COUNTRY = "France"
 _KNOWN_COUNTRY_LOWER = "france"
+_KNOWN_PLAYER = "Pelé"
 
 # Accented names for accent-insensitivity tests
 _ACCENTED_TEAM = "São Tomé and Príncipe"
