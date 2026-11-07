@@ -1,4 +1,5 @@
 import type { MetadataRoute } from 'next';
+import { NAV_LINKS } from '@/lib/nav';
 
 const BASE_URL = 'https://futebol.orbisplace.co.uk';
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:7531';
@@ -30,48 +31,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const staticPages: MetadataRoute.Sitemap = [
     { url: BASE_URL, lastModified: new Date(), changeFrequency: 'daily', priority: 1 },
-    {
-      url: `${BASE_URL}/teams`,
+    ...NAV_LINKS.map((item) => ({
+      url: `${BASE_URL}${item.href}`,
       lastModified: new Date(),
-      changeFrequency: 'weekly',
-      priority: 0.9,
-    },
-    {
-      url: `${BASE_URL}/tournaments`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly',
-      priority: 0.9,
-    },
-    {
-      url: `${BASE_URL}/head-to-head`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
+      changeFrequency: 'weekly' as const,
       priority: 0.7,
-    },
-    {
-      url: `${BASE_URL}/elo-ranking`,
-      lastModified: new Date(),
-      changeFrequency: 'weekly',
-      priority: 0.8,
-    },
-    {
-      url: `${BASE_URL}/decade-leaders`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.6,
-    },
-    {
-      url: `${BASE_URL}/house-keeping`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.5,
-    },
-    {
-      url: `${BASE_URL}/askme`,
-      lastModified: new Date(),
-      changeFrequency: 'monthly',
-      priority: 0.6,
-    },
+    })),
     {
       url: `${BASE_URL}/about`,
       lastModified: new Date(),

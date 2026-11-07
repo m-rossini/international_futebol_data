@@ -3,37 +3,9 @@
 import { useEffect, useCallback, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import {
-  X,
-  Users,
-  Trophy,
-  Calendar,
-  Swords,
-  Flag,
-  Globe,
-  TrendingUp,
-  Clock,
-  MessageSquare,
-} from 'lucide-react';
+import { X } from 'lucide-react';
 import { VERSION } from '@/lib/version';
-
-type NavItem =
-  { type: 'item'; href: string; label: string; icon: typeof Users } | { type: 'separator' };
-
-const navItems: NavItem[] = [
-  { type: 'item', href: '/teams', label: 'Teams', icon: Users },
-  { type: 'item', href: '/tournaments', label: 'Tournaments', icon: Trophy },
-  { type: 'item', href: '/confederations', label: 'Confederations', icon: Globe },
-  { type: 'item', href: '/years', label: 'Years', icon: Calendar },
-  { type: 'item', href: '/head-to-head', label: 'Head to Head', icon: Swords },
-  { type: 'separator' },
-  { type: 'item', href: '/elo-ranking', label: 'ELO Rankings', icon: TrendingUp },
-  { type: 'item', href: '/decade-leaders', label: 'Decade Leaders', icon: Clock },
-  { type: 'separator' },
-  { type: 'item', href: '/askme', label: 'Ask Me', icon: MessageSquare },
-  { type: 'separator' },
-  { type: 'item', href: '/house-keeping', label: 'House Keeping', icon: Flag },
-];
+import { NAV_ITEMS } from '@/lib/nav';
 
 interface Props {
   isOpen: boolean;
@@ -114,7 +86,7 @@ export function Sidebar({ isOpen, onClose }: Props) {
         </div>
 
         <nav className="flex-1 px-3 py-3 space-y-1">
-          {navItems.map((item, idx) => {
+          {NAV_ITEMS.map((item, idx) => {
             if (item.type === 'separator') {
               return <hr key={`sep-${idx}`} className="my-2 border-gray-200" />;
             }
