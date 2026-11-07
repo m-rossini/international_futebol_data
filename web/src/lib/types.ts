@@ -289,3 +289,78 @@ export interface YearOverviewItem {
 export interface YearDetail extends YearOverviewItem {
   matches_list: MatchItem[];
 }
+
+export interface CountryListItem {
+  country: string;
+  matches: number;
+  total_goals: number;
+  home_wins: number;
+  away_wins: number;
+  draws: number;
+  unique_teams: number;
+  tournaments: number;
+  cities: number;
+  first_year: number;
+  last_year: number;
+  avg_goals: number;
+}
+
+export interface CityListItem {
+  city: string;
+  country: string;
+  matches: number;
+  total_goals: number;
+  home_wins: number;
+  away_wins: number;
+  draws: number;
+  unique_teams: number;
+  tournaments: number;
+  first_year: number;
+  last_year: number;
+  avg_goals: number;
+}
+
+export interface CountrySummary {
+  matches: number;
+  first_year: number;
+  last_year: number;
+  total_goals: number;
+  avg_goals_per_match: number;
+  home_wins: number;
+  away_wins: number;
+  draws: number;
+  unique_teams: number;
+  unique_tournaments: number;
+  unique_cities: number;
+  biggest_win: BiggestWin | null;
+  top_teams_by_wins: { team: string; value: number }[];
+  top_tournaments: { tournament: string; matches: number }[];
+  top_cities: { city: string; matches: number }[];
+}
+
+export interface CountryDetail {
+  country: string;
+  summary: CountrySummary;
+}
+
+export interface CitySummary {
+  matches: number;
+  first_year: number;
+  last_year: number;
+  total_goals: number;
+  avg_goals_per_match: number;
+  home_wins: number;
+  away_wins: number;
+  draws: number;
+  unique_teams: number;
+  unique_tournaments: number;
+  biggest_win: BiggestWin | null;
+  top_teams_by_wins: { team: string; value: number }[];
+  top_tournaments: { tournament: string; matches: number }[];
+}
+
+export interface CityDetail {
+  city: string;
+  country: string;
+  summary: CitySummary;
+}
