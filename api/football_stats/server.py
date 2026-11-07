@@ -21,6 +21,7 @@ from fastapi import FastAPI, Request
 from football_stats.stats.log import logger
 
 from football_stats.routers.dependencies import state, engine
+from football_stats.ratelimit import limiter, group_for_path, client_ip
 from football_stats.routers.meta import router as meta_router
 from football_stats.routers.teams import router as teams_router
 from football_stats.routers.matches import router as matches_router
@@ -116,6 +117,25 @@ async def log_requests(request: Request, call_next):
         response.status_code,
         elapsed,
     )
+    return response
+
+
+@app.middleware("http")
+async def rate_limit(request: Request, call_next):
+    path = request.url.path
+    ip = client_ip(request)
+    group = group_for_path(path)
+    allowed, retry_after = limiter.allow(ip, group=group)
+    if not allowed:
+        from fastapi.responses import JSONResponse
+
+        return JSONResponse(
+            status_code=429,
+            content={"error": True, "message": "Rate limit exceeded"},
+            headers={"Retry-After": str(max(int(retry_after), 1))},
+        )
+    response = await call_next(request)
+    response.headers["X-RateLimit-Group"] = group
     return response
 
 

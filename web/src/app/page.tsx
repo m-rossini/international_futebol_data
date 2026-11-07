@@ -8,6 +8,7 @@ import { HomeStats } from '@/components/shared/HomeStats';
 import { NAV_ACCENTS, NAV_LINKS } from '@/lib/nav';
 import { useDefaults } from '@/lib/useDefaults';
 import { logUserAction, logApiCall } from '@/lib/observability';
+import { AbuseNoticeBanner } from '@/components/shared/AbuseNoticeBanner';
 
 const API = '/api/proxy';
 
@@ -78,6 +79,7 @@ export default function HomePage() {
 
   return (
     <div className="min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center px-4 py-12">
+      <AbuseNoticeBanner />
       {/* Hero */}
       <div className="text-center mb-10">
         <span className="text-5xl mb-4 block">⚽</span>
