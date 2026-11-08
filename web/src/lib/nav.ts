@@ -69,6 +69,14 @@ export const NAV_ITEMS: NavEntry[] = [
   },
   {
     type: 'link',
+    href: '/former-names',
+    label: 'Former Names',
+    icon: Flag,
+    description: 'Defunct nations and name chains',
+    accent: 'blue',
+  },
+  {
+    type: 'link',
     href: '/tournaments',
     label: 'Tournaments',
     icon: Trophy,

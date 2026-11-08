@@ -450,3 +450,15 @@ export interface StatsBombEventsResponse {
   total_events: number;
   shots: number;
 }
+
+export interface FormerNameItem {
+  current: string;
+  former: string;
+  start_date: string | null;
+  end_date: string | null;
+}
+
+export interface FormerNamesResponse {
+  total: number;
+  chains: FormerNameItem[];
+}

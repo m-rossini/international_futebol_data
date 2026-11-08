@@ -20,6 +20,7 @@ from .metadata import (
     shootouts_metadata,
     former_names_metadata,
     shootout_stats,
+    former_names_list,
 )
 
 from .goals import (
@@ -91,6 +92,7 @@ __all__ = [
     "goalscorers_metadata",
     "shootouts_metadata",
     "former_names_metadata",
+    "former_names_list",
     "shootout_stats",
     "goals_per_year",
     "top_scorers",
