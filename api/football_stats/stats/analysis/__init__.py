@@ -58,6 +58,7 @@ from .city import (
 
 from .players import build_player_detail, build_players
 from .squads import squad_info, squads_list
+from .statsbomb import load_events, shots_for_match, match_has_events
 
 from .country import (
     countries_list,
@@ -122,6 +123,9 @@ __all__ = [
     "_strip_accents",
     "yearly_overview",
     "yearly_matches",
+    "load_events",
+    "shots_for_match",
+    "match_has_events",
 ]
 
 # ---------------------------------------------------------------------------

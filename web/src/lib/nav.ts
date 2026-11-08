@@ -6,6 +6,7 @@ import {
   Info,
   MapPin,
   MessageSquare,
+  ShieldAlert,
   Swords,
   TrendingUp,
   Trophy,
@@ -56,6 +57,14 @@ export const NAV_ITEMS: NavEntry[] = [
     label: 'Squads',
     icon: Users,
     description: 'Browse matches that have lineup data',
+    accent: 'blue',
+  },
+  {
+    type: 'link',
+    href: '/statsbomb',
+    label: 'StatsBomb',
+    icon: ShieldAlert,
+    description: 'Shot maps and xG from open event data',
     accent: 'blue',
   },
   {
