@@ -87,20 +87,6 @@ function buildStats(summary: SummaryResponse, filters: FilterOptionsResponse): S
       accent: 'text-sky-600',
       iconWrap: 'bg-sky-50 text-sky-600',
     },
-    {
-      label: 'Cities',
-      value: filters.cities.length.toLocaleString(),
-      icon: MapPin,
-      accent: 'text-teal-600',
-      iconWrap: 'bg-teal-50 text-teal-600',
-    },
-    {
-      label: 'Years of History',
-      value: yearsOfHistory(r.date_range.from, r.date_range.to),
-      icon: CalendarDays,
-      accent: 'text-indigo-600',
-      iconWrap: 'bg-indigo-50 text-indigo-600',
-    },
   ];
 }
 
@@ -161,22 +147,24 @@ export function HomeStats() {
   }
 
   return (
-    <section className="w-full max-w-3xl" aria-label="Dataset summary statistics">
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+    <section className="w-full max-w-6xl" aria-label="Dataset summary statistics">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         {stats.map((s) => {
           const Icon = s.icon;
           return (
             <div
               key={s.label}
-              className="group flex flex-col gap-1 rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md"
+              className="group flex flex-col items-center gap-2 rounded-xl border border-gray-200 bg-white p-5 shadow-sm hover:shadow-lg transition-all duration-200"
             >
               <span
-                className={`inline-flex h-8 w-8 items-center justify-center rounded-lg ${s.iconWrap}`}
+                className={`inline-flex h-10 w-10 items-center justify-center rounded-xl ${s.iconWrap} mb-2`}
               >
-                <Icon size={16} />
+                <Icon size={20} />
               </span>
-              <span className={`mt-1 text-lg font-bold leading-tight ${s.accent}`}>{s.value}</span>
-              <span className="text-xs font-medium text-gray-500">{s.label}</span>
+              <span className={`text-2xl font-bold leading-tight ${s.accent}`}>{s.value}</span>
+              <span className="text-xs font-medium text-gray-500 uppercase tracking-wider">
+                {s.label}
+              </span>
             </div>
           );
         })}

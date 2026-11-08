@@ -172,6 +172,7 @@ class DataState:
                 len(self._cache_tournaments_list),
                 len(self._cache_countries_list),
                 len(self._cache_cities_list),
+                len(self._cache_players_list),
             )
             return True
         except (OSError, pickle.UnpicklingError, KeyError) as e:
