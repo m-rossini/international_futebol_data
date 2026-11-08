@@ -2,6 +2,7 @@
 
 import { type Column } from '@/components/shared/DataTable';
 import { CountryFlag } from '@/components/shared/CountryFlag';
+import Link from 'next/link';
 import type { TeamItem } from '@/lib/types';
 
 export function winRateColor(rate: number): string {
@@ -41,10 +42,13 @@ export const TEAMS_COLUMNS: Column<TeamItem>[] = [
     header: 'Team',
     sortable: true,
     render: (row) => (
-      <span className="inline-flex items-center gap-1.5">
+      <Link
+        href={`/country/${encodeURIComponent(row.team)}`}
+        className="inline-flex items-center gap-1.5 text-blue-600 hover:underline"
+      >
         <CountryFlag countryName={row.team} size={14} />
         {row.team}
-      </span>
+      </Link>
     ),
   },
   {

@@ -115,10 +115,13 @@ export function MatchTable({ matches, highlightTeam, showNeutral = false, headin
         header: 'Home',
         sortable: true,
         render: (r) => (
-          <span className={`inline-flex items-center gap-1.5 ${homeCls(r, hTeam)}`}>
+          <Link
+            href={`/country/${encodeURIComponent(r.home_team)}`}
+            className={`inline-flex items-center gap-1.5 ${homeCls(r, hTeam)} text-blue-600 hover:underline`}
+          >
             <CountryFlag countryName={r.home_team} size={14} />
             {r.home_team}
-          </span>
+          </Link>
         ),
       },
       {
@@ -136,10 +139,13 @@ export function MatchTable({ matches, highlightTeam, showNeutral = false, headin
         header: 'Away',
         sortable: true,
         render: (r) => (
-          <span className={`inline-flex items-center gap-1.5 ${awayCls(r, hTeam)}`}>
+          <Link
+            href={`/country/${encodeURIComponent(r.away_team)}`}
+            className={`inline-flex items-center gap-1.5 ${awayCls(r, hTeam)} text-blue-600 hover:underline`}
+          >
             <CountryFlag countryName={r.away_team} size={14} />
             {r.away_team}
-          </span>
+          </Link>
         ),
       },
     ];

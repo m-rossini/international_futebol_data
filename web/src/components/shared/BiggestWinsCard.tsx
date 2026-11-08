@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { CountryFlag } from './CountryFlag';
 import { ShootoutBadge } from './ShootoutBadge';
 import type { BiggestWin } from '@/lib/types';
@@ -56,7 +57,12 @@ export function BiggestWinsCard({ team, opponent, wins = [], label }: Props) {
               <span
                 className={`inline-flex items-center gap-1 min-w-0 flex-1 justify-end text-right ${isHome ? teamBold : oppBold}`}
               >
-                {isHome ? team : opponentName}
+                <Link
+                  href={`/country/${encodeURIComponent(isHome ? team : opponentName)}`}
+                  className="text-blue-600 hover:underline"
+                >
+                  {isHome ? team : opponentName}
+                </Link>
                 <CountryFlag countryName={isHome ? team : opponentName} size={12} />
               </span>
 
@@ -70,8 +76,13 @@ export function BiggestWinsCard({ team, opponent, wins = [], label }: Props) {
               <span
                 className={`inline-flex items-center gap-1 min-w-0 flex-1 ${!isHome ? teamBold : oppBold}`}
               >
-                <CountryFlag countryName={!isHome ? team : opponentName} size={12} />
-                {!isHome ? team : opponentName}
+                <Link
+                  href={`/country/${encodeURIComponent(!isHome ? team : opponentName)}`}
+                  className="text-blue-600 hover:underline"
+                >
+                  <CountryFlag countryName={!isHome ? team : opponentName} size={12} />
+                  {!isHome ? team : opponentName}
+                </Link>
               </span>
 
               {/* Goal margin badge */}

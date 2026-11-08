@@ -1,5 +1,7 @@
 'use client';
 
+import Link from 'next/link';
+
 /**
  * A single stat card shown inside the StatsBar grid.
  * The accent controls text color for values like win rate.
@@ -8,6 +10,7 @@ export interface StatItem {
   label: string;
   value: string;
   accent?: 'green' | 'amber' | 'red' | 'blue' | 'neutral';
+  href?: string;
 }
 
 // ---------------------------------------------------------------------------

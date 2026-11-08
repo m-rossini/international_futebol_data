@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { ArrowLeft, Trophy } from 'lucide-react';
 import { DataTable, type Column } from '@/components/shared/DataTable';
 import { FilterBar } from '@/components/shared/FilterBar';
@@ -43,8 +44,13 @@ const yearlyColumns: Column<TournamentYearlyRow>[] = [
           {countries.map((c, i) => (
             <span key={c} className="inline-flex items-center gap-0.5">
               {i > 0 && <span className="text-gray-400">,</span>}
-              <CountryFlag countryName={c} size={14} />
-              {c}
+              <Link
+                href={`/country/${encodeURIComponent(c)}`}
+                className="text-blue-600 hover:underline"
+              >
+                <CountryFlag countryName={c} size={14} />
+                {c}
+              </Link>
             </span>
           ))}
         </span>
@@ -263,9 +269,19 @@ export function TournamentDetailClient({ tournamentName }: Props) {
               <h2 className="text-lg font-semibold text-gray-800 mb-3">Biggest Win</h2>
               <div className="bg-white rounded-lg border border-gray-200 p-4 inline-block">
                 <p className="text-sm text-gray-700">
-                  <span className="font-semibold">{detail.summary.biggest_win.home_team}</span>{' '}
+                  <Link
+                    href={`/country/${encodeURIComponent(detail.summary.biggest_win.home_team)}`}
+                    className="font-semibold text-blue-600 hover:underline"
+                  >
+                    {detail.summary.biggest_win.home_team}
+                  </Link>{' '}
                   {detail.summary.biggest_win.home_score}–{detail.summary.biggest_win.away_score}{' '}
-                  <span className="font-semibold">{detail.summary.biggest_win.away_team}</span>
+                  <Link
+                    href={`/country/${encodeURIComponent(detail.summary.biggest_win.away_team)}`}
+                    className="font-semibold text-blue-600 hover:underline"
+                  >
+                    {detail.summary.biggest_win.away_team}
+                  </Link>
                 </p>
                 <p className="text-xs text-gray-400 mt-1">
                   {detail.summary.biggest_win.date}

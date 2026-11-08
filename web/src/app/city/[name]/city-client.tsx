@@ -54,7 +54,12 @@ export function CityClient({ name, detail, error }: Props) {
           <CountryFlag countryName={detail.country} size={22} />
           {name}
         </h1>
-        <span className="text-sm text-gray-500">{detail.country}</span>
+        <Link
+          href={`/country/${encodeURIComponent(detail.country)}`}
+          className="text-sm text-gray-500 text-blue-600 hover:underline"
+        >
+          {detail.country}
+        </Link>
       </div>
 
       <StatsBar items={items} />
