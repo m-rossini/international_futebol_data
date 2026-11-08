@@ -1,12 +1,12 @@
-"""StatsBomb Open Data event loading.
+"""Shot Maps Open Data event loading.
 
 Reads normalized event files from ``data/events/`` (one Parquet or JSONL file
 per competition). Files are optional — if the directory is absent or empty the
-endpoints return empty results, so deployments without StatsBomb data are
+endpoints return empty results, so deployments without Shot Maps data are
 unaffected.
 
-StatsBomb Open Data: https://github.com/statsbomb/open-data
-Licence: StatsBomb Public Data User Agreement (non-commercial, attribution).
+Shot Maps Open Data: https://github.com/shot-maps/open-data
+Licence: Shot Maps Public Data User Agreement (non-commercial, attribution).
 """
 
 from __future__ import annotations
@@ -17,10 +17,10 @@ from typing import Any
 
 import pandas as pd
 
-logger = logging.getLogger("stats.server.statsbomb")
+logger = logging.getLogger("stats.server.shot-maps")
 
 _EVENTS_DIR = os.environ.get(
-    "STATSBOMB_EVENTS_DIR",
+    "SHOT_MAPS_EVENTS_DIR",
     os.path.join(os.path.dirname(__file__), "..", "..", "..", "data", "events"),
 )
 
@@ -56,7 +56,7 @@ def load_events() -> pd.DataFrame:
         "outcome",
     ]
     if not os.path.isdir(_EVENTS_DIR):
-        logger.debug("StatsBomb events dir not found: %s", _EVENTS_DIR)
+        logger.debug("Shot Maps events dir not found: %s", _EVENTS_DIR)
         return pd.DataFrame(columns=columns)
 
     frames: list[pd.DataFrame] = []

@@ -41,7 +41,7 @@ from football_stats.routers.profile import (
 from football_stats.routers.releases import router as releases_router
 from football_stats.routers.scalar import router as scalar_router
 from football_stats.routers.simulation import router as simulation_router
-from football_stats.routers.statsbomb import router as statsbomb_router
+from football_stats.routers.shot_maps import router as shot_maps_router
 from football_stats.routers.former_names import router as former_names_router
 from football_stats.llm.config import LLMConfig
 from football_stats.llm.chain import ProviderChain
@@ -162,7 +162,7 @@ app.include_router(profile_router)  # /llm/profile
 app.include_router(releases_router)  # /releases
 app.include_router(scalar_router)  # /scalar
 app.include_router(simulation_router)  # /simulate
-app.include_router(statsbomb_router)  # /statsbomb/events, /statsbomb/shots/{match_id}
+app.include_router(shot_maps_router)  # /shot_maps/events, /shot_maps/shots/{match_id}
 app.include_router(former_names_router)  # /former-names
 
 

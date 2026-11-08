@@ -36,7 +36,8 @@ async function fetchPlayer(name: string): Promise<{
 
 export default async function PlayerPage({ params }: { params: Promise<{ name: string }> }) {
   const { name } = await params;
-  const { detail, error } = await fetchPlayer(name);
+  const decodedName = decodeURIComponent(name);
+  const { detail, error } = await fetchPlayer(decodedName);
 
-  return <PlayerClient name={name} detail={detail} error={error} />;
+  return <PlayerClient name={decodedName} detail={detail} error={error} />;
 }
