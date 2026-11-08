@@ -174,9 +174,8 @@ export default function AboutPage() {
 
         <h2 className="text-xl font-semibold text-gray-800 mt-8">Credits</h2>
         <p>
-          This project builds on data and research published by other people. Sources marked
-          <em> Used now</em> are part of the current dataset; sources marked <em>Planned</em> are
-          approved for upcoming features and are listed here in advance.
+          This project builds on data and research published by other people. All sources below are
+          used in the current dataset.
         </p>
         <div className="overflow-x-auto mt-4">
           <table className="w-full text-sm text-left border border-gray-200 rounded-lg overflow-hidden">

@@ -1,21 +1,41 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Users, Trophy, Target, CalendarDays, MapPin, Globe, Goal } from 'lucide-react';
+import { Flag, Goal, MapPin, Users, Trophy, Target, Clock, Globe } from 'lucide-react';
 import { logApiCall } from '@/lib/observability';
 
 const API = '/api/proxy';
 
-// Minimal shapes of the two endpoints we consume (see api SummaryResponse /
+// Minimal shapes of the endpoints we consume (see api SummaryResponse /
 // FilterOptionsResponse). Only the fields we display are declared.
 interface SummaryResponse {
   results: {
     total_matches: number;
     total_goals: number;
+    tournaments_count: number;
+    avg_goals_per_match: number;
     date_range: { from: string | null; to: string | null };
+    home_advantage: {
+      home_wins: number;
+      away_wins: number;
+      draws: number;
+      home_win_pct: number;
+      away_win_pct: number;
+      draw_pct: number;
+    };
   };
   goalscorers: {
+    total_goals_recorded: number;
     unique_scorers: number;
+    unique_teams_scored_for: number;
+    own_goals: number;
+    penalty_goals: number;
+  };
+  shootouts: {
+    total_shootouts: number;
+  };
+  former_names: {
+    total_renamed_countries: number;
   };
 }
 
@@ -34,16 +54,12 @@ interface Stat {
   iconWrap: string;
 }
 
-function yearsOfHistory(from: string | null, to: string | null): string {
-  if (!from || !to) return '—';
-  const start = new Date(from).getFullYear();
-  const end = new Date(to).getFullYear();
-  if (Number.isNaN(start) || Number.isNaN(end)) return '—';
-  return `${start}–${end}`;
-}
-
 function buildStats(summary: SummaryResponse, filters: FilterOptionsResponse): Stat[] {
   const r = summary.results;
+  const g = summary.goalscorers;
+  const s = summary.shootouts;
+  const f = summary.former_names;
+  const ha = r.home_advantage;
   return [
     {
       label: 'Matches Recorded',
@@ -75,7 +91,7 @@ function buildStats(summary: SummaryResponse, filters: FilterOptionsResponse): S
     },
     {
       label: 'Unique Scorers',
-      value: summary.goalscorers.unique_scorers.toLocaleString(),
+      value: g.unique_scorers.toLocaleString(),
       icon: Goal,
       accent: 'text-rose-600',
       iconWrap: 'bg-rose-50 text-rose-600',
@@ -86,6 +102,90 @@ function buildStats(summary: SummaryResponse, filters: FilterOptionsResponse): S
       icon: Globe,
       accent: 'text-sky-600',
       iconWrap: 'bg-sky-50 text-sky-600',
+    },
+    {
+      label: 'Cities',
+      value: filters.cities.length.toLocaleString(),
+      icon: MapPin,
+      accent: 'text-teal-600',
+      iconWrap: 'bg-teal-50 text-teal-600',
+    },
+    {
+      label: 'Avg Goals/Match',
+      value: r.avg_goals_per_match.toFixed(2),
+      icon: Clock,
+      accent: 'text-indigo-600',
+      iconWrap: 'bg-indigo-50 text-indigo-600',
+    },
+    {
+      label: 'Home Wins',
+      value: ha.home_wins.toLocaleString(),
+      icon: Users,
+      accent: 'text-green-600',
+      iconWrap: 'bg-green-50 text-green-600',
+    },
+    {
+      label: 'Away Wins',
+      value: ha.away_wins.toLocaleString(),
+      icon: Users,
+      accent: 'text-red-600',
+      iconWrap: 'bg-red-50 text-red-600',
+    },
+    {
+      label: 'Draws',
+      value: ha.draws.toLocaleString(),
+      icon: Clock,
+      accent: 'text-gray-600',
+      iconWrap: 'bg-gray-50 text-gray-600',
+    },
+    {
+      label: 'Home Win %',
+      value: ha.home_win_pct.toFixed(1) + '%',
+      icon: Users,
+      accent: 'text-green-600',
+      iconWrap: 'bg-green-50 text-green-600',
+    },
+    {
+      label: 'Shootouts',
+      value: s.total_shootouts.toLocaleString(),
+      icon: Clock,
+      accent: 'text-amber-600',
+      iconWrap: 'bg-amber-50 text-amber-600',
+    },
+    {
+      label: 'Own Goals',
+      value: g.own_goals.toLocaleString(),
+      icon: Goal,
+      accent: 'text-rose-600',
+      iconWrap: 'bg-rose-50 text-rose-600',
+    },
+    {
+      label: 'Penalty Goals',
+      value: g.penalty_goals.toLocaleString(),
+      icon: Goal,
+      accent: 'text-emerald-600',
+      iconWrap: 'bg-emerald-50 text-emerald-600',
+    },
+    {
+      label: 'Defunct Nations',
+      value: f.total_renamed_countries.toLocaleString(),
+      icon: Flag,
+      accent: 'text-gray-600',
+      iconWrap: 'bg-gray-50 text-gray-600',
+    },
+    {
+      label: 'Tournaments Count',
+      value: r.tournaments_count.toLocaleString(),
+      icon: Trophy,
+      accent: 'text-amber-600',
+      iconWrap: 'bg-amber-50 text-amber-600',
+    },
+    {
+      label: 'Teams Scored For',
+      value: g.unique_teams_scored_for.toLocaleString(),
+      icon: Users,
+      accent: 'text-violet-600',
+      iconWrap: 'bg-violet-50 text-violet-600',
     },
   ];
 }
@@ -130,7 +230,7 @@ export function HomeStats() {
 
   if (error) {
     return (
-      <div className="w-full max-w-3xl text-center">
+      <div className="w-full max-w-6xl text-center">
         <p className="text-sm text-gray-400">Stats unavailable right now.</p>
       </div>
     );
@@ -138,8 +238,8 @@ export function HomeStats() {
 
   if (!stats) {
     return (
-      <div className="w-full max-w-3xl grid grid-cols-2 sm:grid-cols-4 gap-3" aria-hidden="true">
-        {Array.from({ length: 8 }).map((_, i) => (
+      <div className="w-full max-w-6xl grid grid-cols-3 gap-4" aria-hidden="true">
+        {Array.from({ length: 18 }).map((_, i) => (
           <div key={i} className="h-24 animate-pulse rounded-xl bg-gray-100" />
         ))}
       </div>
