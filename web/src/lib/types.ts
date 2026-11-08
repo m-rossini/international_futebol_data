@@ -427,3 +427,26 @@ export interface SquadDetailResponse {
   away_team: string;
   squads: SquadTeam[];
 }
+
+export interface StatsBombShot {
+  player_name: string | null;
+  team: string | null;
+  minute: number | null;
+  x: number | null;
+  y: number | null;
+  xg: number | null;
+  body_part: string | null;
+  outcome: string | null;
+}
+
+export interface StatsBombShotsResponse {
+  match_id: string;
+  shots: StatsBombShot[];
+  total_shots: number;
+}
+
+export interface StatsBombEventsResponse {
+  matches_with_events: number;
+  total_events: number;
+  shots: number;
+}

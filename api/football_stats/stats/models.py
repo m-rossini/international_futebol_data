@@ -871,6 +871,41 @@ class SquadDetailResponse(BaseModel):
     model_config = ConfigDict(extra="allow")
 
 
+class StatsBombShot(BaseModel):
+    """A single shot event from StatsBomb Open Data."""
+
+    player_name: Optional[str] = None
+    team: Optional[str] = None
+    minute: Optional[int] = None
+    x: Optional[float] = None
+    y: Optional[float] = None
+    xg: Optional[float] = None
+    body_part: Optional[str] = None
+    outcome: Optional[str] = None
+
+    model_config = ConfigDict(extra="allow")
+
+
+class StatsBombShotsResponse(BaseModel):
+    """GET /statsbomb/shots/{match_id}."""
+
+    match_id: str
+    shots: list[StatsBombShot] = Field(default_factory=list)
+    total_shots: int = 0
+
+    model_config = ConfigDict(extra="allow")
+
+
+class StatsBombEventsResponse(BaseModel):
+    """GET /statsbomb/events."""
+
+    matches_with_events: int = 0
+    total_events: int = 0
+    shots: int = 0
+
+    model_config = ConfigDict(extra="allow")
+
+
 class MatchItem(BaseModel):
     """A single historical match, as embedded in the detail endpoints."""
 

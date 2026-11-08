@@ -1,11 +1,18 @@
+"""Tests for GET /squads and GET /squads/{date}/{home}/{away} endpoints."""
+
+import os
 import pytest
 from fastapi.testclient import TestClient
 
 from tests.helpers import _assert_keys, _assert_status
 
-from football_stats.state import state as _state  # noqa: E402
-
-_HAS_SQUADS = _state.squads is not None and len(_state.squads) > 0
+_DATA_DIR = os.environ.get("DATA_DIR", "")
+_HAS_SQUADS = (
+    os.path.exists(os.path.join(_DATA_DIR, "squads.csv"))
+    and (os.path.getsize(os.path.join(_DATA_DIR, "squads.csv")) > 0)
+    if _DATA_DIR
+    else False
+)
 
 
 class TestSquads:

@@ -36,6 +36,9 @@ from .analysis import (
     build_player_detail,
     squads_list,
     squad_info,
+    load_events,
+    shots_for_match,
+    match_has_events,
     yearly_overview,
     yearly_matches,
     _strip_accents,
@@ -367,6 +370,37 @@ class QueryEngine:
             return squad_info(self._state.squads, match_date, home_team, away_team)
         except ValueError as e:
             return {"error": True, "message": str(e)}
+
+    # ------------------------------------------------------------------
+    #  StatsBomb event queries
+    # ------------------------------------------------------------------
+
+    def statsbomb_events(self, filters: Optional[FilterParams] = None) -> dict:
+        """Load StatsBomb events and return shot data availability."""
+        logger.debug("StatsBomb events requested", extra={"source": "live"})
+        events = load_events()
+        return {
+            "matches_with_events": int(
+                events["match_id"].nunique() if not events.empty else 0
+            ),
+            "total_events": int(len(events)) if not events.empty else 0,
+            "shots": int((events["type"] == "Shot").sum() if not events.empty else 0),
+        }
+
+    def statsbomb_shots(
+        self, match_id: str, filters: Optional[FilterParams] = None
+    ) -> dict:
+        """Return shot events for a specific match (shot map data)."""
+        logger.debug("StatsBomb shots requested: %s", match_id)
+        events = load_events()
+        if not match_has_events(events, match_id):
+            return {"error": True, "message": f"No event data for match {match_id}."}
+        shots = shots_for_match(events, match_id)
+        return {
+            "match_id": match_id,
+            "shots": shots,
+            "total_shots": len(shots),
+        }
 
     # ------------------------------------------------------------------
     #  Year queries
