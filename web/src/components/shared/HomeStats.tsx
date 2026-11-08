@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Users, Trophy, Target, CalendarDays, MapPin, Globe, Goal, Clock } from 'lucide-react';
+import { Users, Trophy, Target, MapPin, Globe, Goal, Clock, Flag } from 'lucide-react';
 import { logApiCall } from '@/lib/observability';
 
 const API = '/api/proxy';
