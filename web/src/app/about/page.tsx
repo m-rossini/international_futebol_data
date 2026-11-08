@@ -55,7 +55,7 @@ const CREDITS: Credit[] = [
     use: 'Event data, lineups and 360 freeze frames for selected competitions.',
     licence: 'StatsBomb Public Data User Agreement',
     licenceHref: 'https://github.com/statsbomb/open-data/blob/master/LICENSE.pdf',
-    status: 'Planned',
+    status: 'Used now',
   },
   {
     name: 'OpenFootball',
@@ -63,7 +63,7 @@ const CREDITS: Credit[] = [
     use: 'Tournament squad lists.',
     licence: 'Public domain',
     licenceHref: 'https://github.com/openfootball',
-    status: 'Planned',
+    status: 'Used now',
   },
   {
     name: 'Wikidata',
@@ -71,7 +71,7 @@ const CREDITS: Credit[] = [
     use: 'Player dates of birth, positions and aliases.',
     licence: 'CC0 1.0',
     licenceHref: 'https://www.wikidata.org/wiki/Wikidata:Licensing',
-    status: 'Planned',
+    status: 'Used now',
   },
 ];
 
