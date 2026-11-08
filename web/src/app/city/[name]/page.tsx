@@ -35,7 +35,8 @@ async function fetchCity(name: string): Promise<{
 
 export default async function CityPage({ params }: { params: Promise<{ name: string }> }) {
   const { name } = await params;
-  const { detail, error } = await fetchCity(name);
+  const decodedName = decodeURIComponent(name);
+  const { detail, error } = await fetchCity(decodedName);
 
-  return <CityClient name={name} detail={detail} error={error} />;
+  return <CityClient name={decodedName} detail={detail} error={error} />;
 }

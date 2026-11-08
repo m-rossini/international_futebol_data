@@ -49,7 +49,8 @@ async function fetchCountry(name: string): Promise<{
 
 export default async function CountryPage({ params }: { params: Promise<{ name: string }> }) {
   const { name } = await params;
-  const { detail, cities, error } = await fetchCountry(name);
+  const decodedName = decodeURIComponent(name);
+  const { detail, cities, error } = await fetchCountry(decodedName);
 
-  return <CountryClient name={name} detail={detail} cities={cities} error={error} />;
+  return <CountryClient name={decodedName} detail={detail} cities={cities} error={error} />;
 }

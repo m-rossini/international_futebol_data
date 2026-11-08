@@ -871,8 +871,8 @@ class SquadDetailResponse(BaseModel):
     model_config = ConfigDict(extra="allow")
 
 
-class StatsBombShot(BaseModel):
-    """A single shot event from StatsBomb Open Data."""
+class ShotMapsShot(BaseModel):
+    """A single shot event from ShotMaps Open Data."""
 
     player_name: Optional[str] = None
     team: Optional[str] = None
@@ -886,18 +886,18 @@ class StatsBombShot(BaseModel):
     model_config = ConfigDict(extra="allow")
 
 
-class StatsBombShotsResponse(BaseModel):
-    """GET /statsbomb/shots/{match_id}."""
+class ShotMapsShotsResponse(BaseModel):
+    """GET /shot_maps/shots/{match_id}."""
 
     match_id: str
-    shots: list[StatsBombShot] = Field(default_factory=list)
+    shots: list[ShotMapsShot] = Field(default_factory=list)
     total_shots: int = 0
 
     model_config = ConfigDict(extra="allow")
 
 
-class StatsBombEventsResponse(BaseModel):
-    """GET /statsbomb/events."""
+class ShotMapsEventsResponse(BaseModel):
+    """GET /shot_maps/events."""
 
     matches_with_events: int = 0
     total_events: int = 0

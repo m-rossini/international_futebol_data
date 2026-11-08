@@ -428,7 +428,7 @@ export interface SquadDetailResponse {
   squads: SquadTeam[];
 }
 
-export interface StatsBombShot {
+export interface ShotMapsShot {
   player_name: string | null;
   team: string | null;
   minute: number | null;
@@ -439,13 +439,13 @@ export interface StatsBombShot {
   outcome: string | null;
 }
 
-export interface StatsBombShotsResponse {
+export interface ShotMapsShotsResponse {
   match_id: string;
-  shots: StatsBombShot[];
+  shots: ShotMapsShot[];
   total_shots: number;
 }
 
-export interface StatsBombEventsResponse {
+export interface ShotMapsEventsResponse {
   matches_with_events: number;
   total_events: number;
   shots: number;

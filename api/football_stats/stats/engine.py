@@ -33,7 +33,6 @@ from .analysis import (
     countries_list,
     country_info,
     former_names_list,
-    build_players,
     build_player_detail,
     squads_list,
     squad_info,
@@ -345,8 +344,8 @@ class QueryEngine:
 
     def players(self, filters: Optional[FilterParams] = None) -> list:
         """List all player entities derived from goalscorers.csv."""
-        logger.debug("Players list", extra={"source": "live"})
-        return build_players(self._state.goalscorers)
+        logger.debug("Players list", extra={"source": "cache"})
+        return self._state.cache_players_list
 
     def player(self, name: str, filters: Optional[FilterParams] = None) -> dict:
         """Comprehensive stats for a specific player."""
@@ -382,12 +381,12 @@ class QueryEngine:
             return {"error": True, "message": str(e)}
 
     # ------------------------------------------------------------------
-    #  StatsBomb event queries
+    #  ShotMaps event queries
     # ------------------------------------------------------------------
 
-    def statsbomb_events(self, filters: Optional[FilterParams] = None) -> dict:
-        """Load StatsBomb events and return shot data availability."""
-        logger.debug("StatsBomb events requested", extra={"source": "live"})
+    def shot_maps_events(self, filters: Optional[FilterParams] = None) -> dict:
+        """Load ShotMaps events and return shot data availability."""
+        logger.debug("ShotMaps events requested", extra={"source": "live"})
         events = load_events()
         return {
             "matches_with_events": int(
@@ -397,11 +396,11 @@ class QueryEngine:
             "shots": int((events["type"] == "Shot").sum() if not events.empty else 0),
         }
 
-    def statsbomb_shots(
+    def shot_maps_shots(
         self, match_id: str, filters: Optional[FilterParams] = None
     ) -> dict:
         """Return shot events for a specific match (shot map data)."""
-        logger.debug("StatsBomb shots requested: %s", match_id)
+        logger.debug("ShotMaps shots requested: %s", match_id)
         events = load_events()
         if not match_has_events(events, match_id):
             return {"error": True, "message": f"No event data for match {match_id}."}

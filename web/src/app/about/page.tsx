@@ -50,7 +50,7 @@ const CREDITS: Credit[] = [
     status: 'Used now',
   },
   {
-    name: 'StatsBomb Open Data',
+    name: 'Shot Maps Open Data',
     href: 'https://github.com/statsbomb/open-data',
     use: 'Event data, lineups and 360 freeze frames for selected competitions.',
     licence: 'StatsBomb Public Data User Agreement',

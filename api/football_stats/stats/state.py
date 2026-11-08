@@ -30,6 +30,7 @@ _CACHE_TEAMS = os.path.join(_CACHE_DIR, "teams_list.pkl")
 _CACHE_TOURNAMENTS = os.path.join(_CACHE_DIR, "tournaments_list.pkl")
 _CACHE_COUNTRIES = os.path.join(_CACHE_DIR, "countries_list.pkl")
 _CACHE_CITIES = os.path.join(_CACHE_DIR, "cities_list.pkl")
+_CACHE_PLAYERS = os.path.join(_CACHE_DIR, "players_list.pkl")
 
 
 def _drop_future_rows(df: pd.DataFrame, label: str) -> pd.DataFrame:
@@ -66,6 +67,7 @@ class DataState:
         self._cache_tournaments_list: list[dict] | None = None
         self._cache_countries_list: list[dict] | None = None
         self._cache_cities_list: list[dict] | None = None
+        self._cache_players_list: list[dict] | None = None
 
     @property
     def enriched(self) -> pd.DataFrame:
@@ -102,6 +104,13 @@ class DataState:
             raise RuntimeError("Precomputed caches not loaded. Call reload() first.")
         return self._cache_cities_list
 
+    @property
+    def cache_players_list(self) -> list[dict]:
+        """Return the cached players list."""
+        if self._cache_players_list is None:
+            raise RuntimeError("Precomputed caches not loaded. Call reload() first.")
+        return self._cache_players_list
+
     def _get_csv_sizes(self) -> dict[str, int]:
         """Get file sizes of all source CSVs for staleness detection."""
         sizes: dict[str, int] = {}
@@ -130,6 +139,7 @@ class DataState:
                 _CACHE_TOURNAMENTS,
                 _CACHE_COUNTRIES,
                 _CACHE_CITIES,
+                _CACHE_PLAYERS,
             ]
         ):
             return False
@@ -154,8 +164,10 @@ class DataState:
                 self._cache_countries_list = pickle.load(f)
             with open(_CACHE_CITIES, "rb") as f:
                 self._cache_cities_list = pickle.load(f)
+            with open(_CACHE_PLAYERS, "rb") as f:
+                self._cache_players_list = pickle.load(f)
             logger.info(
-                "Disk cache loaded: %d teams, %d tournaments, %d countries, %d cities",
+                "Disk cache loaded: %d teams, %d tournaments, %d countries, %d cities, %d players",
                 len(self._cache_teams_list),
                 len(self._cache_tournaments_list),
                 len(self._cache_countries_list),
@@ -181,6 +193,8 @@ class DataState:
                 pickle.dump(self._cache_countries_list, f)
             with open(_CACHE_CITIES, "wb") as f:
                 pickle.dump(self._cache_cities_list, f)
+            with open(_CACHE_PLAYERS, "wb") as f:
+                pickle.dump(self._cache_players_list, f)
             with open(_CACHE_META, "w") as f:
                 json.dump(self._get_csv_sizes(), f)
 
@@ -193,6 +207,7 @@ class DataState:
         from .analysis.city import cities_list
         from .analysis.country import countries_list
         from .analysis.enrich import enrich_match_results
+        from .analysis.players import build_players
         from .analysis.team import teams_list
         from .analysis.tournament import tournaments_list
 
@@ -202,12 +217,14 @@ class DataState:
         self._cache_tournaments_list = tournaments_list(self._cache_enriched)
         self._cache_countries_list = countries_list(self._cache_enriched)
         self._cache_cities_list = cities_list(self._cache_enriched)
+        self._cache_players_list = build_players(self.goalscorers)
         logger.info(
-            "Caches computed: %d teams, %d tournaments, %d countries, %d cities",
+            "Caches computed: %d teams, %d tournaments, %d countries, %d cities, %d players",
             len(self._cache_teams_list),
             len(self._cache_tournaments_list),
             len(self._cache_countries_list),
             len(self._cache_cities_list),
+            len(self._cache_players_list),
         )
 
     def reload(self) -> dict:
