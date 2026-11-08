@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Flag, Goal, MapPin, Users, Trophy, Target, Clock, Globe } from 'lucide-react';
+import { Users, Trophy, Target, CalendarDays, MapPin, Globe, Goal, Clock } from 'lucide-react';
 import { logApiCall } from '@/lib/observability';
 
 const API = '/api/proxy';
@@ -23,6 +23,9 @@ interface SummaryResponse {
       away_win_pct: number;
       draw_pct: number;
     };
+    goal_distribution: {
+      total_goals: { mean: number; min: number; max: number; p25: number; p75: number };
+    };
   };
   goalscorers: {
     total_goals_recorded: number;
@@ -30,9 +33,13 @@ interface SummaryResponse {
     unique_teams_scored_for: number;
     own_goals: number;
     penalty_goals: number;
+    scorer_distribution: {
+      goals_per_scorer: { mean: number; max: number; median: number };
+    };
   };
   shootouts: {
     total_shootouts: number;
+    unique_winners: number;
   };
   former_names: {
     total_renamed_countries: number;
@@ -60,6 +67,8 @@ function buildStats(summary: SummaryResponse, filters: FilterOptionsResponse): S
   const s = summary.shootouts;
   const f = summary.former_names;
   const ha = r.home_advantage;
+  const gpg = g.scorer_distribution.goals_per_scorer;
+
   return [
     {
       label: 'Matches Recorded',
@@ -76,6 +85,13 @@ function buildStats(summary: SummaryResponse, filters: FilterOptionsResponse): S
       iconWrap: 'bg-emerald-50 text-emerald-600',
     },
     {
+      label: 'Avg Goals/Match',
+      value: r.avg_goals_per_match.toFixed(2),
+      icon: Clock,
+      accent: 'text-indigo-600',
+      iconWrap: 'bg-indigo-50 text-indigo-600',
+    },
+    {
       label: 'National Teams',
       value: filters.teams.length.toLocaleString(),
       icon: Users,
@@ -88,13 +104,6 @@ function buildStats(summary: SummaryResponse, filters: FilterOptionsResponse): S
       icon: Target,
       accent: 'text-amber-600',
       iconWrap: 'bg-amber-50 text-amber-600',
-    },
-    {
-      label: 'Unique Scorers',
-      value: g.unique_scorers.toLocaleString(),
-      icon: Goal,
-      accent: 'text-rose-600',
-      iconWrap: 'bg-rose-50 text-rose-600',
     },
     {
       label: 'Countries',
@@ -111,11 +120,18 @@ function buildStats(summary: SummaryResponse, filters: FilterOptionsResponse): S
       iconWrap: 'bg-teal-50 text-teal-600',
     },
     {
-      label: 'Avg Goals/Match',
-      value: r.avg_goals_per_match.toFixed(2),
-      icon: Clock,
-      accent: 'text-indigo-600',
-      iconWrap: 'bg-indigo-50 text-indigo-600',
+      label: 'Unique Scorers',
+      value: g.unique_scorers.toLocaleString(),
+      icon: Goal,
+      accent: 'text-rose-600',
+      iconWrap: 'bg-rose-50 text-rose-600',
+    },
+    {
+      label: 'Goals per Scorer',
+      value: gpg.mean.toFixed(1),
+      icon: Goal,
+      accent: 'text-rose-600',
+      iconWrap: 'bg-rose-50 text-rose-600',
     },
     {
       label: 'Home Wins',
@@ -146,6 +162,20 @@ function buildStats(summary: SummaryResponse, filters: FilterOptionsResponse): S
       iconWrap: 'bg-green-50 text-green-600',
     },
     {
+      label: 'Away Win %',
+      value: ha.away_win_pct.toFixed(1) + '%',
+      icon: Users,
+      accent: 'text-red-600',
+      iconWrap: 'bg-red-50 text-red-600',
+    },
+    {
+      label: 'Draw %',
+      value: ha.draw_pct.toFixed(1) + '%',
+      icon: Clock,
+      accent: 'text-gray-600',
+      iconWrap: 'bg-gray-50 text-gray-600',
+    },
+    {
       label: 'Shootouts',
       value: s.total_shootouts.toLocaleString(),
       icon: Clock,
@@ -172,20 +202,6 @@ function buildStats(summary: SummaryResponse, filters: FilterOptionsResponse): S
       icon: Flag,
       accent: 'text-gray-600',
       iconWrap: 'bg-gray-50 text-gray-600',
-    },
-    {
-      label: 'Tournaments Count',
-      value: r.tournaments_count.toLocaleString(),
-      icon: Trophy,
-      accent: 'text-amber-600',
-      iconWrap: 'bg-amber-50 text-amber-600',
-    },
-    {
-      label: 'Teams Scored For',
-      value: g.unique_teams_scored_for.toLocaleString(),
-      icon: Users,
-      accent: 'text-violet-600',
-      iconWrap: 'bg-violet-50 text-violet-600',
     },
   ];
 }
