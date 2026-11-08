@@ -32,6 +32,7 @@ from .analysis import (
     city_info,
     countries_list,
     country_info,
+    former_names_list,
     build_players,
     build_player_detail,
     squads_list,
@@ -328,6 +329,15 @@ class QueryEngine:
             return country_info(self._enriched_filtered(filters), name)
         except ValueError as e:
             return {"error": True, "message": str(e)}
+
+    # ------------------------------------------------------------------
+    #  Former names queries
+    # ------------------------------------------------------------------
+
+    def former_names(self) -> list:
+        """List current → former team name chains with date ranges."""
+        logger.debug("Former names list", extra={"source": "live"})
+        return former_names_list(self._state.former_names)
 
     # ------------------------------------------------------------------
     #  Player queries

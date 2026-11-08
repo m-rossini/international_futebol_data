@@ -1079,3 +1079,23 @@ class LlmProfileResponse(BaseModel):
 
     status: str
     data: dict[str, Any] = Field(default_factory=dict)
+
+
+class FormerNameItem(BaseModel):
+    """One current → former team name chain."""
+
+    current: str
+    former: str
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
+
+    model_config = ConfigDict(extra="allow")
+
+
+class FormerNamesResponse(BaseModel):
+    """GET /former-names."""
+
+    total: int
+    chains: list[FormerNameItem] = Field(default_factory=list)
+
+    model_config = ConfigDict(extra="allow")

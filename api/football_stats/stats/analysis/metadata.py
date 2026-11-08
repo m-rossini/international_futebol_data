@@ -158,3 +158,23 @@ def shootout_stats(shootouts: pd.DataFrame) -> dict:
         "total_shootouts": len(shootouts),
         "most_shootout_wins": winner_counts,
     }
+
+
+def former_names_list(former_names: pd.DataFrame) -> list[dict]:
+    """List all current → former name chains with date ranges."""
+    if former_names is None or former_names.empty:
+        return []
+    df = former_names.copy()
+    df["start_date"] = pd.to_datetime(df["start_date"], errors="coerce")
+    df["end_date"] = pd.to_datetime(df["end_date"], errors="coerce")
+    return [
+        {
+            "current": r["current"],
+            "former": r["former"],
+            "start_date": str(r["start_date"].date())
+            if pd.notna(r["start_date"])
+            else None,
+            "end_date": str(r["end_date"].date()) if pd.notna(r["end_date"]) else None,
+        }
+        for _, r in df.sort_values(["current", "start_date"]).iterrows()
+    ]
