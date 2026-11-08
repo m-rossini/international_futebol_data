@@ -198,9 +198,9 @@ export default function HomePage() {
         )}
       </div>
 
-      {/* Quick nav cards — first 6 nav links, horizontally */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full max-w-6xl">
-        {NAV_LINKS.slice(0, 6).map((item) => (
+      {/* Quick nav cards — all nav links from shared config */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 w-full max-w-6xl">
+        {NAV_LINKS.map((item) => (
           <Link
             key={item.href}
             href={item.href}

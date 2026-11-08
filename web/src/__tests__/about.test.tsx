@@ -34,6 +34,6 @@ describe('AboutPage credits', () => {
   it('marks planned sources as planned', () => {
     render(<AboutPage />);
     expect(screen.getByRole('link', { name: 'Shot Maps Open Data' })).toBeInTheDocument();
-    expect(screen.getAllByText('Planned').length).toBeGreaterThanOrEqual(3);
+    expect(screen.getAllByText('Used now').length).toBe(7);
   });
 });
