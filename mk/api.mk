@@ -50,7 +50,8 @@ api-test-cov: api-build
 api-mcp: api-build
 	$(DOCKER) run --rm -it \
 		-p 7532:7532 \
-		-e API_BASE_URL=http://host.docker.internal:7531 \
+		$(ADD_HOST_FLAG) \
+		-e API_BASE_URL=http://$(HOST_GATEWAY):7531 \
 		-v $(CURDIR)/api:/app \
 		-v $(CURDIR)/releases:/app/releases:ro \
 		$(IMG_API):dev \

@@ -4,7 +4,13 @@
 # Remote targets keep their own explicit runtimes (DEV_* = podman,
 # PROD_* = docker) — this only affects local targets.
 DOCKER     ?= $(shell command -v docker >/dev/null 2>&1 && echo docker || command -v podman >/dev/null 2>&1 && echo podman || echo docker)
-COMPOSE    ?= $(shell if command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then echo "docker compose"; elif command -v podman >/dev/null 2>&1 && podman compose version >/dev/null 2>&1; then echo "podman compose"; elif command -v podman-compose >/dev/null 2>&1; then echo "podman-compose"; else echo "docker compose"; fi)
+# COMPOSE follows the selected runtime so DOCKER=docker implies
+# "docker compose" and DOCKER=podman implies podman compose.
+ifeq ($(DOCKER),podman)
+COMPOSE    ?= $(shell if podman compose version >/dev/null 2>&1; then echo "podman compose"; elif command -v podman-compose >/dev/null 2>&1; then echo "podman-compose"; else echo "podman compose"; fi)
+else
+COMPOSE    ?= docker compose
+endif
 # Host gateway differs per runtime: docker injects host.docker.internal,
 # podman provides host.containers.internal (needs --add-host mapping).
 ifeq ($(DOCKER),podman)
