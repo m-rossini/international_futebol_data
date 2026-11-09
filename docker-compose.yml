@@ -41,6 +41,11 @@ services:
       - ${DATA_VOLUME}:/data:ro,z
     environment:
       - DATA_DIR=/data
+      # Keep uv's project venv out of the ./api bind mount (/app): the image
+      # already bakes a venv into /app/.venv, but the bind hides it, so every
+      # `uv run` would try to create /app/.venv on the shared host dir.
+      # /tmp is container-local and always writable by the runtime user.
+      - UV_PROJECT_ENVIRONMENT=/tmp/.venv
       # HOME/UV cache must be writable when running as a non-root user; uv
       # otherwise defaults to /.cache/uv and fails with permission denied.
       - HOME=/tmp
@@ -76,6 +81,8 @@ services:
       - ./api:/app:z
     environment:
       - API_BASE_URL=http://api:7531
+      # Same as api: keep uv's venv in container-local /tmp, not the bind.
+      - UV_PROJECT_ENVIRONMENT=/tmp/.venv
       # Writable HOME/uv cache for the non-root user (see note under api).
       - HOME=/tmp
       - UV_CACHE_DIR=/tmp/.cache/uv
