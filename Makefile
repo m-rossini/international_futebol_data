@@ -80,7 +80,7 @@ help:
 	@echo ""
 
 # ═══════════════════════════════════════════════════════
-#  Local (this machine — docker compose)
+#  Local (this machine — auto-detected container compose)
 # ═══════════════════════════════════════════════════════
 local-up:
 	$(COMPOSE) up -d --build
