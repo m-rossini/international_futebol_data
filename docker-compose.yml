@@ -39,6 +39,11 @@ services:
       - ./infra/VERSION:/app/infra/VERSION:ro,z
       # Set DATA_VOLUME in .env to point to your CSV directory
       - ${DATA_VOLUME}:/data:ro,z
+      # squads.csv ships in-repo (api/data/squads.csv) while the other CSVs
+      # live in DATA_VOLUME. Mount it into /data so the loader finds the
+      # full set. If squads.csv ever lands in DATA_VOLUME itself, drop this
+      # line — the bind there would be shadowed by this file mount.
+      - ./api/data/squads.csv:/data/squads.csv:ro,z
     environment:
       - DATA_DIR=/data
       # Keep uv's project venv out of the ./api bind mount (/app): the image
