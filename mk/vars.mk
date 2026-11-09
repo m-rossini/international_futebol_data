@@ -1,5 +1,25 @@
-DOCKER     = docker
-COMPOSE    = docker compose
+# ── Container runtime auto-detection ──────────────────
+# Prefers docker when available, falls back to podman. Override by
+# exporting DOCKER / COMPOSE (or `make DOCKER=... COMPOSE=...`).
+# Remote targets keep their own explicit runtimes (DEV_* = podman,
+# PROD_* = docker) — this only affects local targets.
+DOCKER     ?= $(shell command -v docker >/dev/null 2>&1 && echo docker || command -v podman >/dev/null 2>&1 && echo podman || echo docker)
+# COMPOSE follows the selected runtime so DOCKER=docker implies
+# "docker compose" and DOCKER=podman implies podman compose.
+ifeq ($(DOCKER),podman)
+COMPOSE    ?= $(shell if podman compose version >/dev/null 2>&1; then echo "podman compose"; elif command -v podman-compose >/dev/null 2>&1; then echo "podman-compose"; else echo "podman compose"; fi)
+else
+COMPOSE    ?= docker compose
+endif
+# Host gateway differs per runtime: docker injects host.docker.internal,
+# podman provides host.containers.internal (needs --add-host mapping).
+ifeq ($(DOCKER),podman)
+HOST_GATEWAY ?= host.containers.internal
+ADD_HOST_FLAG ?= --add-host=$(HOST_GATEWAY):host-gateway
+else
+HOST_GATEWAY ?= host.docker.internal
+ADD_HOST_FLAG ?=
+endif
 IMG_API    = international-futebol-data
 IMG_WEB    = futebol-web
 PORT_API   = 7531
