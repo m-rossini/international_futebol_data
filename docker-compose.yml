@@ -8,7 +8,11 @@ services:
     ports:
       - "80:80"
     volumes:
-      - ./nginx/conf.d/futebol-local.conf:/etc/nginx/conf.d/default.conf:ro
+      # :z relabels bind mounts as shared container content. Required on
+      # SELinux-enforcing hosts (rootless podman) — without it the container
+      # gets Permission denied on every bind-mounted file. Ignored by
+      # Docker where SELinux is disabled.
+      - ./nginx/conf.d/futebol-local.conf:/etc/nginx/conf.d/default.conf:ro,z
     depends_on:
       - web
       - mcp
@@ -30,11 +34,11 @@ services:
       - "7531:7531"
       - "5678:5678"
     volumes:
-      - ./api:/app
-      - ./releases:/app/releases:ro
-      - ./infra/VERSION:/app/infra/VERSION:ro
+      - ./api:/app:z
+      - ./releases:/app/releases:ro,z
+      - ./infra/VERSION:/app/infra/VERSION:ro,z
       # Set DATA_VOLUME in .env to point to your CSV directory
-      - ${DATA_VOLUME}:/data:ro
+      - ${DATA_VOLUME}:/data:ro,z
     environment:
       - DATA_DIR=/data
       # HOME/UV cache must be writable when running as a non-root user; uv
@@ -69,7 +73,7 @@ services:
     # Same host-user requirement as api (see note there).
     user: "${LOCAL_UID:-1000}:${LOCAL_GID:-1000}"
     volumes:
-      - ./api:/app
+      - ./api:/app:z
     environment:
       - API_BASE_URL=http://api:7531
       # Writable HOME/uv cache for the non-root user (see note under api).
@@ -98,7 +102,7 @@ services:
     ports:
       - "7500:3000"
     volumes:
-      - ./web:/app
+      - ./web:/app:z
       - /app/node_modules
     environment:
       - NEXT_PUBLIC_API_URL=http://api:7531
