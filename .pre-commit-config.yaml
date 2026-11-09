@@ -47,7 +47,7 @@ repos:
         exclude: ^dashboards/
       - id: check-added-large-files
         args: [--maxkb=2000]
-        exclude: ^(api/football_stats/static/scalar-api-reference\.js|api/data/squads\.csv)$
+        exclude: ^(api/football_stats/static/scalar-api-reference\.js|api/data/squads\.csv|api/data/events/.*)$
       - id: check-ast
         files: ^api/
       - id: check-json
