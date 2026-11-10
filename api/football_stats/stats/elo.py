@@ -37,8 +37,13 @@ K_FACTOR = 60
 # Home advantage bonus
 HOME_ADVANTAGE = 100
 
-# Cache file paths (relative to the data directory)
-ELO_CACHE_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "data")
+# Cache file paths. These live in api/.cache (NOT the data directory):
+# runtime cache must never be written into the source tree or the shared
+# DATA_DIR bind — both may be read-only in containers, and api/data is a
+# git-tracked directory. api/.cache is host-persisted via the ./api bind
+# mount, writable by the container user, and gitignored (see root .gitignore).
+# Same convention as state.py's .cache/precomputed.
+ELO_CACHE_DIR = os.path.join(os.path.dirname(__file__), "..", "..", ".cache", "elo")
 ELO_CACHE_FILE = os.path.join(ELO_CACHE_DIR, "elo_ratings.pkl")
 ELO_HASH_FILE = os.path.join(ELO_CACHE_DIR, "elo_matches_hash.txt")
 
@@ -120,7 +125,12 @@ def _save_elo_cache(
             f.write(_matches_hash(matches, elo_config))
         logger.info("ELO ratings cached to disk (%d rows).", len(df))
     except Exception as exc:
-        logger.warning("Failed to write ELO cache: %s", exc)
+        # Fail fast and loud: a cache that cannot be written means every
+        # restart pays the full recalculation, so a silent warning would hide
+        # a broken deployment indefinitely. Crash startup instead.
+        raise RuntimeError(
+            f"Failed to write ELO cache to {ELO_CACHE_FILE}: {exc}"
+        ) from exc
     finally:
         if tmp_path and os.path.exists(tmp_path):
             try:
