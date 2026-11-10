@@ -83,7 +83,9 @@ help:
 #  Local (this machine — auto-detected container compose)
 # ═══════════════════════════════════════════════════════
 local-up:
-	$(COMPOSE) up -d --build
+	$(COMPOSE) up -d --build api mcp web openobserve
+	bash scripts/set-nginx-resolver.sh futebol-local.conf
+	$(COMPOSE) up -d --build nginx
 
 local-down:
 	$(COMPOSE) down
