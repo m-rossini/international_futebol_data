@@ -4,6 +4,7 @@ api-build:
 api-up: api-down
 	$(DOCKER) run -d \
 		--name futebol-api \
+		--user $(CONTAINER_USER) \
 		-p $(PORT_API):7531 \
 		-p 5678:5678 \
 		-e DATA_DIR=/data \
@@ -29,6 +30,7 @@ api-logs:
 
 api-test: api-build
 	$(DOCKER) run --rm -t \
+		--user $(CONTAINER_USER) \
 		-e DATA_DIR=/data \
 		-e FORCE_COLOR=1 \
 		-v $(CURDIR)/api:/app \
@@ -39,6 +41,7 @@ api-test: api-build
 
 api-test-cov: api-build
 	$(DOCKER) run --rm -t \
+		--user $(CONTAINER_USER) \
 		-e DATA_DIR=/data \
 		-e FORCE_COLOR=1 \
 		-v $(CURDIR)/api:/app \
@@ -49,6 +52,7 @@ api-test-cov: api-build
 
 api-mcp: api-build
 	$(DOCKER) run --rm -it \
+		--user $(CONTAINER_USER) \
 		-p 7532:7532 \
 		$(ADD_HOST_FLAG) \
 		-e API_BASE_URL=http://$(HOST_GATEWAY):7531 \
