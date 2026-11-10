@@ -16,9 +16,20 @@ endif
 ifeq ($(DOCKER),podman)
 HOST_GATEWAY ?= host.containers.internal
 ADD_HOST_FLAG ?= --add-host=$(HOST_GATEWAY):host-gateway
+# Rootless podman maps container UID 0 to the invoking host user, while any
+# other UID lands on a subuid with no write access to the bind mounts — so
+# `user: 1000:1000` (correct for Docker) can read but never write.
+# Run as 0:0 under podman: files created in binds stay host-owned.
+CONTAINER_USER ?= 0:0
 else
 HOST_GATEWAY ?= host.docker.internal
 ADD_HOST_FLAG ?=
+# Docker (rootful daemon) maps UIDs 1:1, so run as the host user to keep
+# bind-mounted files host-owned. Resolve here (not in compose) so the
+# exported value is final — compose does not re-expand nested expressions.
+LOCAL_UID ?= 1000
+LOCAL_GID ?= 1000
+CONTAINER_USER ?= $(LOCAL_UID):$(LOCAL_GID)
 endif
 IMG_API    = international-futebol-data
 IMG_WEB    = futebol-web
@@ -28,6 +39,7 @@ PART      ?= patch
 
 -include .env
 export DATA_VOLUME
+export CONTAINER_USER
 
 IMG_API_PROD = $(IMG_API):prod
 IMG_WEB_PROD = $(IMG_WEB):prod

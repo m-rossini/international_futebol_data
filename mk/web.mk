@@ -7,6 +7,7 @@ web-build:
 web-up: web-down
 	$(DOCKER) run -d \
 		--name futebol-web \
+		--user $(CONTAINER_USER) \
 		-p $(PORT_WEB):3000 \
 		-v $(CURDIR)/web:/app \
 		-v /app/node_modules \
@@ -30,6 +31,7 @@ web-logs:
 
 web-test: web-build
 	$(DOCKER) run --rm -t \
+		--user $(CONTAINER_USER) \
 		-v $(CURDIR)/web:/app \
 		-v /app/node_modules \
 		$(IMG_WEB):dev \
@@ -37,6 +39,7 @@ web-test: web-build
 
 web-test-cov: web-build
 	$(DOCKER) run --rm -t \
+		--user $(CONTAINER_USER) \
 		-v $(CURDIR)/web:/app \
 		-v /app/node_modules \
 		$(IMG_WEB):dev \
