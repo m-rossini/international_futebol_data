@@ -9,7 +9,7 @@ web-up: web-down
 		--name futebol-web \
 		--user $(CONTAINER_USER) \
 		-p $(PORT_WEB):3000 \
-		-v $(CURDIR)/web:/app \
+		-v $(CURDIR)/web:/app:z \
 		-v /app/node_modules \
 		--entrypoint /bin/sh \
 		$(IMG_WEB):dev \
@@ -32,7 +32,7 @@ web-logs:
 web-test: web-build
 	$(DOCKER) run --rm -t \
 		--user $(CONTAINER_USER) \
-		-v $(CURDIR)/web:/app \
+		-v $(CURDIR)/web:/app:z \
 		-v /app/node_modules \
 		$(IMG_WEB):dev \
 		sh -c "pnpm test && pnpm lint"
@@ -40,7 +40,7 @@ web-test: web-build
 web-test-cov: web-build
 	$(DOCKER) run --rm -t \
 		--user $(CONTAINER_USER) \
-		-v $(CURDIR)/web:/app \
+		-v $(CURDIR)/web:/app:z \
 		-v /app/node_modules \
 		$(IMG_WEB):dev \
 		sh -c "pnpm vitest run --coverage"
