@@ -180,7 +180,12 @@ class DataState:
             return False
 
     def _save_to_disk_cache(self) -> None:
-        """Save precomputed DataFrames to disk cache. Silently skips if read-only."""
+        """Save precomputed DataFrames to disk cache.
+
+        Fail fast and loud on error: like the ELO cache, an unwritable cache
+        means every restart pays the full recomputation, so a silent warning
+        would hide a broken deployment indefinitely. Crash startup instead.
+        """
         try:
             os.makedirs(_CACHE_DIR, exist_ok=True)
 
@@ -201,7 +206,9 @@ class DataState:
 
             logger.info("Precomputed caches saved to disk.")
         except OSError as e:
-            logger.warning("Could not save precomputed caches to disk: %s", e)
+            raise RuntimeError(
+                f"Could not save precomputed caches to {_CACHE_DIR}: {e}"
+            ) from e
 
     def _compute_caches(self) -> None:
         """Compute all precomputed list DataFrames from raw results."""

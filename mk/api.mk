@@ -8,8 +8,8 @@ api-up: api-down
 		-p $(PORT_API):7531 \
 		-p 5678:5678 \
 		-e DATA_DIR=/data \
-		-v $(CURDIR)/api:/app \
-		-v $(DATA_VOLUME):/data:ro \
+		-v $(CURDIR)/api:/app:z \
+		-v $(DATA_VOLUME):/data:ro,z \
 		--entrypoint /bin/sh \
 		$(IMG_API):dev \
 		-c "sleep infinity"
@@ -33,9 +33,9 @@ api-test: api-build
 		--user $(CONTAINER_USER) \
 		-e DATA_DIR=/data \
 		-e FORCE_COLOR=1 \
-		-v $(CURDIR)/api:/app \
-		-v $(CURDIR)/releases:/app/releases:ro \
-		-v $(DATA_VOLUME):/data:ro \
+		-v $(CURDIR)/api:/app:z \
+		-v $(CURDIR)/releases:/app/releases:ro,z \
+		-v $(DATA_VOLUME):/data:ro,z \
 		$(IMG_API):dev \
 		sh -c "uv sync && PYTHONPATH=football_stats uv run pytest tests/ -v --color=yes"
 
@@ -44,9 +44,9 @@ api-test-cov: api-build
 		--user $(CONTAINER_USER) \
 		-e DATA_DIR=/data \
 		-e FORCE_COLOR=1 \
-		-v $(CURDIR)/api:/app \
-		-v $(CURDIR)/releases:/app/releases:ro \
-		-v $(DATA_VOLUME):/data:ro \
+		-v $(CURDIR)/api:/app:z \
+		-v $(CURDIR)/releases:/app/releases:ro,z \
+		-v $(DATA_VOLUME):/data:ro,z \
 		$(IMG_API):dev \
 		sh -c "uv sync && PYTHONPATH=football_stats uv run pytest tests/ -v --color=yes --cov=football_stats --cov-report=term-missing"
 
@@ -56,7 +56,7 @@ api-mcp: api-build
 		-p 7532:7532 \
 		$(ADD_HOST_FLAG) \
 		-e API_BASE_URL=http://$(HOST_GATEWAY):7531 \
-		-v $(CURDIR)/api:/app \
-		-v $(CURDIR)/releases:/app/releases:ro \
+		-v $(CURDIR)/api:/app:z \
+		-v $(CURDIR)/releases:/app/releases:ro,z \
 		$(IMG_API):dev \
 		uv run python football_stats/mcp_server.py --transport sse --port 7532
