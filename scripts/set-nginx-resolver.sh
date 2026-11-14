@@ -25,19 +25,21 @@ grep -q "$PLACEHOLDER" "$CONF" || { echo "$CONF has no $PLACEHOLDER placeholder;
 # Any running container on the compose network reports the same resolver.
 # Prefer reading /etc/resolv.conf from a live container, since that is
 # authoritative for whichever runtime is in use (Docker vs Podman).
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+RUNTIME=$(sh "$SCRIPT_DIR/container-runtime.sh" runtime)
 RESOLVER=""
-RUNTIME=$(command -v podman || command -v docker || true)
 for name in futebol-api futebol-web futebol-observe api web openobserve; do
-    if [ -n "$RUNTIME" ] && out=$($RUNTIME exec "$name" cat /etc/resolv.conf 2>/dev/null); then
+    if out=$("$RUNTIME" exec "$name" cat /etc/resolv.conf 2>/dev/null); then
         RESOLVER=$(printf '%s\n' "$out" | awk '/^nameserver/ { print $2; exit }')
         [ -n "$RESOLVER" ] && break
     fi
 done
 
 if [ -z "$RESOLVER" ]; then
-    # Fall back to the network gateway, then to Docker's embedded DNS.
-    NET=$(command -v podman >/dev/null 2>&1 && echo podman || echo docker)
-    RESOLVER=$(podman network inspect futebol_default --format '{{range .Subnets}}{{.Gateway}}{{end}}' 2>/dev/null || true)
+    # Fall back to the Podman network gateway, then to Docker's embedded DNS.
+    if [ "$RUNTIME" = "podman" ]; then
+        RESOLVER=$(podman network inspect futebol_default --format '{{range .Subnets}}{{.Gateway}}{{end}}' 2>/dev/null || true)
+    fi
     [ -z "$RESOLVER" ] && RESOLVER="127.0.0.11"
     echo "  (could not read resolv.conf from a container; falling back to $RESOLVER)"
 fi
