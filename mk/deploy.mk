@@ -1,3 +1,9 @@
+# Remote runtime selection is delegated to scripts/container-runtime.sh, which
+# auto-detects docker (WSL, Debian) or podman (Fedora) on the target host.
+# Set DOCKER_CMD / COMPOSE_CMD (or the DEV_* / PROD_* variables) to override.
+REMOTE_RUNTIME = CONTAINER_RUNTIME='$(DOCKER_CMD)' bash scripts/container-runtime.sh
+REMOTE_COMPOSE = CONTAINER_COMPOSE='$(COMPOSE_CMD)' bash scripts/container-runtime.sh compose
+
 build:
 	@echo "Building production images…"
 	$(DOCKER) build -f api/Dockerfile --build-context releases=./releases --build-context infra=./infra --target production -t $(IMG_API_PROD) api/
@@ -41,18 +47,18 @@ publish-images:
 release-images:
 	@test -n "$(HOST)" || (echo "ERROR: HOST is not set." && exit 1)
 	@echo "Loading images on $(HOST)…"
-	ssh $(HOST) "$(DOCKER_CMD) load < $(DEPLOY_DIR)/tmp/api.tar && $(DOCKER_CMD) load < $(DEPLOY_DIR)/tmp/web.tar"
+	ssh $(HOST) "cd $(DEPLOY_DIR) && $(REMOTE_RUNTIME) load tmp/api.tar tmp/web.tar"
 	@echo "Images loaded"
 
 deploy-stack:
 	@test -n "$(HOST)" || (echo "ERROR: HOST is not set." && exit 1)
 	@echo "Deploying on $(HOST)…"
 	@echo "  1/5 Stopping old containers…"
-	ssh $(HOST) "cd $(DEPLOY_DIR) && $(COMPOSE_CMD) stop api mcp web openobserve 2>/dev/null || true"
+	ssh $(HOST) "cd $(DEPLOY_DIR) && $(REMOTE_COMPOSE) stop api mcp web openobserve 2>/dev/null || true"
 	@echo "  2/5 Decompressing data…"
 	ssh $(HOST) "cd $(DEPLOY_DIR) && mkdir -p data && tar xzf tmp/data.tar.gz -C data/ 2>/dev/null || true"
 	@echo "  3/5 Starting containers…"
-	ssh $(HOST) "cd $(DEPLOY_DIR) && $(COMPOSE_CMD) up -d --no-deps --force-recreate api mcp web openobserve"
+	ssh $(HOST) "cd $(DEPLOY_DIR) && $(REMOTE_COMPOSE) up -d --no-deps --force-recreate api mcp web openobserve"
 	@echo "  4/5 Substituting nginx DNS resolver…"
 	@# The compose network now exists, so the container DNS server can be read
 	@# from the running containers. Podman's resolver is the network gateway,
@@ -61,17 +67,17 @@ deploy-stack:
 	ssh $(HOST) "cd $(DEPLOY_DIR) && bash scripts/set-nginx-resolver.sh $(NGINX_DST)"
 	@echo "  5/5 Starting nginx…"
 	@# Started last so it resolves the freshly assigned upstream addresses.
-	ssh $(HOST) "cd $(DEPLOY_DIR) && $(COMPOSE_CMD) up -d --no-deps --force-recreate nginx"
+	ssh $(HOST) "cd $(DEPLOY_DIR) && $(REMOTE_COMPOSE) up -d --no-deps --force-recreate nginx"
 	$(POST_DEPLOY)
 	@echo "  Initializing observability…"
 	ssh $(HOST) "cd $(DEPLOY_DIR) && bash scripts/init-observability.sh 2>&1 || true"
 	@echo "  Verifying…"
-	ssh $(HOST) "cd $(DEPLOY_DIR) && $(COMPOSE_CMD) ps"
+	ssh $(HOST) "cd $(DEPLOY_DIR) && $(REMOTE_COMPOSE) ps"
 	ssh $(HOST) "rm -rf $(DEPLOY_DIR)/tmp"
 	@echo "Deploy complete"
 
 stop-stack:
 	@test -n "$(HOST)" || (echo "ERROR: HOST is not set." && exit 1)
 	@echo "Bringing down all services on $(HOST)…"
-	ssh $(HOST) "cd $(DEPLOY_DIR) && $(COMPOSE_CMD) down -v 2>/dev/null || true"
+	ssh $(HOST) "cd $(DEPLOY_DIR) && $(REMOTE_COMPOSE) down -v 2>/dev/null || true"
 	@echo "Services stopped"

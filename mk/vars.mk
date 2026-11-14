@@ -1,8 +1,9 @@
 # ── Container runtime auto-detection ──────────────────
 # Prefers docker when available, falls back to podman. Override by
 # exporting DOCKER / COMPOSE (or `make DOCKER=... COMPOSE=...`).
-# Remote targets keep their own explicit runtimes (DEV_* = podman,
-# PROD_* = docker) — this only affects local targets.
+# Remote targets detect their own runtime via scripts/container-runtime.sh
+# (docker on WSL/Debian, podman on Fedora). DEV_*/PROD_* below are optional
+# overrides, empty by default.
 DOCKER     ?= $(shell if command -v docker >/dev/null 2>&1; then echo docker; elif command -v podman >/dev/null 2>&1; then echo podman; else echo docker; fi)
 # COMPOSE follows the selected runtime so DOCKER=docker implies
 # "docker compose" and DOCKER=podman implies podman compose.
@@ -48,14 +49,14 @@ STAGING      = /tmp/futebol-vps
 DEV_HOST       ?= boyz@192.168.1.198
 DEV_USER       = $(firstword $(subst @, ,$(DEV_HOST)))
 DEV_DEPLOY_DIR ?= /opt/futebol
-DEV_DOCKER      = podman
-DEV_COMPOSE     = podman-compose
+DEV_DOCKER      ?=
+DEV_COMPOSE     ?=
 DEV_COMPOSE_FILE = docker-compose.vps-internal.yml
 
 PROD_HOST       ?=
 PROD_DEPLOY_DIR ?= /opt/futebol
-PROD_DOCKER     ?= docker
-PROD_COMPOSE    ?= docker compose
+PROD_DOCKER     ?=
+PROD_COMPOSE    ?=
 PROD_COMPOSE_FILE = docker-compose.vps.yml
 DOMAIN         ?= orbisplace.co.uk
 ENV_FILE       ?= .env.vps.example
