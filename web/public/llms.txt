@@ -23,7 +23,7 @@
 - /house-keeping — Teams mapped to countries and flags
 
 ## API
-The site exposes a REST API at /api/proxy/ with endpoints for teams, tournaments, matches, rankings, and filters. An MCP server is also available at futebol-mcp.orbisplace.co.uk.
+The site exposes a REST API at /api/proxy/ with endpoints for teams, tournaments, matches, rankings, and filters. An MCP server is also available at https://futebol-mcp.orbisplace.co.uk/mcp (Streamable HTTP).
 
 ## Data Coverage
 Matches from 1872 to present day. Includes FIFA and non-FIFA teams, CONIFA World Cup, regional competitions, youth tournaments, and historical qualifiers.
