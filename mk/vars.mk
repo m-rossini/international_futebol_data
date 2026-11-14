@@ -3,7 +3,7 @@
 # exporting DOCKER / COMPOSE (or `make DOCKER=... COMPOSE=...`).
 # Remote targets keep their own explicit runtimes (DEV_* = podman,
 # PROD_* = docker) — this only affects local targets.
-DOCKER     ?= $(shell command -v docker >/dev/null 2>&1 && echo docker || command -v podman >/dev/null 2>&1 && echo podman || echo docker)
+DOCKER     ?= $(shell if command -v docker >/dev/null 2>&1; then echo docker; elif command -v podman >/dev/null 2>&1; then echo podman; else echo docker; fi)
 # COMPOSE follows the selected runtime so DOCKER=docker implies
 # "docker compose" and DOCKER=podman implies podman compose.
 ifeq ($(DOCKER),podman)
