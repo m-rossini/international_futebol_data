@@ -6,8 +6,14 @@ Thin HTTP wrapper — calls the REST API on localhost:7531 instead of loading da
 No pandas, no QueryEngine, no DataState. Just httpx.
 
 Usage:
-    python football_stats/mcp_server.py                  # stdio transport
-    python football_stats/mcp_server.py --transport sse --port 7532
+    python football_stats/mcp_server.py                        # streamable HTTP on :7532/mcp
+    python football_stats/mcp_server.py --transport stdio      # stdio (Claude Desktop, local agents)
+    python football_stats/mcp_server.py --transport sse        # deprecated legacy SSE
+
+The streamable HTTP transport implements the MCP spec revision 2025-03-26+
+(Streamable HTTP). The legacy HTTP+SSE transport from 2024-11-05 remains
+available with ``--transport sse`` but is deprecated and should not be used
+for new clients.
 """
 
 import argparse
@@ -24,6 +30,11 @@ from mcp.server.fastmcp import FastMCP
 # ---------------------------------------------------------------------------
 API_BASE = os.environ.get("API_BASE_URL", "http://localhost:7531")
 REQUEST_TIMEOUT = float(os.environ.get("MCP_REQUEST_TIMEOUT", "30"))
+
+# HTTP transport settings (streamable HTTP / legacy SSE)
+MCP_HOST = os.environ.get("MCP_HOST", "0.0.0.0")
+MCP_PORT = int(os.environ.get("MCP_PORT", "7532"))
+MCP_HTTP_PATH = os.environ.get("MCP_HTTP_PATH", "/mcp")
 
 logging.basicConfig(level=logging.INFO, stream=sys.stderr)
 logger = logging.getLogger("mcp_server")
@@ -75,8 +86,11 @@ def _filter_params(
 # ---------------------------------------------------------------------------
 mcp = FastMCP(
     "International Football Stats",
-    host="0.0.0.0",
-    port=int(os.environ.get("MCP_PORT", "7532")),
+    host=MCP_HOST,
+    port=MCP_PORT,
+    # Streamable HTTP endpoint used by the current MCP spec. Exposed at
+    # http://<host>:<port>/mcp by default; override with MCP_HTTP_PATH.
+    streamable_http_path=MCP_HTTP_PATH,
 )
 
 
@@ -337,24 +351,69 @@ def get_country(
 # ---------------------------------------------------------------------------
 #  Entry point
 # ---------------------------------------------------------------------------
-if __name__ == "__main__":
+TRANSPORTS = ["streamable-http", "stdio", "sse"]
+DEFAULT_TRANSPORT = "streamable-http"
+
+
+def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(
         description="MCP Server for International Football Stats (API wrapper)"
     )
     parser.add_argument(
         "--transport",
-        choices=["stdio", "sse"],
-        default="stdio",
-        help="Transport protocol (default: stdio for Claude Desktop / local agents)",
+        choices=TRANSPORTS,
+        default=DEFAULT_TRANSPORT,
+        help=(
+            "Transport protocol (default: streamable-http, the current MCP "
+            "spec; use stdio for local agents such as Claude Desktop; sse is "
+            "deprecated)"
+        ),
     )
     parser.add_argument(
-        "--port", type=int, default=7532, help="Port for SSE transport (default: 7532)"
+        "--host",
+        default=MCP_HOST,
+        help=f"Bind address for HTTP transports (default: {MCP_HOST})",
     )
-    args = parser.parse_args()
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=MCP_PORT,
+        help=f"Port for HTTP transports (default: {MCP_PORT})",
+    )
+    parser.add_argument(
+        "--path",
+        default=MCP_HTTP_PATH,
+        help=f"Endpoint path for streamable-http (default: {MCP_HTTP_PATH})",
+    )
+    args = parser.parse_args(argv)
 
-    logger.info("MCP server starting — transport=%s, api=%s", args.transport, API_BASE)
-    if args.transport == "sse":
-        mcp.settings.port = args.port
-        mcp.run(transport="sse")
-    else:
+    mcp.settings.host = args.host
+    mcp.settings.port = args.port
+    mcp.settings.streamable_http_path = args.path
+
+    if args.transport == "stdio":
+        logger.info("MCP server starting — transport=stdio, api=%s", API_BASE)
         mcp.run(transport="stdio")
+        return
+
+    if args.transport == "sse":
+        logger.warning(
+            "The SSE transport is deprecated by the MCP specification; "
+            "use --transport streamable-http instead"
+        )
+        mcp.run(transport="sse")
+        return
+
+    logger.info(
+        "MCP server starting — transport=streamable-http, "
+        "endpoint=http://%s:%d%s, api=%s",
+        args.host,
+        args.port,
+        args.path,
+        API_BASE,
+    )
+    mcp.run(transport="streamable-http")
+
+
+if __name__ == "__main__":
+    main()
