@@ -59,4 +59,4 @@ api-mcp: api-build
 		-v $(CURDIR)/api:/app:z \
 		-v $(CURDIR)/releases:/app/releases:ro,z \
 		$(IMG_API):dev \
-		uv run python football_stats/mcp_server.py --transport sse --port 7532
+		uv run python football_stats/mcp_server.py --transport streamable-http --port 7532
