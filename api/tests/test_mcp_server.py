@@ -127,6 +127,56 @@ class TestModuleImport:
         assert mcp_server.mcp is mock_mcp_and_fastmcp.FastMCP.return_value
 
 
+class TestTransportSelection:
+    """Tests for the CLI transport dispatch."""
+
+    def test_default_transport_is_streamable_http(self, mock_mcp_and_fastmcp):
+        """Running without flags starts the streamable HTTP transport."""
+        import football_stats.mcp_server as mcp_server
+
+        mcp_server.mcp.run.reset_mock()
+        mcp_server.main([])
+        mcp_server.mcp.run.assert_called_once_with(transport="streamable-http")
+
+    def test_stdio_transport(self, mock_mcp_and_fastmcp):
+        """--transport stdio still starts the stdio transport."""
+        import football_stats.mcp_server as mcp_server
+
+        mcp_server.mcp.run.reset_mock()
+        mcp_server.main(["--transport", "stdio"])
+        mcp_server.mcp.run.assert_called_once_with(transport="stdio")
+
+    def test_sse_transport_is_still_available(self, mock_mcp_and_fastmcp):
+        """--transport sse remains available as a deprecated fallback."""
+        import football_stats.mcp_server as mcp_server
+
+        mcp_server.mcp.run.reset_mock()
+        mcp_server.main(["--transport", "sse"])
+        mcp_server.mcp.run.assert_called_once_with(transport="sse")
+
+    def test_http_settings_from_cli(self, mock_mcp_and_fastmcp):
+        """--host/--port/--path configure the FastMCP HTTP settings."""
+        from football_stats.mcp_server import main
+
+        import football_stats.mcp_server as mcp_server
+
+        mcp_server.mcp.settings.reset_mock()
+        main(["--host", "127.0.0.1", "--port", "9000", "--path", "/custom"])
+        assert mcp_server.mcp.settings.host == "127.0.0.1"
+        assert mcp_server.mcp.settings.port == 9000
+        assert mcp_server.mcp.settings.streamable_http_path == "/custom"
+
+    def test_fastmcp_gets_streamable_http_path(self, mock_mcp_and_fastmcp):
+        """FastMCP is constructed with the streamable HTTP path."""
+        import importlib
+
+        import football_stats.mcp_server as mcp_server
+
+        importlib.reload(mcp_server)
+        kwargs = mock_mcp_and_fastmcp.FastMCP.call_args.kwargs
+        assert kwargs["streamable_http_path"].startswith("/")
+
+
 class TestGetToolDefinitions:
     """Tests for get_tool_definitions (used by LLM service)."""
 

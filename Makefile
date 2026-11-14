@@ -35,7 +35,7 @@ help:
 	@echo "    make api-logs           Tail container logs"
 	@echo "    make api-test           Run pytest (ephemeral)"
 	@echo "    make api-test-cov       Run pytest with coverage"
-	@echo "    make api-mcp            Run MCP server via SSE (ephemeral, port 7532, needs API running)"
+	@echo "    make api-mcp            Run MCP server via streamable HTTP (ephemeral, :7532/mcp, needs API running)"
 	@echo ""
 	@echo "  WEB (dev container — attach VS Code)"
 	@echo "    make web-flags          Download flag SVGs"

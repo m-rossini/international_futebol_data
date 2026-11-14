@@ -96,6 +96,41 @@ Most list endpoints accept optional query parameters:
 
 ---
 
+## MCP Server
+
+`football_stats/mcp_server.py` exposes the REST API as MCP tools. It supports
+the **Streamable HTTP** transport (MCP spec revision 2025-03-26 and later),
+which is the default, plus **stdio** for local agents.
+
+```bash
+# Streamable HTTP — endpoint at http://localhost:7532/mcp
+uv run python football_stats/mcp_server.py
+
+# stdio (Claude Desktop, local agents)
+uv run python football_stats/mcp_server.py --transport stdio
+
+# Legacy HTTP+SSE (deprecated, kept for old clients)
+uv run python football_stats/mcp_server.py --transport sse
+```
+
+CLI flags: `--host`, `--port` (default `7532`) and `--path` (default `/mcp`).
+The same values can be set with `MCP_HOST`, `MCP_PORT` and `MCP_HTTP_PATH`.
+
+Client configuration for the hosted instance:
+
+```json
+{
+  "mcpServers": {
+    "futebol": {
+      "type": "streamable-http",
+      "url": "https://futebol-mcp.orbisplace.co.uk/mcp"
+    }
+  }
+}
+```
+
+---
+
 ## LLM Conversation
 
 The API supports natural language queries via an LLM-powered `/conversation` endpoint. Users can ask questions in plain English and receive data-driven answers based on the loaded football statistics.

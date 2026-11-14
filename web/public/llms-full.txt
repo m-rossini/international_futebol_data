@@ -44,7 +44,10 @@ The REST API at /api/proxy/ provides:
 - GET /filters — Available filter values (teams, tournaments, countries)
 
 ## MCP Server
-An MCP (Model Context Protocol) server is available at futebol-mcp.orbisplace.co.uk for AI assistants to query the database programmatically.
+An MCP (Model Context Protocol) server is available for AI assistants to query
+the database programmatically. It uses the Streamable HTTP transport at:
+
+  https://futebol-mcp.orbisplace.co.uk/mcp
 
 ## Technical Details
 - Built with Next.js (React) frontend and Python FastAPI backend
