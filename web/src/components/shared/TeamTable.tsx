@@ -1,7 +1,9 @@
 'use client';
 
 import { useMemo } from 'react';
-import { DataTable } from '@/components/shared/DataTable';
+import Link from 'next/link';
+import { ClipboardList } from 'lucide-react';
+import { DataTable, type Column } from '@/components/shared/DataTable';
 import { FilterBar } from '@/components/shared/FilterBar';
 import { TEAMS_COLUMNS } from '@/lib/team-columns';
 import type { TeamItem } from '@/lib/types';
@@ -18,6 +20,8 @@ interface Props {
   minMatches?: number;
   onMinMatchesChange?: (value: number) => void;
   defaultSort?: { key: string; dir: 'asc' | 'desc' };
+  /** Teams with squad data — renders a squad action button for those rows. */
+  squadTeams?: Set<string> | null;
 }
 
 export function TeamTable({
@@ -31,11 +35,35 @@ export function TeamTable({
   minMatches = 0,
   onMinMatchesChange,
   defaultSort = { key: 'matches_played', dir: 'desc' },
+  squadTeams,
 }: Props) {
   const filteredData = useMemo(() => {
     if (minMatches <= 0) return data;
     return data.filter((t) => t.matches_played >= minMatches);
   }, [data, minMatches]);
+
+  const columns = useMemo<Column<TeamItem>[]>(() => {
+    if (!squadTeams) return TEAMS_COLUMNS;
+    return [
+      ...TEAMS_COLUMNS,
+      {
+        key: 'squads',
+        header: '',
+        sortable: false,
+        render: (row) =>
+          squadTeams.has(row.team) ? (
+            <Link
+              href={`/teams/${encodeURIComponent(row.team)}#squads`}
+              title={`View ${row.team} squads`}
+              aria-label={`View ${row.team} squads`}
+              className="inline-flex items-center text-blue-600 hover:text-blue-800"
+            >
+              <ClipboardList size={16} />
+            </Link>
+          ) : null,
+      } satisfies Column<TeamItem>,
+    ];
+  }, [squadTeams]);
 
   return (
     <div>
@@ -63,7 +91,7 @@ export function TeamTable({
         <p className="text-sm text-red-500">Error: {error}</p>
       ) : (
         <DataTable
-          columns={TEAMS_COLUMNS}
+          columns={columns}
           data={filteredData}
           keyField="team"
           defaultSort={defaultSort}

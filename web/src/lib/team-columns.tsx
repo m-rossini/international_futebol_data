@@ -43,7 +43,7 @@ export const TEAMS_COLUMNS: Column<TeamItem>[] = [
     sortable: true,
     render: (row) => (
       <Link
-        href={`/country/${encodeURIComponent(row.team)}`}
+        href={`/teams/${encodeURIComponent(row.team)}`}
         className="inline-flex items-center gap-1.5 text-blue-600 hover:underline"
       >
         <CountryFlag countryName={row.team} size={14} />

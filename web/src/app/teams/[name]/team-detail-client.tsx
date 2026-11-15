@@ -12,6 +12,7 @@ import { GoalsHistogramChart } from '@/components/shared/chart/GoalsHistogramCha
 import { MatchLadderChart } from '@/components/shared/chart/MatchLadderChart';
 import { BiggestWinsCard } from '@/components/shared/BiggestWinsCard';
 import { MatchTable } from '@/components/shared/MatchTable';
+import { TeamSquadsSection } from './team-squads-section';
 import { StatsBar, buildMatchStats, buildGoalStats } from '@/components/shared/StatsBar';
 import { logApiCall, logUserAction } from '@/lib/observability';
 import type { TeamDetail, YearlyRow } from '@/lib/types';
@@ -348,6 +349,9 @@ export function TeamDetailClient({ teamName }: Props) {
               </div>
             )}
           </div>
+
+          {/* Squad lineups for this team's matches */}
+          <TeamSquadsSection teamName={teamName} matches={detail.matches_list} />
         </>
       ) : null}
     </div>

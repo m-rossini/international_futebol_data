@@ -78,14 +78,6 @@ export const NAV_ITEMS: NavEntry[] = [
   { type: 'separator' },
   {
     type: 'link',
-    href: '/squads',
-    label: 'Squads',
-    icon: Users,
-    description: 'Browse matches that have lineup data',
-    accent: 'blue',
-  },
-  {
-    type: 'link',
     href: '/players',
     label: 'Players',
     icon: Users,

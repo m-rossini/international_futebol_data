@@ -1,6 +1,7 @@
-import { describe, it, expect } from 'vitest';
-import { render } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, waitFor, act } from '@testing-library/react';
 import { MatchTable } from '@/components/shared/MatchTable';
+import { resetSquadCacheForTests } from '@/lib/squads';
 import type { MatchItem } from '@/lib/types';
 
 const matches: MatchItem[] = [
@@ -22,6 +23,13 @@ function hrefs(container: HTMLElement): string[] {
 }
 
 describe('MatchTable team links', () => {
+  beforeEach(() => {
+    resetSquadCacheForTests();
+    globalThis.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve([]),
+    });
+  });
   it('links team names to their team pages by default', () => {
     const { container } = render(<MatchTable matches={matches} />);
     const links = hrefs(container);
@@ -48,5 +56,46 @@ describe('MatchTable team links', () => {
     const links = hrefs(container);
     expect(links).toContain('/teams/England/2022?tournaments=FIFA');
     expect(links).toContain('/teams/Iran/2022?tournaments=FIFA');
+  });
+
+  it('shows a squad button only for matches with squad data', async () => {
+    resetSquadCacheForTests();
+    globalThis.fetch = vi.fn().mockImplementation((url: string) => {
+      if (String(url).includes('/squads')) {
+        return Promise.resolve({
+          ok: true,
+          json: () =>
+            Promise.resolve([
+              { match_date: '2022-11-21', home_team: 'England', away_team: 'Iran' },
+            ]),
+        });
+      }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
+    });
+    const { container } = render(<MatchTable matches={matches} />);
+    await waitFor(() => {
+      expect(
+        container.querySelector('a[aria-label="View squads for England vs Iran"]'),
+      ).not.toBeNull();
+    });
+    const btn = container.querySelector('a[aria-label="View squads for England vs Iran"]');
+    expect(btn?.getAttribute('href')).toBe('/squads/2022-11-21/England/Iran');
+  });
+
+  it('shows no squad button when no match has squad data', async () => {
+    resetSquadCacheForTests();
+    let resolveSquads!: (v: unknown[]) => void;
+    globalThis.fetch = vi.fn().mockImplementation((url: string) => {
+      if (String(url).includes('/squads')) {
+        return new Promise((res) => {
+          resolveSquads = (v) => res({ ok: true, json: () => Promise.resolve(v) });
+        });
+      }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve([]) });
+    });
+    const { container } = render(<MatchTable matches={matches} />);
+    resolveSquads([]);
+    await act(async () => {});
+    expect(container.querySelector('a[aria-label^="View squads"]')).toBeNull();
   });
 });

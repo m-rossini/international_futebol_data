@@ -2,10 +2,12 @@
 
 import { useMemo, useState, useCallback } from 'react';
 import Link from 'next/link';
+import { ClipboardList } from 'lucide-react';
 import { DataTable, type Column } from '@/components/shared/DataTable';
 import { CountryFlag } from '@/components/shared/CountryFlag';
 import { ShootoutBadge } from '@/components/shared/ShootoutBadge';
 import { MatchDetailRow } from '@/components/shared/MatchDetailRow';
+import { useSquadMatchKeys, squadMatchKey, squadDetailUrl } from '@/lib/squads';
 import type { MatchItem } from '@/lib/types';
 
 // ---------------------------------------------------------------------------
@@ -76,6 +78,8 @@ export function MatchTable({
     () => teamHref ?? ((team: string) => `/teams/${encodeURIComponent(team)}`),
     [teamHref],
   );
+
+  const squadKeys = useSquadMatchKeys();
 
   const rows: Row[] = useMemo(
     () =>
@@ -171,8 +175,27 @@ export function MatchTable({
       });
     }
 
+    if (squadKeys) {
+      cols.push({
+        key: 'squads',
+        header: '',
+        sortable: false,
+        render: (r) =>
+          squadKeys.has(squadMatchKey(r.date, r.home_team, r.away_team)) ? (
+            <Link
+              href={squadDetailUrl(r.date, r.home_team, r.away_team)}
+              title="View squads"
+              aria-label={`View squads for ${r.home_team} vs ${r.away_team}`}
+              className="inline-flex items-center text-blue-600 hover:text-blue-800"
+            >
+              <ClipboardList size={16} />
+            </Link>
+          ) : null,
+      });
+    }
+
     return cols;
-  }, [showNeutral, hTeam, hrefForTeam]);
+  }, [showNeutral, hTeam, hrefForTeam, squadKeys]);
 
   if (matches.length === 0) return null;
 

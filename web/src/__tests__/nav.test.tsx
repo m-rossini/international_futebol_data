@@ -59,4 +59,9 @@ describe('navigation config', () => {
       expect(screen.getByText(item.label)).toBeInTheDocument();
     }
   });
+
+  it('does not expose squads as top-level navigation', () => {
+    const hrefs = NAV_LINKS.map((item) => item.href);
+    expect(hrefs).not.toContain('/squads');
+  });
 });
