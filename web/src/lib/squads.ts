@@ -21,7 +21,22 @@ let keysPromise: Promise<Set<string>> | null = null;
 /** All squad-match keys, fetched once per session and shared by every consumer. */
 export function getSquadMatchKeys(): Promise<Set<string>> {
   if (!keysPromise) {
-    keysPromise = fetch(SQUADS_URL)
+    let result: unknown;
+    try {
+      result = fetch(SQUADS_URL);
+    } catch {
+      result = null;
+    }
+    if (
+      result === null ||
+      result === undefined ||
+      typeof (result as Promise<Response>).then !== 'function'
+    ) {
+      // fetch unavailable or mocked without an implementation (tests):
+      // treat as "no squad data" instead of crashing the render.
+      return Promise.resolve(new Set<string>());
+    }
+    keysPromise = (result as Promise<Response>)
       .then(async (res): Promise<SquadMatchItem[]> => {
         if (!res.ok) return [];
         const data: unknown = await res.json();
