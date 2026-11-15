@@ -44,7 +44,19 @@ export function SquadsClient() {
     };
   }, []);
 
-  const columns: Column<SquadMatchItem>[] = [
+  // Multiple matches can share a date, so `match_date` is not a unique React
+  // key. Derive a stable composite key (date + home + away), mirroring
+  // MatchTable's `_key` convention.
+  interface Row extends SquadMatchItem {
+    _key: string;
+  }
+
+  const rows: Row[] = matches.map((m) => ({
+    ...m,
+    _key: `${m.match_date}-${m.home_team}-${m.away_team}`,
+  }));
+
+  const columns: Column<Row>[] = [
     {
       key: 'match_date',
       header: 'Date',
@@ -94,8 +106,8 @@ export function SquadsClient() {
           </p>
           <DataTable
             columns={columns}
-            data={matches}
-            keyField="match_date"
+            data={rows}
+            keyField="_key"
             defaultSort={{ key: 'match_date', dir: 'desc' }}
           />
         </>
