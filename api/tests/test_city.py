@@ -84,6 +84,16 @@ class TestCity:
         _assert_status(resp, 200)
         assert resp.json().get("error") is True
 
+    def test_city_with_slash_in_name(self, client: TestClient):
+        # "Domat/Ems" contains a literal slash: %2F is decoded to "/" by the
+        # server before routing, so a plain {city_name} segment 404s. The
+        # :path converter keeps it reachable.
+        resp = client.get("/city/Domat%2FEms")
+        _assert_status(resp)
+        body = resp.json()
+        assert body["city"] == "Domat/Ems"
+        assert body["country"] == "Switzerland"
+
     # ------------------------------------------------------------------
     #  Filter tests
     # ------------------------------------------------------------------

@@ -25,7 +25,7 @@ async def cities_endpoint(filters: FilterParamsDep = Depends()):
     return engine.cities(filters.inner)
 
 
-@router.get("/city/{city_name}", response_model=CityInfoResponse | ErrorResponse)
+@router.get("/city/{city_name:path}", response_model=CityInfoResponse | ErrorResponse)
 async def city_endpoint(city_name: str, filters: FilterParamsDep = Depends()):
     """Comprehensive stats for a specific city.
     Optional filters: ``?tournaments=Friendly&date_from=2000``"""
