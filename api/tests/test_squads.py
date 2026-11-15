@@ -70,6 +70,54 @@ class TestSquads:
         _assert_status(resp, 200)
         assert resp.json().get("error") is True
 
+    def test_squad_info_coerces_nan_position_to_none(self):
+        """Bench rows without a position must not break response validation."""
+        import pandas as pd
+
+        from football_stats.stats.analysis.squads import squad_info
+
+        squads = pd.DataFrame(
+            [
+                {
+                    "match_date": "2024-07-14",
+                    "home_team": "Spain",
+                    "away_team": "England",
+                    "team": "Spain",
+                    "player_name": "Test Starter",
+                    "shirt_no": 10,
+                    "position": "Center Forward",
+                    "starter": True,
+                    "captain": False,
+                },
+                {
+                    "match_date": "2024-07-14",
+                    "home_team": "Spain",
+                    "away_team": "England",
+                    "team": "Spain",
+                    "player_name": "Test Bench",
+                    "shirt_no": 9,
+                    "position": float("nan"),
+                    "starter": False,
+                    "captain": False,
+                },
+                {
+                    "match_date": "2024-07-14",
+                    "home_team": "Spain",
+                    "away_team": "England",
+                    "team": "England",
+                    "player_name": "Test Keeper",
+                    "shirt_no": 1,
+                    "position": "Goalkeeper",
+                    "starter": True,
+                    "captain": True,
+                },
+            ]
+        )
+        result = squad_info(squads, "2024-07-14", "Spain", "England")
+        spain = next(s for s in result["squads"] if s["team"] == "Spain")
+        bench = next(p for p in spain["bench"] if p["player_name"] == "Test Bench")
+        assert bench["position"] is None
+
     def test_squads_teams_filter(self, client: TestClient):
         if not _HAS_SQUADS:
             pytest.skip("squads.csv not available in this DATA_DIR")

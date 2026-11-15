@@ -67,7 +67,7 @@ def squad_info(
             entry = {
                 "player_name": r["player_name"],
                 "shirt_no": int(r["shirt_no"]) if pd.notna(r["shirt_no"]) else None,
-                "position": r["position"],
+                "position": r["position"] if pd.notna(r["position"]) else None,
                 "captain": bool(r["captain"]),
             }
             if bool(r["starter"]):
