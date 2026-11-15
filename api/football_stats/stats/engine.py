@@ -305,9 +305,14 @@ class QueryEngine:
         """Comprehensive stats for a specific city."""
         logger.debug("City info requested: %s", name)
         try:
-            return city_info(self._enriched_filtered(filters), name)
+            result = city_info(self._enriched_filtered(filters), name)
         except ValueError as e:
             return {"error": True, "message": str(e)}
+        mark_shootouts(
+            result.get("matches_list", []),
+            build_shootout_lookup(self._state.shootouts),
+        )
+        return result
 
     # ------------------------------------------------------------------
     #  Country queries

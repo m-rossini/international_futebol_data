@@ -94,6 +94,31 @@ class TestCity:
         assert body["city"] == "Domat/Ems"
         assert body["country"] == "Switzerland"
 
+    def test_city_matches_list(self, client: TestClient):
+        resp = client.get(f"/city/{_KNOWN_CITY}")
+        _assert_status(resp)
+        body = resp.json()
+        matches = body["matches_list"]
+        assert isinstance(matches, list)
+        assert 0 < len(matches) <= body["summary"]["matches"]
+        _assert_keys(
+            matches[0],
+            {
+                "date",
+                "home_team",
+                "away_team",
+                "home_score",
+                "away_score",
+                "tournament",
+                "city",
+                "country",
+            },
+            "city.matches_list.item",
+        )
+        dates = [m["date"] for m in matches]
+        assert dates == sorted(dates)
+        assert all(m["city"] == body["city"] for m in matches)
+
     # ------------------------------------------------------------------
     #  Filter tests
     # ------------------------------------------------------------------

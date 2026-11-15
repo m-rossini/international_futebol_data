@@ -544,6 +544,7 @@ class CityInfoResponse(BaseModel):
     city: str
     country: str
     summary: CitySummary
+    matches_list: list[MatchItem] = Field(default_factory=list)
 
     # ===========================================================================
     #  GET /countries  &  GET /country/{name}

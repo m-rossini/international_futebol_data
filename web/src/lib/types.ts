@@ -363,6 +363,7 @@ export interface CityDetail {
   city: string;
   country: string;
   summary: CitySummary;
+  matches_list: MatchItem[];
 }
 
 export interface PlayerListItem {
