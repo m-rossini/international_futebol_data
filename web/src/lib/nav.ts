@@ -120,6 +120,15 @@ export const NAV_ITEMS: NavEntry[] = [
   { type: 'separator' },
   {
     type: 'link',
+    href: '/askme',
+    label: 'Ask Me',
+    icon: MessageSquare,
+    description: 'Ask questions in natural language',
+    accent: 'emerald',
+  },
+  { type: 'separator' },
+  {
+    type: 'link',
     href: '/house-keeping',
     label: 'House Keeping',
     icon: Flag,
