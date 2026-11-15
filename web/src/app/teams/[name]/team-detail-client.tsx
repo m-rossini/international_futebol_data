@@ -120,6 +120,12 @@ export function TeamDetailClient({ teamName }: Props) {
 
   const qs = useMemo(() => buildQs(sp), [sp]);
 
+  // Team links keep the current filter context (tournaments/countries/dates).
+  const teamHref = useCallback(
+    (t: string) => `/teams/${encodeURIComponent(t)}${qs ? `?${qs}` : ''}`,
+    [qs],
+  );
+
   const ageHistogram = useMemo<Record<string, number> | null>(() => {
     if (!detail || detail.matches_list.length === 0) return null;
 
@@ -330,7 +336,12 @@ export function TeamDetailClient({ teamName }: Props) {
             {detail.matches_list.length > 0 && (
               <div className="mt-4">
                 {detail.matches_list.length > 0 ? (
-                  <MatchTable matches={detail.matches_list} highlightTeam={teamName} showNeutral />
+                  <MatchTable
+                    matches={detail.matches_list}
+                    highlightTeam={teamName}
+                    showNeutral
+                    teamHref={teamHref}
+                  />
                 ) : (
                   <p className="text-sm text-gray-400">No matches match the current filter.</p>
                 )}

@@ -60,6 +60,12 @@ export function YearMatchesClient({ teamName, year }: Props) {
 
   const qs = useMemo(() => buildQs(sp), [sp]);
 
+  // Opponent links stay in the same year and keep the current filters.
+  const teamHref = useCallback(
+    (t: string) => `/teams/${encodeURIComponent(t)}/${year}${qs ? `?${qs}` : ''}`,
+    [qs, year],
+  );
+
   useEffect(() => {
     let cancelled = false;
 
@@ -384,7 +390,12 @@ export function YearMatchesClient({ teamName, year }: Props) {
                 : 'No matches found for this year.'}
             </p>
           ) : (
-            <MatchTable matches={filtered} highlightTeam={teamName} showNeutral />
+            <MatchTable
+              matches={filtered}
+              highlightTeam={teamName}
+              showNeutral
+              teamHref={teamHref}
+            />
           )}
         </>
       ) : null}

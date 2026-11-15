@@ -73,6 +73,17 @@ export function SeasonDetailClient({ tournamentName, year }: Props) {
 
   const qs = useMemo(() => buildQs(sp), [sp]);
 
+  // Team links stay in the same season and keep the tournament context.
+  const teamHref = useCallback(
+    (t: string) => {
+      const params = new URLSearchParams(sp.toString());
+      params.set('tournaments', tournamentName);
+      const q = params.toString();
+      return `/teams/${encodeURIComponent(t)}/${year}${q ? `?${q}` : ''}`;
+    },
+    [sp, tournamentName, year],
+  );
+
   useEffect(() => {
     let cancelled = false;
 
@@ -224,7 +235,7 @@ export function SeasonDetailClient({ tournamentName, year }: Props) {
               )}
             </div>
             {detail.matches_list.length > 0 ? (
-              <MatchTable matches={detail.matches_list} showNeutral />
+              <MatchTable matches={detail.matches_list} showNeutral teamHref={teamHref} />
             ) : (
               <p className="text-sm text-gray-400">
                 No matches for this edition with the current filters.

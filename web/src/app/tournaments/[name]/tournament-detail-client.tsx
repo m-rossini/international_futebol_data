@@ -114,6 +114,17 @@ export function TournamentDetailClient({ tournamentName }: Props) {
 
   const qs = useMemo(() => buildQs(sp), [sp]);
 
+  // Team links keep the tournament context so the team page is pre-filtered.
+  const teamHref = useCallback(
+    (t: string) => {
+      const params = new URLSearchParams(sp.toString());
+      params.set('tournaments', tournamentName);
+      const q = params.toString();
+      return `/teams/${encodeURIComponent(t)}${q ? `?${q}` : ''}`;
+    },
+    [sp, tournamentName],
+  );
+
   useEffect(() => {
     let cancelled = false;
 
@@ -362,7 +373,7 @@ export function TournamentDetailClient({ tournamentName }: Props) {
             </div>
             {matches.length > 0 ? (
               <>
-                <MatchTable matches={matches} showNeutral />
+                <MatchTable matches={matches} showNeutral teamHref={teamHref} />
                 {matchTotal > MATCHES_PAGE && (
                   <div className="flex items-center justify-between mt-3">
                     <button
