@@ -69,3 +69,21 @@ class TestSquads:
         resp = client.get("/squads/1900-01-01/NonExistent/NonExistent")
         _assert_status(resp, 200)
         assert resp.json().get("error") is True
+
+    def test_squads_teams_filter(self, client: TestClient):
+        if not _HAS_SQUADS:
+            pytest.skip("squads.csv not available in this DATA_DIR")
+        first = client.get("/squads?limit=1").json()[0]
+        team = first["home_team"]
+        resp = client.get(f"/squads?teams={team}&limit=500")
+        _assert_status(resp)
+        body = resp.json()
+        assert len(body) > 0
+        assert all(m["home_team"] == team or m["away_team"] == team for m in body)
+
+    def test_squads_teams_filter_unknown_returns_empty(self, client: TestClient):
+        if not _HAS_SQUADS:
+            pytest.skip("squads.csv not available in this DATA_DIR")
+        resp = client.get("/squads?teams=NonExistentTeamXYZ&limit=500")
+        _assert_status(resp)
+        assert resp.json() == []

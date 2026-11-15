@@ -367,7 +367,11 @@ class QueryEngine:
     def squad_matches(self, filters: Optional[FilterParams] = None) -> list:
         """List matches that have squad data."""
         logger.debug("Squad matches list", extra={"source": "live"})
-        return squads_list(self._state.squads)
+        df = self._state.squads
+        if filters is not None and filters.teams:
+            wanted = set(filters.teams)
+            df = df[df["home_team"].isin(wanted) | df["away_team"].isin(wanted)]
+        return squads_list(df)
 
     def squad(
         self,
