@@ -88,7 +88,10 @@ class OpenAICompatibleProvider(ABC):
         if self._client is None:
             from openai import OpenAI
 
-            kwargs: dict[str, Any] = {"api_key": self._config.get_api_key() or "none"}
+            kwargs: dict[str, Any] = {
+                "api_key": self._config.get_api_key() or "none",
+                "timeout": self._config.timeout_seconds,
+            }
             if self._config.base_url:
                 kwargs["base_url"] = self._config.base_url
             self._client = OpenAI(**kwargs)
@@ -250,7 +253,10 @@ class AnthropicProvider:
         if self._client is None:
             from anthropic import Anthropic
 
-            self._client = Anthropic(api_key=self._config.get_api_key())
+            self._client = Anthropic(
+                api_key=self._config.get_api_key(),
+                timeout=self._config.timeout_seconds,
+            )
         return self._client
 
     async def chat_with_tools(

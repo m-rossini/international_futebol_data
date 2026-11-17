@@ -22,6 +22,10 @@ class LLMProfileConfig:
     base_url: str | None = None
     max_tokens: int = 4096
     temperature: float = 0.7
+    # Per-attempt request timeout in seconds. The chain fails over to the
+    # next profile when a provider times out, so no single slow model can
+    # hang a conversation indefinitely.
+    timeout_seconds: float = 60.0
 
     def get_api_key(self) -> str | None:
         """Read the API key from the environment variable."""
@@ -99,6 +103,7 @@ class LLMConfig:
                 profiles_dict[name]["base_url"] = p.base_url
             profiles_dict[name]["max_tokens"] = p.max_tokens
             profiles_dict[name]["temperature"] = p.temperature
+            profiles_dict[name]["timeout_seconds"] = p.timeout_seconds
 
         return {
             "profiles": profiles_dict,
@@ -228,4 +233,5 @@ def _parse_provider_config(data: dict[str, Any] | None) -> LLMProfileConfig | No
         base_url=data.get("base_url"),
         max_tokens=data.get("max_tokens", 4096),
         temperature=data.get("temperature", 0.7),
+        timeout_seconds=data.get("timeout_seconds", 60.0),
     )
