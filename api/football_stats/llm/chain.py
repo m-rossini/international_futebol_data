@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import time
 from typing import Any
 
 from .config import LLMConfig
@@ -14,8 +15,13 @@ logger = logging.getLogger("llm.chain")
 class ProviderChain:
     """Tries profiles in priority order, falling through to the next on failure."""
 
-    def __init__(self, config: LLMConfig):
+    def __init__(self, config: LLMConfig, cooldown_seconds: float = 300.0):
         self._config = config
+        # How long a failed profile is skipped (unless every profile is
+        # cooling down). Prevents one slow/dead model from being retried on
+        # every agent-loop iteration of every question.
+        self._cooldown_seconds = cooldown_seconds
+        self._cooldown_until: dict[str, float] = {}
         self._providers: list[tuple[str, LLMProvider]] = []
         self._init_chain()
 
@@ -47,6 +53,7 @@ class ProviderChain:
     def rebuild(self, config: LLMConfig) -> None:
         """Rebuild the chain with a new config (e.g. after profile switch)."""
         self._config = config
+        self._cooldown_until.clear()
         self._init_chain()
 
     # ------------------------------------------------------------------
@@ -88,16 +95,34 @@ class ProviderChain:
     ) -> ChatResponse:
         """Send a chat request, trying profiles in priority order.
 
+        Profiles that failed recently are skipped (cooldown) so a slow or
+        dead model is not retried on every call — unless every profile is
+        cooling down, in which case all are tried anyway rather than
+        refusing outright.
+
         Raises:
             RuntimeError: If no providers are available or all fail.
         """
         errors: list[str] = []
 
-        for name, provider in self._providers:
+        now = time.monotonic()
+        eligible = [
+            (name, provider)
+            for name, provider in self._providers
+            if self._cooldown_until.get(name, 0.0) <= now
+        ]
+        if not eligible and self._providers:
+            logger.info(
+                "All LLM profiles cooling down — trying anyway rather than refusing."
+            )
+            eligible = list(self._providers)
+
+        for name, provider in eligible:
             try:
                 return await provider.chat_with_tools(messages, tools, model)
             except Exception as e:
                 logger.warning("Profile '%s' failed: %s", name, e)
+                self._cooldown_until[name] = time.monotonic() + self._cooldown_seconds
                 errors.append(f"{name}: {e}")
 
         if not errors:

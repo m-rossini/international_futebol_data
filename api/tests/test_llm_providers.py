@@ -127,8 +127,10 @@ class _FakeProvider:
 
     def __init__(self, behaviour):
         self._behaviour = behaviour
+        self.calls = 0
 
     async def chat_with_tools(self, messages, tools, model=None):
+        self.calls += 1
         if isinstance(self._behaviour, Exception):
             raise self._behaviour
         return self._behaviour
@@ -154,3 +156,54 @@ class TestChainFailoverOnTimeout:
         )
         with pytest.raises(RuntimeError, match="All LLM profiles failed"):
             asyncio.run(chain.chat_with_tools([], []))
+
+
+class TestChainCooldown:
+    def _chain(self, *providers, **kwargs):
+        chain = ProviderChain(LLMConfig(profiles={}), **kwargs)
+        chain._providers = list(providers)
+        return chain
+
+    def test_failed_profile_skipped_on_next_call(self):
+        slow = _FakeProvider(TimeoutError("timed out"))
+        fast = _FakeProvider(ChatResponse(content="ok"))
+        chain = self._chain(("slow", slow), ("fast", fast))
+        assert asyncio.run(chain.chat_with_tools([], [])).content == "ok"
+        assert (slow.calls, fast.calls) == (1, 1)
+        # Second call goes straight to the healthy profile.
+        assert asyncio.run(chain.chat_with_tools([], [])).content == "ok"
+        assert (slow.calls, fast.calls) == (1, 2)
+
+    def test_all_cooling_down_still_tried(self):
+        slow = _FakeProvider(TimeoutError("slow timed out"))
+        slower = _FakeProvider(TimeoutError("slower timed out"))
+        chain = self._chain(("slow", slow), ("slower", slower))
+        with pytest.raises(RuntimeError, match="All LLM profiles failed"):
+            asyncio.run(chain.chat_with_tools([], []))
+        # Both cooling down, but a new call tries anyway rather than refusing.
+        with pytest.raises(RuntimeError, match="All LLM profiles failed"):
+            asyncio.run(chain.chat_with_tools([], []))
+        assert (slow.calls, slower.calls) == (2, 2)
+
+    def test_cooldown_expires(self):
+        import time as _time
+
+        slow = _FakeProvider(TimeoutError("timed out"))
+        fast = _FakeProvider(ChatResponse(content="ok"))
+        chain = self._chain(("slow", slow), ("fast", fast), cooldown_seconds=0.05)
+        asyncio.run(chain.chat_with_tools([], []))
+        assert slow.calls == 1
+        _time.sleep(0.06)
+        asyncio.run(chain.chat_with_tools([], []))
+        assert slow.calls == 2
+
+    def test_rebuild_clears_cooldowns(self):
+        slow = _FakeProvider(TimeoutError("timed out"))
+        fast = _FakeProvider(ChatResponse(content="ok"))
+        chain = self._chain(("slow", slow), ("fast", fast))
+        asyncio.run(chain.chat_with_tools([], []))
+        assert slow.calls == 1
+        chain.rebuild(LLMConfig(profiles={}))
+        chain._providers = [("slow", slow), ("fast", fast)]
+        asyncio.run(chain.chat_with_tools([], []))
+        assert slow.calls == 2
