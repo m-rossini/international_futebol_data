@@ -2,10 +2,12 @@
 
 import { useMemo, useState, useCallback } from 'react';
 import Link from 'next/link';
+import { ClipboardList } from 'lucide-react';
 import { DataTable, type Column } from '@/components/shared/DataTable';
 import { CountryFlag } from '@/components/shared/CountryFlag';
 import { ShootoutBadge } from '@/components/shared/ShootoutBadge';
 import { MatchDetailRow } from '@/components/shared/MatchDetailRow';
+import { useSquadMatchKeys, squadMatchKey, squadDetailUrl } from '@/lib/squads';
 import type { MatchItem } from '@/lib/types';
 
 // ---------------------------------------------------------------------------
@@ -51,6 +53,8 @@ interface Props {
   showNeutral?: boolean;
   /** Optional heading rendered above the table. */
   heading?: string;
+  /** Build the href for a team name. Defaults to the team page. */
+  teamHref?: (team: string) => string;
 }
 
 // ---------------------------------------------------------------------------
@@ -61,8 +65,21 @@ interface Row extends MatchItem {
   _key: string;
 }
 
-export function MatchTable({ matches, highlightTeam, showNeutral = false, heading }: Props) {
+export function MatchTable({
+  matches,
+  highlightTeam,
+  showNeutral = false,
+  heading,
+  teamHref,
+}: Props) {
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
+
+  const hrefForTeam = useMemo(
+    () => teamHref ?? ((team: string) => `/teams/${encodeURIComponent(team)}`),
+    [teamHref],
+  );
+
+  const squadKeys = useSquadMatchKeys();
 
   const rows: Row[] = useMemo(
     () =>
@@ -116,7 +133,7 @@ export function MatchTable({ matches, highlightTeam, showNeutral = false, headin
         sortable: true,
         render: (r) => (
           <Link
-            href={`/country/${encodeURIComponent(r.home_team)}`}
+            href={hrefForTeam(r.home_team)}
             className={`inline-flex items-center gap-1.5 ${homeCls(r, hTeam)} text-blue-600 hover:underline`}
           >
             <CountryFlag countryName={r.home_team} size={14} />
@@ -140,7 +157,7 @@ export function MatchTable({ matches, highlightTeam, showNeutral = false, headin
         sortable: true,
         render: (r) => (
           <Link
-            href={`/country/${encodeURIComponent(r.away_team)}`}
+            href={hrefForTeam(r.away_team)}
             className={`inline-flex items-center gap-1.5 ${awayCls(r, hTeam)} text-blue-600 hover:underline`}
           >
             <CountryFlag countryName={r.away_team} size={14} />
@@ -158,8 +175,27 @@ export function MatchTable({ matches, highlightTeam, showNeutral = false, headin
       });
     }
 
+    if (squadKeys) {
+      cols.push({
+        key: 'squads',
+        header: '',
+        sortable: false,
+        render: (r) =>
+          squadKeys.has(squadMatchKey(r.date, r.home_team, r.away_team)) ? (
+            <Link
+              href={squadDetailUrl(r.date, r.home_team, r.away_team)}
+              title="View squads"
+              aria-label={`View squads for ${r.home_team} vs ${r.away_team}`}
+              className="inline-flex items-center text-blue-600 hover:text-blue-800"
+            >
+              <ClipboardList size={16} />
+            </Link>
+          ) : null,
+      });
+    }
+
     return cols;
-  }, [showNeutral, hTeam]);
+  }, [showNeutral, hTeam, hrefForTeam, squadKeys]);
 
   if (matches.length === 0) return null;
 

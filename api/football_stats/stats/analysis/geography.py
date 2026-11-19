@@ -8,6 +8,36 @@ from .enrich import enrich_match_results, strip_accents
 from .winner import biggest_single_win
 
 
+def entity_matches_list(df: pd.DataFrame) -> list[dict]:
+    """Match rows for an already-filtered frame, oldest first.
+
+    Same row shape as ``team_matches_all`` so every MatchTable consumer
+    can render it unchanged. Drops unplayed (NaN-score) rows.
+    """
+    if df.empty:
+        return []
+    matches = df.dropna(subset=["home_score", "away_score"]).copy()
+    matches = matches.sort_values("date")
+    rows = []
+    for _, row in matches.iterrows():
+        rows.append(
+            {
+                "date": str(row["date"]),
+                "home_team": row["home_team"],
+                "away_team": row["away_team"],
+                "home_score": int(row["home_score"]),
+                "away_score": int(row["away_score"]),
+                "tournament": row.get("tournament"),
+                "city": row.get("city"),
+                "country": row.get("country"),
+                "neutral": bool(row.get("neutral", False))
+                if "neutral" in row.index
+                else None,
+            }
+        )
+    return rows
+
+
 class GeographyStats:
     """Parameterized calculator for city or country stats.
 

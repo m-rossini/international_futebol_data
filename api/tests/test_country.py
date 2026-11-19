@@ -86,6 +86,12 @@ class TestCountry:
         _assert_status(resp, 200)
         assert resp.json().get("error") is True
 
+    def test_country_has_no_matches_list(self, client: TestClient):
+        # Match lists are city-scoped; the country payload stays aggregate-only.
+        resp = client.get(f"/country/{_KNOWN_COUNTRY}")
+        _assert_status(resp)
+        assert "matches_list" not in resp.json()
+
     # ------------------------------------------------------------------
     #  Filter tests
     # ------------------------------------------------------------------

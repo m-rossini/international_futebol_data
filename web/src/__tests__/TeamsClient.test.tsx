@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { TeamsClient } from '@/app/teams/teams-client';
+import { resetSquadCacheForTests } from '@/lib/squads';
 
 const mockTeams = [
   {
@@ -34,18 +35,16 @@ const mockTeams = [
 
 const mockFilters = { teams: ['Brazil', 'Germany'], tournaments: [], countries: [] };
 
-let mockSearchParams = new URLSearchParams('');
-const mockPush = vi.fn();
-const mockReplace = vi.fn();
-
-vi.mock('next/navigation', () => ({
-  useSearchParams: () => mockSearchParams,
-  useRouter: () => ({ push: mockPush, replace: mockReplace }),
-  usePathname: () => '/teams',
-}));
+let mockSquadMatches: unknown[] = [];
 
 function mockFetchSuccess() {
   globalThis.fetch = vi.fn().mockImplementation((url: string) => {
+    if (String(url).includes('/squads')) {
+      return Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve(mockSquadMatches),
+      });
+    }
     if (url.includes('/filters')) {
       return Promise.resolve({
         ok: true,
@@ -66,11 +65,23 @@ function mockFetchSuccess() {
   });
 }
 
+let mockSearchParams = new URLSearchParams('');
+const mockPush = vi.fn();
+const mockReplace = vi.fn();
+
+vi.mock('next/navigation', () => ({
+  useSearchParams: () => mockSearchParams,
+  useRouter: () => ({ push: mockPush, replace: mockReplace }),
+  usePathname: () => '/teams',
+}));
+
 describe('TeamsClient', () => {
   beforeEach(() => {
     mockSearchParams = new URLSearchParams('');
     mockPush.mockClear();
     mockReplace.mockClear();
+    mockSquadMatches = [];
+    resetSquadCacheForTests();
     mockFetchSuccess();
   });
 
@@ -134,5 +145,21 @@ describe('TeamsClient', () => {
     await waitFor(() => {
       expect(screen.getByText(/Error/)).toBeInTheDocument();
     });
+  });
+
+  it('shows a squad action button only for teams with squad data', async () => {
+    mockSquadMatches = [{ match_date: '2022-12-18', home_team: 'Brazil', away_team: 'France' }];
+    resetSquadCacheForTests();
+    mockFetchSuccess();
+
+    render(<TeamsClient />);
+    await waitFor(() => {
+      expect(screen.getByText('Brazil')).toBeInTheDocument();
+    });
+    const brazilBtn = await screen.findByRole('link', {
+      name: 'View Brazil squads',
+    });
+    expect(brazilBtn).toHaveAttribute('href', '/teams/Brazil#squads');
+    expect(screen.queryByRole('link', { name: 'View Germany squads' })).not.toBeInTheDocument();
   });
 });

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { StatsBar, StatItem } from '@/components/shared/StatsBar';
 import { CountryFlag } from '@/components/shared/CountryFlag';
+import { MatchTable } from '@/components/shared/MatchTable';
 import type { CityDetail } from '@/lib/types';
 
 interface Props {
@@ -68,6 +69,15 @@ export function CityClient({ name, detail, error }: Props) {
         All matches played in {name}{' '}
         {s.first_year && s.last_year && `(${s.first_year}–${s.last_year})`}.
       </p>
+
+      {detail.matches_list.length > 0 && (
+        <div className="mt-8 mb-6">
+          <h2 className="text-lg font-semibold text-gray-800 mb-3">
+            Matches ({detail.matches_list.length.toLocaleString()})
+          </h2>
+          <MatchTable matches={detail.matches_list} showNeutral />
+        </div>
+      )}
     </div>
   );
 }

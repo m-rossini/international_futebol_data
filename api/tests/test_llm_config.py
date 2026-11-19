@@ -205,6 +205,52 @@ class TestProfilePromotion:
             pass
 
 
+class TestProfileTimeout:
+    """LLMProfileConfig carries a per-attempt request timeout (failover bound)."""
+
+    def test_default_timeout(self):
+        cfg = LLMProfileConfig(provider="openai", model="gpt-4o-mini")
+        assert cfg.timeout_seconds == 60.0
+
+    def test_parsed_from_file(self, tmp_path):
+        path = _write_config(
+            tmp_path,
+            {
+                "llm": {
+                    "profiles": {
+                        "fast": {
+                            "provider": "ollama",
+                            "model": "llama3.1",
+                            "priority": 1,
+                            "timeout_seconds": 15,
+                        },
+                    },
+                }
+            },
+        )
+        cfg = LLMConfig.from_file(path)
+        assert cfg.active_profile.timeout_seconds == 15
+
+    def test_round_trips_through_to_llm_dict(self, tmp_path):
+        path = _write_config(
+            tmp_path,
+            {
+                "llm": {
+                    "profiles": {
+                        "fast": {
+                            "provider": "ollama",
+                            "model": "llama3.1",
+                            "priority": 1,
+                            "timeout_seconds": 15,
+                        },
+                    },
+                }
+            },
+        )
+        cfg = LLMConfig.from_file(path)
+        assert cfg.to_llm_dict()["profiles"]["fast"]["timeout_seconds"] == 15
+
+
 class TestSafeSummary:
     """LLMProfileConfig.safe_summary excludes secrets."""
 

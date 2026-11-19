@@ -78,14 +78,6 @@ export const NAV_ITEMS: NavEntry[] = [
   { type: 'separator' },
   {
     type: 'link',
-    href: '/squads',
-    label: 'Squads',
-    icon: Users,
-    description: 'Browse matches that have lineup data',
-    accent: 'blue',
-  },
-  {
-    type: 'link',
     href: '/players',
     label: 'Players',
     icon: Users,
@@ -124,6 +116,15 @@ export const NAV_ITEMS: NavEntry[] = [
     icon: TrendingUp,
     description: 'ELO ratings calculated from match results',
     accent: 'violet',
+  },
+  { type: 'separator' },
+  {
+    type: 'link',
+    href: '/askme',
+    label: 'Ask Me',
+    icon: MessageSquare,
+    description: 'Ask questions in natural language',
+    accent: 'emerald',
   },
   { type: 'separator' },
   {

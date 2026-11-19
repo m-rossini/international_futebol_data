@@ -1,6 +1,6 @@
 """City-level analysis — thin wrapper over GeographyStats."""
 
-from .geography import GeographyStats
+from .geography import GeographyStats, entity_matches_list
 
 _geo = GeographyStats(group_col="city", label="city")
 
@@ -33,4 +33,5 @@ def city_info(results, city: str, top_n: int = 10) -> dict:
     df = results[mask]
     country = df["country"].mode().iloc[0] if not df.empty else None
     base["country"] = country
+    base["matches_list"] = entity_matches_list(df)
     return base

@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { TeamTable } from '@/components/shared/TeamTable';
+import { useSquadTeams } from '@/lib/squads';
 import { logApiCall, logUserAction } from '@/lib/observability';
 import type { TeamItem } from '@/lib/types';
 import type { SortDir } from '@/components/shared/DataTable';
@@ -35,6 +36,8 @@ export function TeamStandingsTable({ tournamentName }: Props) {
   const [error, setError] = useState<string | null>(null);
 
   const qs = useMemo(() => buildQs(sp, tournamentName), [sp, tournamentName]);
+
+  const squadTeams = useSquadTeams();
 
   const minMatches = useMemo(() => {
     const v = sp.get('min_matches');
@@ -148,6 +151,7 @@ export function TeamStandingsTable({ tournamentName }: Props) {
       onRowClick={handleRowClick}
       minMatches={minMatches}
       onMinMatchesChange={setMinMatches}
+      squadTeams={squadTeams}
     />
   );
 }
